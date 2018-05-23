@@ -1,0 +1,95 @@
+body {
+	background-color: black;
+	font-family: sans-serif; /* Arial is invicible */
+	color: #d8d8d8;
+	line-height: 1.35em;
+}
+header, main {
+	max-width: 1055px;
+	margin: auto;
+}
+header {
+	margin-top: 20px;
+	margin-bottom: 20px;
+	background: linear-gradient(#333, #222);
+	display: table;
+	width: 100%;
+	line-height: normal;
+}
+header > a, header > span {
+	display: table-cell;
+	vertical-align: middle;
+	text-align: center;
+}
+header > span:first-child {
+	background: black;
+	font-size: 40px;
+	padding: 0px 10px 0px 0px;
+	font-weight: normal;
+	color: #ddd;
+}
+header > a {
+	padding-left: 8px;
+	padding-right: 8px;
+	font-weight: bold;
+	color: #ccc;
+}
+header > a.active {
+	background: linear-gradient(#111, #222);
+	color: #add;
+}
+header > span:last-child {
+	width: 100%;
+}
+@media (max-width: 400px) {
+	header > a {
+		font-size: 14px;
+		padding-left: 5px;
+		padding-right: 5px;
+	}
+}
+main {
+	box-sizing: border-box;
+	padding-left: 75px;
+}
+@media (max-width: 500px) {
+	main {
+		padding-left: 0;
+	}
+}
+main.tools {
+	padding-left: 0;
+}
+#greeting {
+	font-weight: bold;
+}
+a {
+	text-decoration: none;
+	color: #7ff;
+}
+.boldgrey {
+	font-weight: bold;
+	color: #aaa;
+}
+span.desc {
+	font-size: 90%;
+	color: #999;
+}
+span.result {
+	color: #7ff;
+}
+.bold {
+	font-weight: bold;
+}
+.italic {
+	font-style: italic;
+}
+.underline {
+	text-decoration: underline;
+}
+.overline {
+	text-decoration: overline;
+}
+.strike {
+	text-decoration: line-through;
+}

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ISLand 2D Interactive</title>
+<style>
+body {
+ background-color: black;
+ margin: 0;
+ padding:0;
+ overflow: hidden;
+}
+</style>
+</head>
+<canvas id="canvas" oncontextmenu="return false"></canvas>
+<script src="dat.gui.min.js"></script>
+<script>
+/*
+This version is interactive
+*/
+var points = [], boundX, boundY, forceActive = false, forceInverse = false;
+function setSize(x, y)
+{
+ boundX = x; boundY = y; 
+}
+function generateRandomPoints(config)
+{
+ points.length = 0;
+ for(var t=0;t<config.particles;t++)
+ {
+  points.push([Math.random()*boundX, Math.random()*boundY, 0, 0, 0, 0, 0, 0, 0]);
+ }
+ points.push([NaN, NaN, 0, 0, 0, 0, 0, 0, 0]); //for click
+}
+function computeForces(config)
+{
+ var t, t2, f, v = [], vl;
+ for(t=0;t<config.particles;t++)
+ for(t2=t+1;t2<=config.particles;t2++)
+ {
+  if (t2==config.particles && !forceActive)
+  {
+   points[t][3]  += config.paybackRatio*points[t][6]; points[t][4]  += config.paybackRatio*points[t][7]; points[t][5]  += config.paybackRatio*points[t][8];
+   points[t][6]  -= config.paybackRatio*points[t][6]; points[t][7]  -= config.paybackRatio*points[t][7]; points[t][8]  -= config.paybackRatio*points[t][8];
+   break;
+  }
+
+  v[0] = points[t][0]-points[t2][0]; v[1] = points[t][1]-points[t2][1]; v[2] = points[t][2]-points[t2][2];
+  vl = (points[t][0]-points[t2][0])*(points[t][0]-points[t2][0]) + (points[t][1]-points[t2][1])*(points[t][1]-points[t2][1]) + (points[t][2]-points[t2][2])*(points[t][2]-points[t2][2]);
+
+  if (config.pow==1/2)
+  vl = Math.sqrt(vl);
+  else
+  vl = Math.pow(vl, config.pow);
+
+  if (vl)
+  {
+   f = t2==config.particles?(config.clickAction*(forceInverse?-1:1)*config.clickForce):config.force;
+
+   v[0] /= vl; v[1] /= vl; v[2] /= vl;
+   v[0] *= f; v[1] *= f; v[2] *= f;
+  } else v[0] = v[1] = v[2] = 0;
+
+  points[t][3]  -= v[0]; points[t][4]  -= v[1]; points[t][5]  -= v[2];
+
+  if (forceActive && t2==config.particles)
+  {
+   points[t][6]  += v[0]; points[t][7]  += v[1]; points[t][8]  += v[2]; //we will have to pay for it!
+  }
+
+  points[t2][3] += v[0]; points[t2][4] += v[1]; points[t2][5] += v[2]; 
+ }
+}
+function applyForces(config)
+{
+ var t;
+ for(t=0;t<config.particles;t++)
+ {
+  points[t][0] = Math.max(0, Math.min(boundX-1, points[t][0]+points[t][3])); 
+  points[t][1] = Math.max(0, Math.min(boundY-1, points[t][1]+points[t][4])); 
+  points[t][2] += points[t][5]; 
+ }
+}
+
+//display
+var tx = document.getElementById('canvas').getContext('2d');
+var dx, dy;
+function setDisplaySize(x, y)
+{
+ dx = x; dy = y;
+ tx.canvas.width = x; tx.canvas.height = y;
+}
+function paint(points, config)
+{
+ var t;
+
+ if (config.blurAlpha==1)
+ tx.clearRect(0, 0, dx, dy);
+ else
+ {
+  tx.fillStyle = 'rgba('+(config.backgroundColor[0]|0)+', '+(config.backgroundColor[1]|0)+', '+(config.backgroundColor[2]|0)+', '+config.blurAlpha+')';
+  tx.fillRect(0, 0, dx, dy);
+ }
+ 
+ tx.fillStyle = 'rgba('+(config.color[0]|0)+','+(config.color[1]|0)+','+(config.color[2]|0)+','+config.alpha+')';
+
+ for(t=0;t<config.particles;t++)
+ {
+  tx.beginPath();
+  tx.arc(points[t][0], points[t][1], config.radius, 0, 2*Math.PI);
+  tx.fill();
+ }
+}
+
+//main
+var config = {reset: changeSize, pow: 1/2, force: 0.001, alpha: 0.75, radius: 2, blurAlpha: 1, blur: 0.01, particles: 400, backgroundColor: [0,0,0], color: [255,255,255], clickAction: 1, clickForce: 11, paybackRatio: 0.15};
+var pcount = config.particles; //cache to avoid restart bug
+postProcess();
+onBGChange();
+
+function parseColor(cstr)
+{
+ return cstr.slice(4,-1).split(',').map(Number);
+}
+function postProcess()
+{
+ config.blurAlpha = 1-config.blur;
+}
+function onBGChange()
+{
+ postProcess();
+ document.body.style.backgroundColor = 'rgb('+config.backgroundColor+')';
+}
+
+var rc;
+addEventListener('wheel', changeCircleSize);
+function changeCircleSize(event)
+{
+ config.radius += Math.sign(event.deltaY)/2;
+ config.radius = Math.max(0.2, config.radius);
+ if (rc)
+ rc.updateDisplay();
+ event.preventDefault();
+}
+
+addEventListener('resize', changeSize);
+function changeSize()
+{
+ setDisplaySize(innerWidth, innerHeight);
+ setSize(innerWidth, innerHeight);
+ generateRandomPoints(config);
+}
+changeSize();
+
+var mousePressed = false;
+
+tx.canvas.addEventListener('mousedown', mouseDown);
+tx.canvas.addEventListener('touchstart', touchStart);
+tx.canvas.addEventListener('touchmove', touchStart);
+
+addEventListener('mousemove', mouseMove); 
+
+addEventListener('mouseup', mouseUp);
+addEventListener('touchend', clickEnd);
+addEventListener('touchcancel', clickEnd);
+addEventListener('touchleave', clickEnd);
+
+function mouseDown(event)
+{
+ mousePressed = true;
+ clickStart(event.clientX, event.clientY, event.button==2);
+ event.preventDefault();
+}
+function touchStart(event) //sorry, no multitouch coz I can't test it
+{
+ if (event.targetTouches.length)
+ clickStart(event.targetTouches[0].clientX, event.targetTouches[0].clientY);
+ event.preventDefault();
+}
+function clickStart(x, y, inverse)
+{
+ points[config.particles][0] = x; points[config.particles][1] = y;
+ forceInverse = inverse;
+ forceActive = true; 
+}
+
+function mouseMove(event)
+{
+ if (!mousePressed) return;
+ clickStart(event.clientX, event.clientY, event.button==2);
+ event.preventDefault();
+}
+function mouseUp()
+{
+ mousePressed = false;
+ clickEnd();
+}
+function clickEnd()
+{
+ forceActive = false;
+}
+
+function perFrame()
+{
+ computeForces(config);
+ applyForces(config);
+ paint(points, config);
+
+ requestAnimationFrame(perFrame);
+}
+perFrame();
+
+var gui = new dat.GUI();
+gui.add(config, 'reset').name('Reset');
+gui.add(config, 'particles').name('Particles').onChange(function()
+{
+ if (config.particles!=pcount)
+ {
+  changeSize();
+  pcount = config.particles;
+ }
+});
+
+var ef = gui.addFolder('Engine Advanced');
+ef.add(config, 'pow').name('Distance power').min(0.1);
+ef.add(config, 'force').name('Force factor');
+
+var df = gui.addFolder('Display');
+df.addColor(config, 'backgroundColor').name('Background').onChange(onBGChange);
+df.addColor(config, 'color').name('Foreground');
+rc = df.add(config, 'radius').name('Circle radius').min(0.2);
+df.add(config, 'alpha').min(0).max(1).name('Alpha');
+df.add(config, 'blur').min(0).max(1).name('Blur').onChange(postProcess);
+
+var cf = gui.addFolder('Controlls');
+cf.add(config, 'clickAction', {Attract: 1, Repel: -1}).name('Touch action');
+cf.add(config, 'clickForce').name('Touch force');
+cf.add(config, 'paybackRatio').min(0).max(1).name('Payback speed');
+</script>
+</html>

@@ -1,0 +1,473 @@
+body {
+	text-size-adjust: none;
+	-webkit-text-size-adjust: none;
+}
+#tc-loading {
+	position: fixed;
+	top:0;
+	left:0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	background-color: rgba(0,0,0,0.3);
+	z-index: 1;
+}
+#tc-loading div {
+	position: fixed;
+	top:0;
+	left:0;
+	right:0;
+	width: 150px;
+	margin: auto;
+	padding:14px;
+	background-color: #333;
+	font-weight:bold;
+	box-shadow: 0px 0px 12px 3px black;
+	text-align: center;
+}
+#moreinfo, #usedlibraries {
+	font-size: 15px;
+}
+#moreinfo {
+	position: relative;
+	height: 180px;
+	overflow:auto;
+	resize: vertical;
+	font-size: 15px;
+	z-index:0;
+	padding-right: 3px;
+}
+#moreinfo-shadow {
+	content: "";
+	z-index: 2;
+	display: block;
+	position: sticky;
+	height: 30px;
+	width:100%;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: linear-gradient(to bottom, rgba(0,0,0,0), rgb(0,0,0));
+	background-repeat: no-repeat;
+	background-attachment: scroll;
+	pointer-events: none;
+	margin-top: -20px;
+}
+#moreinfo li {
+	margin-bottom: 5px;
+}
+#moreinfo .feature {
+	font-weight: bold;
+	color: #9ed1d1;
+}
+#moreinfo .snippet {
+	background-color: #021111;
+	color: #9ff;
+	font-family: courier new,monospace;
+	font-size: 10pt;
+	padding: 2px;
+}
+#textoptable {
+	border:0;
+	margin:0;
+	border-spacing:0;
+	border-collapse:collapse;
+}
+#scaleme {
+	height: 306px;
+}
+#addarea1 {
+	width: 100%; height: 150px;
+	box-sizing: border-box;
+}
+input, textarea {
+	background-color: #001313;
+	color: #7ff;
+}
+textarea {
+	font-size: 10pt;
+}
+#escarea1 {
+	width: 670px;
+	height: 300px;
+}
+.th-shadow > span {
+	background-color: #7ff;
+	color: #7ff;
+	z-index:1;
+	position:relative;
+	pointer-events: none;
+	mix-blend-mode: difference;
+}
+/*
+.th-shadow > span > span {
+	background-color: yellow;
+	color: black;
+}
+*/
+#escarea1::selection {
+	color: black;
+	background-color: rgba(89,190,190,0.995);
+}
+#escarea1::-moz-selection {
+	color: black;
+	background-color: rgb(89,190,190);
+}
+#scaleme {
+	overflow-y: scroll;
+}
+#lncoln {
+	border: 1px solid grey;
+	padding: 2px;
+	margin-bottom: 2px;
+	margin-top: 2px;
+}
+#text-binary-mode {
+	margin-left: 2px;
+}
+#text-binary-mode.binary {
+	font-weight: bold;
+	color: #999;
+}
+#text-binary-mode:before {
+	content: 'Text mode';
+}
+#text-binary-mode.binary:before {
+	content: 'Binary mode';
+}
+#adt {
+	display: none;
+}
+input[type=number], #xor-edit-distance-max {
+	width: 60px;
+}
+#selection-start, #selection-end, #slice-start, #slice-end {
+	width: 50px;
+}
+#ascii-base, #limit-float-places {
+	width: 40px;
+}
+#regexo-rtext {
+	width: 290px;
+}
+#regex-search-rtext, #regex-search-rreplace {
+	box-sizing: border-box;
+	vertical-align: middle;
+	height: 3em;
+}
+#regex-search-rtext {
+	width: 570px;
+}
+#regex-search-rreplace {
+	width: 340px;
+}
+.regex-status-examples-table {
+	width: 100%;
+}
+.regex-split-table {
+	width: 100%;
+}
+#regex-status {
+	padding-top: 3px;
+	padding-bottom: 3px;
+	background-color: #111;
+	width: 50%;
+	text-align: center;
+}
+#regex-status #regex-status-message.initial {
+	color: #aaa;
+}
+#regex-status-matchinfo {
+	display: none;
+}
+#regex-status-matched-groups {
+	display: none;
+	width: 100%;
+	margin-top: 5px;
+}
+#regex-status-matched-groups textarea {
+	width: 100%;
+	box-sizing: border-box;
+}
+#regex-status-matched-groups td:first-child{
+	text-align: right;
+}
+#regex-status-matched-groups td {
+	padding-right: 3px;
+	padding-bottom: 5px;
+	text-align: left;
+}
+#regex-example-list {
+	width: 350px;
+}
+#regex-interactive-example-list {
+	width: 335px;
+}
+#regex-interactive-buttons, #misctransform-interactive-buttons {
+	display: none;
+}
+#regex-interactive-title {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	display: none;
+}
+#regex-interactive-ui {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	display: none;
+}
+.regex-interactive-parameter-group {
+	padding: 6px 0 2px 0;
+}
+.unicode-tools select {
+	width: 200px;
+}
+#unicode-tricks-select {
+	width: 150px;
+}
+#cadmin-column-start {
+	width: 40px;
+}
+#cadmin-column-end {
+	width: 40px;
+}
+#cadmin-column-insert {
+	width: 40px;
+}
+#cadmin-column-colno {
+	width: 40px;
+}
+#eladmin-calc-result-td {
+	visibility: hidden;
+	align: center;
+}
+#eladmin-calc-table {
+	width: 100%
+}
+#element-separator-td {
+	background-color: #111;
+	width: 50%;
+}
+#quote-escape-settings {
+	display: none;
+}
+#xor-result {
+	overflow: auto;
+	resize: both;
+	width: 980px;
+        height: 180px;
+	border: 1px solid grey;
+	padding: 6px;
+}
+#xor-result table {
+	border-collapse:collapse;
+	display: none;
+}
+#xor-result table thead td {
+	font-weight: bold;
+}
+#xor-result table td {
+	padding: 2px 3px 2px 3px;
+	border: 1px solid #444;
+	text-align: center;
+	min-width: 100px;
+}
+#xor-result table td:last-child {
+	border-style: none;
+	background-color: black;
+}
+#xor-result table tbody tr:nth-child(2n) {
+	background-color: #151515;
+}
+#xor-result-output textarea {
+	width: 100%;
+	box-sizing: border-box;
+	height: 80px;
+}
+#jxpr-table {
+	width: 500px;
+}
+#jxpr-table td:first-child {
+	vertical-align: top;
+}
+#jxpr-table td:nth-child(2) {
+	width: 100%;
+}
+#jxpr-table td:nth-child(2) textarea{
+	width: 100%;
+	box-sizing: border-box;
+}
+#jsevt {
+	width: 500px;
+	box-sizing: border-box;
+}
+#pcalc-aandb td {
+	text-align: center;
+}
+#pcalc-aandb tr:first-child td {
+	font-weight: bold;
+}
+#pcalc-result-copy {
+	display: none;
+}
+
+
+.tlc-sayer
+{
+ position: absolute; 
+ width: 1000px;
+ overflow: hidden;
+}
+.tlc-sayer span
+{
+ position: absolute;
+ color: #aaa;
+ right: 10px;
+ font-size: 14px;
+ padding-top: 1px;
+}
+.tlc-sayer span.current
+{
+ color: #ddd;
+ font-weight: bold;
+}
+
+.tube-separator {
+	color: #888;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+.tube-separator:before {
+	content: '|';
+}
+sub, sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.25em;
+}
+a.button, button {
+ color: #242424;
+ margin: 0px;
+ font-size: 13px;
+ line-height: 15px;
+ padding: 3px 7px;
+ border-radius: 2px;
+ border: 1px solid #999;
+ background-color: #ccc;
+ background: linear-gradient(#dfdfdf, #c8c8c8);
+}
+button::-moz-focus-inner { padding: 0; border: 0 }
+
+a.button:active, button:active {
+ background-color: #bbb;
+ background: linear-gradient(#c8c8c8, #dfdfdf);
+}
+button.last {
+ background-color: #bbb;
+ background: linear-gradient(#dfe8ff, #c8d0d8);
+}
+button.last:active {
+ background-color: #bbb;
+ background: linear-gradient(#c8d0d8, #dfe8ff);
+}
+
+/* diff start */
+
+.diff-output
+{
+ margin: 10px 0px; padding: 0;
+ overflow: auto;
+ box-sizing: border-box;
+ border: 1px solid grey;
+ resize: both;
+ width: 100%;
+ height: 200px;
+}
+.diff-output.inline
+{
+ font-family: monospace, courier new, lucida console;
+ font-size: 15px;
+ white-space: pre-wrap;
+ padding: 8px;
+}
+.diff-output .diff-special
+{
+ font-size: 0px;
+ border: 1px solid #ccc;
+ border-radius: 2px;
+ display: inline-block;
+}
+.diff-output .diff-special span
+{
+ font-size: 10px;
+ padding: 2px;
+}
+.diff-output .inline-old
+{
+ background-color: #682626;
+}
+.diff-output .inline-new
+{
+ background-color: #024702;
+}
+.diff-output .inline-newline
+{
+ padding: 2px;
+ font-weight: bold;
+ color: #aff;
+}
+
+.diff-output.inline.nowrap {
+ white-space: pre;
+}
+.diff-output table {
+ margin:0; border-collapse: separate;
+ border-spacing:0;
+ width: 100%;
+}
+.diff-output table.nowrap tr td:nth-child(3){
+ white-space: pre;
+}
+.diff-output td.lineno {
+ padding: 3px 15px;
+ background-color: #282828;
+ font-size: 0.8em;
+ user-select: none;
+ -webkit-user-select: none;
+ -moz-user-select: none;
+ position: relative;
+ left: 0;
+ background-clip: padding-box;
+ text-align: right;
+}
+.diff-output table tr:last-child td.lineno {
+ border-bottom: 1px solid #555;
+}
+.diff-output table tr td:nth-child(2) {
+ border-left: 1px solid #555;
+ border-right: 1px solid #555;
+}
+.diff-output table tr td:nth-child(3) {
+ padding-left: 10px;
+ font-family: monospace, courier new, lucida console;
+ width: 100%;
+ font-size: 14px;
+ white-space: pre-wrap;
+}
+.diff-output table tr.diff-old td {
+ background-color: #682626;
+}
+.diff-output table tr.diff-new td {
+ background-color: #024702;
+}
+

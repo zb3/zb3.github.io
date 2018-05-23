@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name=viewport content="width=device-width, initial-scale=1">
+</head>
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif, arial;
+  background-color: black;
+  color: #eee;
+  font-size: 17px;
+}
+a {
+  color: #8ff;
+}
+header {
+  text-align: center;
+  padding: 6px;
+  border-bottom: 1px solid #555;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header > span {
+  font-size: 1.5em;
+  font-weight: bold;
+  padding: 2px;
+}
+header > * {
+  flex-grow: 0;
+}
+header > div {
+  max-width: 280px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-grow: 1;
+  margin-left: 15px;
+  margin-right: 10px;
+}
+header > span:last-child {
+  display: flex;
+}
+button {
+  background: linear-gradient(to bottom, #333, #111);
+  border: 1px solid #1C1C1C;
+  border-radius: 3px;
+  font-weight: bold;
+  color: #aff;
+  padding: 5px 10px;
+}
+#layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+#layout > div {
+  flex-grow: 1;
+  background-color: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  display: flex;
+}
+#layout > div button {
+  padding: 10px 40px;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+#board {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#frame {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #555;
+  position: absolute;
+  top: 50px;
+  left: 50px;
+  background-color: black;
+  overflow: hidden;
+}
+#arrow {
+  color: white;
+  width: 40px;
+  height: 40px;
+  font-size: 40px;
+  line-height: 1;
+  text-align: center;
+  transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  transform-origin: center;
+  position: absolute;
+  cursor: default;
+}
+#game {
+  display: flex;
+}
+#initial,
+#over {
+  padding: 20px;
+  text-align: center;
+}
+.sayer {
+  display: inline-block;
+  padding: 5px 7px;
+  box-sizing: border-box;
+  min-width: 50px;
+  border: 1px solid #444;
+  background: linear-gradient(to top, #222, #111);
+  font-weight: bold;
+  color: #ccc;
+  margin: 0 2px;
+}
+.gameover {
+  font-size: 1.7em;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10px;
+}
+#points-over {
+  margin-left: 7px;
+}
+select {
+  margin-left: 3px;
+  padding: 5px 10px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: #ccc;
+}
+</style>
+<div id="layout">
+
+  <header>
+    <span>DTS</span>
+    <div id="game" style="display: none;">
+      <span>Score: <span id="points" class="sayer">0</span></span>
+      <span>Time left: <span id="timeleft" class="sayer">0</span></span>
+
+    </div>
+    <span id="header-filler" style="display: none;"><button onclick="over();displayInitial();">back</button></span>
+  </header>
+
+  <div>
+
+    <div id="board" style="display: none;" oncontextmenu="return false">
+      <div id="frame" oncontextmenu="return false">
+        <div id="arrow" oncontextmenu="return false">➜</div>
+      </div>
+    </div>
+
+    <div id="initial">
+      Drag the square in the direction the <span style="color: #8ff">arrow</span> points in until you see the next one, then do the same.<br><br>
+      Yes, this is for real... This was initially about dragging <a href="dtbw.html">browser windows</a>, but that was very limited...
+      <br><br> Size: <select id="frame-size"><option>Very small<option>Small<option selected>Medium<option>Large</select><br><br>
+      <button onclick="newGame();">Start game</button>
+    </div>
+
+    <div id="over" style="display: none;">
+      <span class="gameover">Game over!</span> Score: <span id="points-over" class="sayer">0</span>
+
+      <br><br><br>
+      <button onclick="displayInitial();">Play again</button>
+    </div>
+
+
+  </div>
+
+</div>
+
+<script>
+//if this is the worst code you've ever seen, then please
+//search for "SomethingWhatever II", and look at that code...
+
+var border = 2;
+var frameSizeFactor = [0.045, 0.065, 0.09, 0.11];
+var arrowSizeFactor = 0.75;
+var arrowSeenPart = 0.33;
+var timeLimitDefault = 8000,
+  timeLimitMinimal = 2500,
+  timeLimitDelta = 750;
+var colorUnseen = 'white';
+var colorSeen = '#8ff';
+
+var arrowSize, frameSize;
+
+var sx, sy;
+var offsetx, offsety; //of board
+var current;
+
+//0 - center seen, 1 - old stuff unseen
+var current = null,
+  next = null,
+  state = 0;
+
+var points, timeLeft;
+var asc;
+var points = 0;
+var timeInterval, timeStart, timeLimit;
+
+
+function setupScreen() {
+  //displayGame
+  document.getElementById('board').style.height = '';
+
+  var board = document.getElementById('board').parentNode;
+  var rect = board.getBoundingClientRect();
+  sx = rect.width - 2 * border;
+  sy = rect.height - 2 * border;
+  offsetx = rect.left;
+  offsety = rect.top;
+
+  //fuck you chrome, I don't have time to deal with your "height" shit
+  document.getElementById('board').style.height = rect.height + 'px';
+}
+
+function r(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function randCoord() {
+  return [r(frameSize / 2, sx - frameSize / 2), r(frameSize / 2, sy - frameSize / 2)];
+}
+
+function dist(c1, c2) {
+  return Math.sqrt((c1[0] - c2[0]) * (c1[0] - c2[0]) + (c1[1] - c2[1]) * (c1[1] - c2[1]));
+}
+
+function generateNext() {
+  var t;
+
+  do {
+    t = randCoord();
+  } while (dist(current, t) < (arrowSize + frameSize * 1.4143));
+
+  next = t;
+}
+
+function isVisible(ax, ay, fx, fy) {
+  return (ax > fx - arrowSize / 2 && ax < fx + frameSize + arrowSize / 2 && ay > fy - arrowSize / 2 && ay < fy + frameSize + arrowSize / 2)
+}
+
+function isCenterVisible(ax, ay, fx, fy) {
+  return ax - asc > fx && ax + asc < fx + frameSize && ay - asc > fy && ay + asc < fy + frameSize;
+}
+
+function update() {
+  if (state == 0 && isVisible(next[0], next[1], cvx, cvy)) {
+    current = next;
+    generateNext();
+    state = 1;
+    arrowColor(colorUnseen);
+    setupArrow(Math.atan2(next[1] - current[1], next[0] - current[0]), arrowSize);
+    cv = true; //make sure setupArrow didn't make it visible in the old place
+  } else if (state == 1 && isCenterVisible(current[0], current[1], cvx, cvy)) {
+    setSeen();
+    points += Math.round((timeLimit - (Date.now() - timeStart)) / 100);
+    updatePoints();
+  }
+
+  updateDisplay(cvx, cvy, current[0], current[1]);
+}
+
+function setSeen() {
+  state = 0;
+  arrowColor(colorSeen);
+  timeStart = Date.now();
+  timeLimit = Math.max(timeLimitMinimal, timeLimit - timeLimitDelta);
+}
+
+function installTimeControl() {
+  clearInterval(timeInterval);
+  timeInterval = setInterval(timeControl, 100);
+  timeStart = Date.now();
+  timeLimit = timeLimitDefault;
+}
+
+function timeControl() {
+  var now = Date.now();
+
+  if (now - timeStart > timeLimit)
+    return over();
+
+  updateTimeLeft(now);
+}
+
+function over() {
+  clearInterval(timeInterval);
+  displayGameOver(points);
+}
+
+function newGame() {
+  current = null;
+  next = null;
+  state = 0;
+  points = 0;
+
+
+  displayGame();
+  setupScreen();
+
+  frameSize = Math.sqrt(sx * sx + sy * sy) * frameSizeFactor[document.getElementById('frame-size').selectedIndex];
+  arrowSize = frameSize * arrowSizeFactor;
+  asc = arrowSeenPart * arrowSize / 2; //arrow-seen coeff... 0 means center, 1 means the whole box, it will be harder to check
+
+
+  //now generate
+  current = randCoord();
+  generateNext();
+
+  setupFrame(frameSize);
+  updateDisplay(current[0] - frameSize / 2, current[1] - frameSize / 2, current[0], current[1]);
+  setupArrow(Math.atan2(next[1] - current[1], next[0] - current[0]), arrowSize);
+  setSeen();
+  installTimeControl();
+}
+
+function abortGame() {
+  timeStart = 0;
+}
+
+var lmx, lmy, lmdown = false;
+
+function installControls() {
+  var el = document.getElementById('board');
+
+  el.addEventListener('mousedown', mousedown); //true?
+  el.addEventListener('mousemove', mousemove);
+  window.addEventListener('mouseup', mouseup);
+
+  el.addEventListener('touchstart', touchstart);
+  el.addEventListener('touchend', touchend);
+  el.addEventListener('touchcancel', touchend);
+  el.addEventListener('touchmove', touchmove);
+}
+
+function touchstart(e) {
+  e.preventDefault();
+
+  if (e.changedTouches.length)
+    ondown(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+}
+
+function touchmove(e) {
+  e.preventDefault();
+
+  if (e.changedTouches.length)
+    onmove(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+}
+
+function touchend(e) {
+  e.preventDefault();
+  onup();
+}
+
+function ondown(x, y) {
+  lmdown = true;
+  lmx = parseInt(document.getElementById('frame').style.left) - x;
+  lmy = parseInt(document.getElementById('frame').style.top) - y;
+}
+
+function onmove(x, y) {
+  if (!lmdown) return;
+
+  cvx = Math.min(sx - frameSize, Math.max(0, lmx + x));
+  cvy = Math.min(sy - frameSize, Math.max(0, lmy + y));
+  lmx = cvx - x;
+  lmy = cvy - y;
+  update() //when?
+}
+
+function onup() {
+  lmdown = false;
+}
+
+function mousedown(e) {
+  e.stopPropagation();
+  e.preventDefault();
+
+  ondown(e.clientX, e.clientY);
+}
+
+function mousemove(e) {
+  e.stopPropagation();
+  e.preventDefault();
+
+  onmove(e.clientX, e.clientY);
+}
+
+function mouseup() {
+  onup();
+}
+
+document.addEventListener('DOMContentLoaded', installControls);
+window.addEventListener('resize', abortGame);
+
+
+//display stuff
+function displayInitial() {
+  document.getElementById('over').style.display = 'none';
+  document.getElementById('initial').style.display = '';
+}
+
+function displayGame() {
+  document.getElementById('game').style.display = '';
+  document.getElementById('header-filler').style.display = '';
+  document.getElementById('board').style.display = '';
+  document.getElementById('over').style.display = 'none';
+  document.getElementById('initial').style.display = 'none';
+}
+
+function displayGameOff() {
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('header-filler').style.display = 'none';
+  document.getElementById('board').style.display = 'none';
+}
+
+function displayGameOver() {
+  document.getElementById('points-over').textContent = points;
+  document.getElementById('over').style.display = '';
+  displayGameOff();
+}
+
+function updateDisplay(fx, fy, ax, ay) {
+  document.getElementById('frame').style.left = fx + 'px';
+  document.getElementById('frame').style.top = fy + 'px';
+  document.getElementById('arrow').style.left = (border + ax - fx) + 'px';
+  document.getElementById('arrow').style.top = (border + ay - fy) + 'px';
+}
+
+function setupArrow(rot, as) {
+  var el = document.getElementById('arrow');
+  el.style.fontSize = el.style.width = el.style.height = el.style.lineHeight = el.style.fontSize = as + 'px';
+  el.style.transform = 'translateX(-50%) translateY(-50%) rotate(' + rot + 'rad)';
+}
+
+function arrowColor(c) {
+  var el = document.getElementById('arrow');
+  el.style.color = c;
+}
+
+function setupFrame(size) {
+  document.getElementById('frame').style.width = size + 'px';
+  document.getElementById('frame').style.height = size + 'px';
+}
+
+function updatePoints() {
+  document.getElementById('points').textContent = points;
+}
+
+function updateTimeLeft(now) {
+  document.getElementById('timeleft').textContent = ((timeLimit - (now - timeStart)) / 1000).toFixed(1);
+}
+</script>
+</html>

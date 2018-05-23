@@ -1,0 +1,512 @@
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: arial;
+}
+#bdisplay
+{
+ border: 1px solid #777777;
+}
+#dsp td
+{
+ vertical-align: top;
+}
+#dsp .ctable
+{
+ margin: 4px 0 4px 0;
+ padding: 0;
+ border: none;
+ border-collapse: collapse;
+}
+#dsp .ctable td
+{
+ vertical-align: middle;
+}
+#dsp .ctable td
+{
+ padding-left:3px;
+}
+#dsp .ctable td:first-child
+{
+ padding-left:0;
+}
+#scoredisp
+{
+ border-collapse: collapse;
+ margin-left: 20px;
+}
+#scoredisp td
+{
+ border: 1px solid #777777;
+ text-align: center;
+ background-color: #060606;
+}
+#scoretable
+{
+ font-family: Arial;
+ font-size: 30px;
+ padding: 0 10px 0 10px;
+}
+.rel
+{
+ position: relative;
+}
+.a0
+{
+ position: absolute;
+ left: 0px;
+ top: 0px;
+ z-index: 0;
+}
+.a1
+{
+ position: absolute;
+ left: 0px;
+ top: 0px;
+ z-index: 1;
+}
+input.size1
+{
+ width: 40px;
+}
+.valign
+{
+ display: table-cell;
+ vertical-align: middle;
+ height:300px;
+}
+input[type=color]
+{
+ padding: 0px;
+ width: 30px;
+}
+input[type=color]::-moz-focus-inner
+{
+ padding: 0px;
+}
+#intro
+{
+ width: 550px;
+ margin: auto;
+}
+button
+{
+ margin: 0px 0px 0px 0px !important;
+}
+</style>
+<div id="intro"><center><h1>Brick Car Game</h1></center><br>
+This is a html5 "remake" of a brick-based lcd display "racing" game with the ability to add more columns and rows.<br>But these are the only modifications, I've tried to keep the rest as it was in my old brick game console. This requires FF28+ or Chromium30+ to run.
+<br><br>Use AD/arrows to control the car horizontally and any other key to accelerate (except P which pauses the gamne).
+<br><br>Click on the canvas to start.
+
+<br><br><br>
+<table id="dsp">
+<tr>
+<td>
+<div class="rel" id="relholder">
+<div class="a0">
+<canvas tabindex="1" id="bgcanvas">
+</div>
+<div class="a1">
+<canvas tabindex="1" id="bdisplay">
+</div>
+</div>
+<td><table id="scoredisp"><tr><td><span id="scoretable">000</span><tr><td><canvas id="bchances"></canvas></table><br><br><b>Game options:</b><br>Number of columns: <input type="number" min="2" max="10" value="4" data-oval="4" step="1" class="size1" onchange="updateWidth(this.value)" autocomplete="off"><br>Viewport height: <input type="number" min="2" max="100" value="20" data-oval="20" step="1" class="size1" onchange="updateV(this.value)" autocomplete="off"><br>Clock tick every [ms]: <input type="number" min="4" max="30" value="4" data-oval="4" step="1" class="size1" onchange="updateClock(this.value)" autocomplete="off"><br>Normal speed: <input type="range" min="-300" max="-16" value="-80" step="1" onchange="rdelay=-parseInt(this.value);" autocomplete="off"><br>Faster speed: <input type="range" min="-25" max="-1" value="-8" step="1" onchange="fdelay=-parseInt(this.value);" autocomplete="off"><br><br><b>Display options:</b><br>
+<table class="ctable" id="bgctable"><tr><td>Background colors:<td><input type="color" value="#000000" onchange="updateBgColor()" autocomplete="off"><td><input type="color" value="#141414" onchange="updateBgColor()" autocomplete="off"></table>
+<table class="ctable" id="ctable"><tr><td>Block colors:<td><input type="color" value="#8c8c8c" onchange="updateColor()" autocomplete="off"><td><button onclick="cs.removeColor(updateColor)">-</button><td><input type="color" value="#00c8c8" onchange="updateColor()" autocomplete="off"><td><button onclick="cs.addColor(updateColor)">+</button></table>
+Box dimensions: <input type="number" min="5" value="15" data-oval="15" step="1" id="block-x" onchange="updateBlock();" class="size1" autocomplete="off">x<input type="number" min="5" value="18" data-oval="18" step="1" class="size1" id="block-y" onchange="updateBlock();" autocomplete="off"><br>
+Border dimensions: <input type="number" min="1" value="1" data-oval="1" step="1" class="size1" id="block-bx" onchange="updateBlock();" autocomplete="off">x<input type="number" min="1" value="2" data-oval="2" step="1" class="size1" id="block-by" onchange="updateBlock();" autocomplete="off"><br></span>
+</table>
+<script>
+var cs = {};
+cs.element = document.getElementById('ctable').childNodes[0].childNodes[0];
+cs.lelement = cs.element.childNodes[cs.element.childNodes.length-1];
+cs.delButton = cs.element.childNodes[2];
+cs.newColor = cs.element.childNodes[1].innerHTML;
+cs.addColor = function(callback)
+{
+ var next = document.createElement('td');
+ next.innerHTML = cs.newColor;
+ if (cs.element.childNodes.length<5)
+ {
+  cs.element.insertBefore(cs.delButton, cs.element.childNodes[2])
+ }
+ cs.element.insertBefore(next, cs.lelement)
+ callback();
+}
+cs.removeColor = function(callback)
+{
+ var next = document.createElement('td');
+ next.innerHTML = 'woot';
+ cs.element.removeChild(cs.element.childNodes[cs.element.childNodes.length-2]);
+ if (cs.element.childNodes.length<5)
+ cs.element.removeChild(cs.element.childNodes[2]);
+ callback();
+}
+
+function gen()
+{
+ b.setDim(bdimx, bdimy, cdx, cdy);
+ b.setBsize(bsizex, bsizey);
+ b.pbg();
+}
+function updateColor()
+{
+ var cl = cs.element.querySelectorAll('input[type=color]'), t;
+ b.rg1 = [];
+ for(t=0;cl[t];t++)
+ {
+  b.rg1.push([parseInt(cl[t].value.substr(1, 2),16), parseInt(cl[t].value.substr(3, 2),16), parseInt(cl[t].value.substr(5, 2),16)]);
+ }
+ gen();
+ ncolor = b.rg1.length;
+}
+function updateBgColor()
+{
+ var cl = document.getElementById('bgctable').querySelectorAll('input[type=color]'), t;
+ b.g1 = [parseInt(cl[0].value.substr(1, 2),16), parseInt(cl[0].value.substr(3, 2),16), parseInt(cl[0].value.substr(5, 2),16)];
+ b.g2 = [parseInt(cl[1].value.substr(1, 2),16), parseInt(cl[1].value.substr(3, 2),16), parseInt(cl[1].value.substr(5, 2),16)];
+ gen();
+}
+
+function updateWidth(v)
+{
+ v = parseInt(v);
+ nrows = v;
+ bdimx = dimx = cdx*nrows+cdy;
+ var t,t2;
+ for(t=0;t<dimy;t++)
+ {
+  board[t] = [];
+  for(t2=0;t2<dimx;t2++)
+  board[t][t2] = 0;
+ }
+ gen()
+ newGame()
+}
+function updateV(v)
+{
+ v = parseInt(v)+3;
+ dimy = v; bdimy = v-3;
+ pcl = bdimy-1;
+ for(t=0;t<dimy;t++)
+ {
+  board[t] = [];
+  for(t2=0;t2<dimx;t2++)
+  board[t][t2] = 0;
+ }
+ gen()
+ newGame()
+}
+function updateClock(v)
+{
+ tdelay = parseInt(v);
+ clearInterval(ntv);
+ ntv = window.setInterval(tick, tdelay);
+}
+function updateBlock()
+{
+ bsizex = parseInt(document.getElementById('block-x').value);
+ bsizey = parseInt(document.getElementById('block-y').value);
+ b.bsizex = bsizex; b.bsizey = bsizey;
+
+ b.borderx = parseInt(document.getElementById('block-bx').value);
+ b.bordery = parseInt(document.getElementById('block-by').value);
+ 
+ gen()
+}
+var car = [[0,1,0],[1,1,1],[0,1,0],[1,0,1]], zero = [[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
+var nrows = 4, pos = 0, t, t2; //pos = player @ which row
+var cdx = 3, cdy = 4;
+var dimx = 3*nrows+4, dimy = 23, pcl = 19, ocl = 0; //[p/o] car line
+var board = [], rlines = [], bsizex = 15, bsizey = 18, bdimx = dimx, bdimy = dimy-3, bpart = 2;
+var gameon = 0, chance_no = 4, chances, use_color = 1, ncolor = 2, tdelay = 4, afact = 1, fdelay = 8, rdelay = 80;
+for(t=0;t<nrows;t++) rlines.push([]);
+for(t=0;t<dimy;t++)
+{
+ board[t] = [];
+ for(t2=0;t2<dimx;t2++)
+ board[t][t2] = 0;
+}
+
+function put(x, y, what, mult) //not only car or zeroes, also the crash animation
+{
+ if (!mult) mult = 1;
+ var t, t2;
+ for(t=0;t<what.length;t++)
+ for(t2=0;t2<what[0].length;t2++)
+ board[t+y][t2+x] = (what[t][t2]?mult:0);
+}
+function test(x, y, w, h)
+{
+ var t, t2;
+ for(t=0;t<h;t++)
+ for(t2=0;t2<w;t2++)
+ if (board[t+y][t2+x])
+ return false;
+ return true;
+}
+function mplayer(row)
+{
+ //move to other
+ put(bpart+pos*cdx, pcl, zero);
+ pos = row;
+ var ok = test(bpart+pos*cdx, pcl, cdx, cdy);
+ put(bpart+pos*cdx, pcl, car);
+ if (ok)
+ {
+  tellSync();
+ }
+ else startExplosion(0);
+}
+function snow()
+{
+ var t, t2;
+ for(t=dimy-1;t>=0;t--)
+ for(t2=0;t2<dimx;t2++)
+ {
+  if (t>=pcl && t2>=bpart+pos*cdx && t2<(bpart+(pos+1)*cdx)) continue;
+  else if (!t) board[t][t2] = 0;
+  else board[t][t2] = board[t-1][t2];
+ }
+ //minus rlines
+ for(t=0;t<nrows;t++)
+ for(t2=0;t2<rlines[t].length;t2++)
+ if (!rlines[t][t2])
+ {
+  scorescore();
+  rlines[t].splice(t2--, 1);
+ }
+ else rlines[t][t2]--;
+}
+function debugBoard()
+{
+ for(t=0;t<dimy;t++)
+ console.log(JSON.stringify(board[t]));
+}
+
+var explosion = [[[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,1,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0]],
+[[0,0,0,0,0],
+[0,1,1,1,0],
+[0,1,0,1,0],
+[0,1,1,1,0],
+[0,0,0,0,0]],
+[[1,0,1,0,1],
+[0,0,0,0,0],
+[1,0,0,0,1],
+[0,0,0,0,0],
+[1,0,1,0,1]],
+[[0,1,0,1,0],
+[1,0,0,0,1],
+[0,0,0,0,0],
+[1,0,0,0,1],
+[0,1,0,1,0]],
+[[1,0,1,0,1],
+[0,0,0,0,0],
+[1,0,0,0,1],
+[0,0,0,0,0],
+[1,0,1,0,1]],
+[[0,0,0,0,0],
+[0,1,1,1,0],
+[0,1,0,1,0],
+[0,1,1,1,0],
+[0,0,0,0,0]],
+[[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0]]];
+
+var ct = 0, cc = 0, ect, fast = 0, anim = -1, line=0, lmode=0, pause = 1, score = 0; //cc is clock counter
+gameon=1;
+
+function resetCar()
+{
+ pos=0;
+ rlines.length=0;
+ var t,t2;
+ for(t=0;t<nrows;t++) rlines.push([]);
+ for(t=0;t<dimy;t++)
+ {
+  board[t][0] = board[t][dimx-1] = t%5<3?1:0;
+  for(t2=1;t2<dimx-1;t2++) board[t][t2]=0;
+ }
+ put(bpart, pcl, car);
+}
+function newGame()
+{
+ ct=0;
+ resetCar();
+ score=0;
+ updateScore();
+ chances=chance_no;
+ b.sc(chances);
+}
+function startExplosion(mv)
+{
+ chances--; b.sc(chances);
+ lmode=1;cc=anim=0; ect = ct+mv;tick();
+}
+function tellSync()
+{
+ shouldsync = 1;
+}
+//PS. should I move this to a separate function?
+function tick()
+{
+ if (!gameon || pause) return;
+ cc = cc % (24*rdelay*fdelay);
+ if (anim!=-1)
+ {
+ if ((cc++)%(12)) return;
+  put(bpart+pos*cdx+((pos==nrows-1)?-1:0), dimy-Math.max(5, (16-ect%9)%9), explosion[anim%7]);
+  anim++;
+  if (anim==28)
+  {
+   anim = -1;
+   lmode = 1;
+   line = dimy-1;
+   cc=0;
+  }
+  tellSync();
+  return;
+ }
+ if (lmode) //also ascending & descending
+ {
+  if ((cc++)%(chances?4:24)) return;
+  var t2;
+  for(t2=0;t2<dimx;t2++)
+  board[line][t2]=lmode==1?1:0;
+  line += lmode==2?1:-1;
+  if (line<3)
+  {
+   lmode=2; line++;
+  }
+  if (line==dimy)
+  {
+   lmode=0; ct=0;
+   if (chances)
+   resetCar();
+   else
+   newGame();
+  }
+  tellSync();
+  return;
+ }
+ if ((cc++)%(fast?fdelay:rdelay)) return;
+ snow();
+ if (rlines[pos].length && rlines[pos][0]<cdy)
+ startExplosion(1);
+ if (!(ct%9))
+ genNew();
+ if ((ct+3)%5<3)
+ board[0][0] = board[0][dimx-1] = 1;
+ ct++;
+ ct = ct%45; //because it's useful for 9 for generation, and for 5 for borders
+ tellSync();
+}
+function genNew()
+{
+ var where = Math.floor(Math.random()*(nrows)), col = 1;
+ if (use_color) col = Math.floor(Math.random()*(ncolor))+1;
+ put(bpart+where*cdx, 0, car, col);
+ rlines[where].push(dimy-cdy);
+}
+shouldsync=0;
+function syncFrame()
+{
+ window.requestAnimationFrame(syncFrame);
+ if (!navigator.userAgent.match(/Firefox/))
+ {
+  //that's because FF needs redundant frames :O
+  //otherwise they're not displayed, which is super weird
+  if (shouldsync==1) shouldsync=0;
+  else return;
+ }
+ var t, t2;
+ b.bg();
+ for(t=3;t<dimy;t++)
+ for(t2=0;t2<dimx;t2++)
+ if (board[t][t2])
+ b.bk(t2, t-3, board[t][t2]-1);
+
+}
+function updateScore()
+{
+ document.getElementById('scoretable').innerHTML = score+'00';
+}
+function scorescore()
+{
+ score++;
+ updateScore();
+}
+</script>
+<script src="cdisplay.js"></script>
+<script>
+syncFrame();
+
+b.element.onkeydown = function(e)
+{
+ e.preventDefault();
+ if (lmode) return;
+ if (e.keyCode==80)
+ pause = 1-pause;
+ if (pause) return;
+ if ((e.keyCode==37 || e.keyCode==65) && pos)
+ mplayer(pos-1);
+ else if ((e.keyCode==39 || e.keyCode==68) && pos<(nrows-1))
+ mplayer(pos+1)
+ else if (!(e.keyCode==37 || e.keyCode==65) && !(e.keyCode==39 || e.keyCode==68) && e.keyCode!=80)
+ fast=e.keyCode;
+}
+b.element.onkeyup = function(e)
+{
+ if (e.keyCode==fast)
+ fast=0;
+ e.preventDefault();
+}
+b.element.onblur = function(e)
+{
+ fast=0; pause = 1;
+ e.preventDefault();
+}
+b.element.onfocus = function(e)
+{
+ pause=0;
+ e.preventDefault();
+}
+newGame();
+var ntv = window.setInterval(tick, tdelay);
+</script>
+</div>
+<script>
+var validator = {};
+validator.install = function()
+{
+ var el = document.querySelectorAll('input[type=number]'), ell = el.length, t;
+ for(t=0;t<ell;t++)
+ {
+  if (el[t].getAttribute('onchange'))
+  el[t].setAttribute('onchange', 'validator.validate(event);'+el[t].getAttribute('onchange'));
+  else //this doesn't work, because DOM3 events suck, text attributes are better coz you can list them and control the order.
+  {
+   el[t].addEventListener('change', validator.validate, false);
+  }
+ }
+}
+validator.validate = function(event)
+{
+ if (!event.target.validity.valid)
+ event.target.value = event.target.dataset.oval;
+ else
+ event.target.dataset.oval = event.target.value;
+}
+document.addEventListener('DOMContentLoaded', validator.install, false);
+</script>
+<br><br><br>

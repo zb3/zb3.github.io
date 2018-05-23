@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>zb3</title>
+		<link rel="stylesheet" type="text/css" href="css/style.css">
+		<link rel="stylesheet" type="text/css" href="css/tools.css">
+		<link rel="stylesheet" type="text/css" href="css/modcalc.css">
+		<link rel="stylesheet" type="text/css" href="css/permute.css">
+		<link rel="stylesheet" type="text/css" href="css/color.css">
+                <meta http-equiv="content-type" content="text/html;charset=utf8">
+	</head>
+	<!-- body -->
+		<header>
+			<span>zb3</span>
+			<a href="index.html">Home</a>
+			<a class="active">Tools</a>
+			<a href="projects.html">Projects</a>
+			<a href="download.html">Download</a>
+			<span></span> <!-- grrrrrr.... -->
+		</header>
+		
+		<div id="tc-loading"><div>Loading...</div></div>
+<style>
+
+
+</style>
+		<main class="tools">
+			<!-- begin blob :) -->
+<b>Note:</b> this page may soon be available only via <a href="http://zb3.github.io/tools.html">http://zb3.github.io/tools.html</a>
+<br>
+This is the tools section I often use, the new version, actually. No, this doesn't mean the code is good, this just means I've added some functions and fixed core bugs. Here are some notes: <span class="desc">(you can resize this div below)</span> 
+
+<div id="moreinfo">
+<ul>
+<li>Tested on firefox <b>48</b> and chromium <b>53</b>, and some features may not work on other browsers, although basic functionality should work.
+<li><b>Everything</b> here is client-side, and the data you enter here is <b>not</b> sent to me. However, keep in mind that not all files are initially loaded (to save load time), so some files are loaded only after you try to use a particular feature - this request is just for that file, no data is sent.
+<li>These transform functions work on selection, or on the whole text if nothing selected. Regex search and replace doesn't (except highlight & replace & extract all), because that would not make any sense.</li>
+
+<li>Textarea cannot handle the <span class="snippet">\r</span> character (this can break newline characters), and sometimes in firefox the <span class="snippet">\xa0</span> character gets replaced with <span class="snippet">\x20</span>. That's why this textarea uses an internal buffer to store the real value so that you can operate on binary data. HOWEVER, any manual change you make to the textarea will actually modify these characters! When these characters are present, it says "binary mode" below the textarea, otherwise it says "text mode". You can copy binary data because the <span class="snippet">copy</span> event is intercepted,  however pasting binary data doesn't work in firefox.
+
+<li>You can drag files into the textarea! They will be interpreted as binary, so if you want Unicode, then press <span class="feature">UTF8 decode</span>. Dragging files out of the browser is not supported, but you can download the content, via clicking <span class="feature">Download</span> - or right clicking it and pressing "save as"</li>
+<li>You can use Ctrl+R to redo last used transform function (works on selection too).</li>
+<li>After you use a transform, that transform becomes the "marked" one (so that you can use it per element in 1D/2D array). To mark a transform without applying it, hold the button for more than one second (the button should become blue).</li>
+<li><span class="feature">Shared copy/paste</span> does not affect your system clipboard - it's a feature that let's you transfer binary data (with <span class="snippet">\r</span> characters) between instances of this page (per browser, uses local storage).</li>
+<li><span class="feature">Extract all</span> means replace all and remove everything that wasn't replaced.</li>
+<li>By <span class="feature">quote escape character</span> I mean CSV quotes. The whole element/row concept was initially designed to handle CSV data.</li>
+<li><span class="feature">Hexify</span> simply replaces non-printable characters with their hex representation in brakcets, so for instance null byte becomes <span class="snippet">[00]</span>. (and obviously, stuff in brackets is escaped so that the operation is reversible)
+<li><span class="feature">Extend regex</span> transforms a given non-extended regex to the "extended" form (as seen in PCRE), which means it escapes spaces and <span class="snippet">#</span>, and then it formats the regex so that it's easier to read, and also contains comments with group numbers (and that even supports nested <span class="snippet">?|</span>!)
+<li><span class="feature">Reformat regex</span> assumes that the regex is already in the extended form, whereas <span class="feature">Extend regex</span> assumes the opposite.
+<li><span class="feature">Regex replacement string</span> is like in JS but with additional features: <span class="snippet">${num}</span>, <span class="snippet">${name}</span>, and conditionals: <span class="snippet">${pat?matched}</span> and <span class="snippet">${pat!didntmatch}</span>, they test whether the pattern given a by number or name is active (empty still means active, use the <span class="snippet">|</span> character before <span class="snippet">?</span> or <span class="snippet">!</span> to change this). Conditionals can be nested.
+<li>Support for other regex engines is experimental, as those were not written in JS, but compiled using emscripten. There are some additional notes:
+<ul>
+<li>in PCRE non-multiline mode, <span class="snippet">$</span> behaves like in JS - matches the real end of the string, not trailing newline
+<li>in Ruby syntax <span class="snippet">[^]</span> can be used to match everything, presence of named groups does not mean numbered groups are inactive, and in singleline mode <span class="snippet">$</span> is the end of string even if the string ends with a newline (to match JS behaviour)
+<li>in Ruby syntax, when a patterns needs to match exactly X characters, this may be considered one step
+<li>in Ruby syntax, <span class="snippet">{n,m}+</span> doesnt work like in Java, you need to use <span class="snippet">(?>(?>pattern){n,m}+)</span>, which at least for me was not what I thought when I typed <span class="snippet">{n,m}+</span>
+<li>there are new features that aren't present in Ruby, namely <span class="feature">relative regex</span> and <span class="feature">RegExtractor</span> - these are explained below:<br>
+<details>
+<summary><span class="feature">Relative regex</span></summary>
+<p>
+If you type <span class="snippet">+</span> after the opening parenthesis of your capturing group, this group will act as the root of that regex, which means it will act as if that group was the entire match. Groups aren't renumbered (but <span class="snippet">$&</span> is affected), so groups outside roots are still accessible. It starts to make sense only when used with loops or recursion, because all matches of a group marked as root are returned, even if this group is inside recursion!<br>
+Of course a group marked as root can't be recurse to itself. Just like one root group may not be contained in another root group.</p>
+<p>For example, using regex <span class="snippet">^a(cb(+c)+dc)*e$</span>, and the replacement string <span class="snippet">[$&]</span>, if the string is <span class="snippet">acbcdccbccdccbcccdce</span>, <span class="feature">replace all</span> will produce the following result: <span class="snippet">acb[c]dccb[c][c]dccb[c][c][c]dce</span>. That is, it will only match those <span class="snippet">c</span> inside, but it will match all of them.</p>
+<p>
+There is one major difference: in case of recursion, <span class="snippet">$n</span> in the replacement string will only be affected by captures on the same level of recursion (just like in PCRE).
+Groups outside roots are accessible, but only the "closest instance" is returned (same level of recursion, same loop iteration etc).
+</p>
+</details>
+
+<details>
+<summary><span class="feature">RegExtractor</span></summary>
+<p>RegExtractor lets you extract specified capturing groups in the regex as a JSON tree. All occurences of marked matches will be captured. Loops are turned into arrays. Recursion is supported too. IOW, every marked group that was matched by a given regex will be present in the resulting JSON tree.</p>
+<p>In order to mark groups, append approporiate sequences below after the opening parenthesis of the group you'd want to affect (or at the begining of the regex in case of <span class="snippet">*u:</span>):</p>
+
+<p><span class="snippet">+</span> - mark group as included, without any options</p>
+or you can use the following:
+<p> 
+ <span class="snippet">*c:</span> - add .content (forces object, doesn't work on headers)<br>
+ <span class="snippet">*o:</span> - force object (without content)<br>
+ <span class="snippet">*a:</span> - force array. in most cases, this is automatically added when a quantifier is detected
+       so it's only needed for duplicate named groups and quantifiers on subexp calls<br>
+ <span class="snippet">*n:</span> - never create arrays - store only the last result<br>
+ <span class="snippet">*u:</span> - if we have only one key, unpack it (you can specify this on root too)<br>
+ <span class="snippet">*j:</span> - if it's an array of strings, join them
+</p>
+<p>
+ <span class="snippet">*h:</span> - this is a header<br><br>
+ header options:<br>
+ <span class="snippet">*m:</span> - if only one group is there other than header, dont "unpack" it<br>
+ <span class="snippet">*d:</span> - always put keys in array even if no duplicates<br>
+ <span class="snippet">*n:</span> - never put keys in array, remember only last key<br>
+</p>
+<p>Example: <span class="snippet">abc(+def)+ghi(*n:?<name>jkl)+</span></p>
+</details>
+
+</ul>
+<li><span class="feature">Binary pack</span> tool uses syntax from <a href="https://github.com/ryanrolds/bufferpack">bufferpack</a>, extended by: <span class="snippet">?</span> is a boolean, <span class="snippet">qQ</span> are signed and unsigned long long respectively (stored as an array of <span class="snippet">[lowBits, highBits]</span> due to JS and therefore JSON limitation), and you can use a <span class="snippet">-</span> suffix to denote that this item is not stored, but contains the length of the next <span class="snippet">A</span> or <span class="snippet">s</span> item.
+<li><span class="feature">JSONPath</span> syntax is described <a href="https://github.com/s3u/JSONPath">here</a>, this is an extended version of the original syntax.
+
+</ul>
+<div id="moreinfo-shadow"></div>
+</div>
+<p id="usedlibraries">
+This project uses the following third-party libraries: <a href="https://github.com/nodeca/pako">Pako</a>, <a href="https://mths.be/esrever">esrever</a>, <a href="https://code.google.com/p/google-diff-match-patch/">DMP</a>, <a href="http://www.pcre.org/">PCRE</a>, <a href="https://github.com/k-takata/Onigmo">Onigmo</a>, <a href="https://github.com/ryanrolds/bufferpack">bufferpack</a>, <a href="https://github.com/s3u/JSONPath">jsonpath-plus</a>, <a href="http://goessner.net/download/prj/jsonxml/">jsonxml</a> (heavily modified) and <a href="https://github.com/vkiryukhin/vkBeautify/">vkbeautify</a>.
+Non JS code was compiled to JS via <a href="https://github.com/kripken/emscripten/">emscripten</a>. Thx open source community :)</p>
+
+
+<b>Text-op:</b><br><table id="textoptable"><tr><td id="trackone"><textarea spellcheck="false" id="escarea1" onkeydown="processKey(event);"  oninput="userInput(event);"></textarea></td><td style="vertical-align: top;"><div id="scaleme"><button data-transform="md5">MD5</button><button data-transform="sha1">SHA1</button><button
+data-transform="SHA256.hash">SHA256</button><button
+data-transform="crc32">CRC32</button><br>Base64 <button data-transform="encode64">encode</button><button data-transform="decode64">decode</button><span class="tube-separator"></span>UTF-8 <button data-transform="utf8encode">encode</button><button data-transform="utf8decode">decode</button><br>Hex <button data-transform="encodehex">encode</button><button data-transform="decodehex">decode</button><button data-transform="escapehex">\x escape</button><button data-transform="unescapehex">\x unescape</button><br>Wide hex <button data-transform="encodewidehex">encode</button><button data-transform="decodewidehex">decode</button><button data-transform="escapewidehex">\u escape</button><button data-transform="unescapewidehex">\u unescape</button><br>Octal <button data-transform="encodeoct">escape</button><button data-transform="decodeoct">unescape</button><span class="tube-separator"></span>URL <button data-transform="urlencode">encode</button><button data-transform="urldecode">decode</button><br><button data-transform="escape">Escape</button><button data-transform="fullyescape">Fully Escape</button><button data-transform="unescape">Unescape</button><br><span data-ensureloaded="pako.min.js"><button data-transform="gzdeflate">gzdeflate</button><button data-transform="gzcompress">gzcompress</button><button data-transform="gzencode">gzencode</button> hex data<br><button data-transform="gzinflate">gzinflate</button><button data-transform="gzuncompress">gzuncompress</button><button data-transform="gzdecode">gzdecode</button> hex data</span><br>Base <input type="number" min="2" max="36" value="10" id="ascii-base" style="width: 40px;" spellcheck="false"> <button data-transform="ASCIIEncode">ASCII Encode</button><button data-transform="ASCIIDecode">ASCII Decode</button> <label><input type="checkbox" id="support-utf16">recognize surrogates</label><br>JSON <button data-transform="jsonstrencode">encode</button><button data-transform="jsonstrdecode">decode</button><span class="tube-separator"></span>Regex <button data-transform="escapeRegExp">escape</button><button data-transform="unescapeRegExp">unescape</button>
+<br><button data-transform="doHexify">hexify</button><button data-transform="unhexify">unhexify</button> non-printable chars <label><input type="checkbox" id="hexify-tab">with tab</label> <label><input type="checkbox" id="hexify-unicode">and all unicode chars</label><label><input type="checkbox" id="hexify-utf16">as UTF16</label>
+
+<br>HTML <button data-transform="escapeHTML">escape</button><button data-transform="escapeUnicodeHTML">escape unicode</button><button data-transform="unescapeHTML">unescape</button>
+<br>C literal <button data-transform="doCEscape">escape</button><button data-transform="cunescape">unescape</button> (<label><input type="checkbox" id="cescape-as-bytes">preserve bytes</label>)
+
+
+<br><button data-transform="striprn">Strip newline</button><button data-transform="rot13">rot13</button><br><button data-transform="reversestr" data-args="false">Reverse</button><button data-transform="reversestr" data-args="true">Unicode reverse</button><button data-transform="lowecase">Lower case</button><button data-transform="uppecase">Upper case</button><br><br>Select <button onclick="selBraceStart();">from brace start</button><button onclick="selBraceEnd();">to brace end</button><br><br><button data-transform="rptMe">Repeat</button> <input type="number" id="rptTimes1"  min=1 value="10"> times!<br>Extract <button data-transform="HexDump.extractHex">hex</button><button data-transform="HexDump.extractText">selected text</button> from hex dump<br> <button data-transform="flattenJSON">Flatten</button> JSON array<br><br>
+<button data-transform="addIndent">Add</button><button data-transform="removeIndent">Remove</button> <input type="number" id="add-indent-no" value="1"> <select id="add-indent-type"><option selected>space<option>tab</select> indent globally<br>
+<button data-transform="amplifyIndent" data-args="1">Add</button><button data-transform="amplifyIndent" data-transform="amplifyIndent" data-args="-1">Remove</button> that indent on each level<br>
+<br>
+<button data-transform="extendRegex">Extend</button><button data-transform="reformatRegex">Reformat</button><button data-transform="minifyRegex">Minify</button> regex (read info!)<br><br>
+
+<button data-transform="sliceOp" data-args="false">Leave</button><button data-transform="sliceOp" data-args="true">Remove</button> slice (<input type="number" id="slice-start" value=0>, <input type="number" id="slice-end" value=0 >) <label><input type="checkbox" id="slice-support-utf16">recognize surrogates</label><br>
+
+<button data-transform="leavedeleteXYZ" data-args="false">Leave</button><button data-transform="leavedeleteXYZ" data-args="true">Delete</button> characters whose position mod <input type="number" min="2" value="4" id="take-xyz-z"> is <input type="number" min="0" value="0" id="take-xyz-x"><br>
+<button data-transform="removeDuplicates">Remove duplicate characters</button><button data-transform="removeDuplicateLines">Remove duplicate lines</button><button onclick="compareAreas();">Compare with additional textarea</button><div id="compare-result"></div>
+<br>
+<button data-transform="_limitFloatPrecision">Limit</button> decimal number precision to <input type="number" id="limit-float-places" value="4">
+<br><br>
+
+<button data-transform="calcEntropy">Shannon entropy</button> <label><input type="checkbox" id="entropy-chunked">using chunk size</label> <input type="number" id="entropy-chunk-size" value="1000"> 
+
+<br>
+<br>
+<div class="unicode-tools" data-ensureloaded="pako.min.js,unicode.js">Unicode maps:<br>
+<button data-transform="UnicodeMapper.unmapString">Clear all maps</button>
+<button data-transform="unicodeBold"><span class="bold">bold</span></button>
+<button data-transform="unicodeItalic"><span class="italic">italic</span></button>
+<button data-transform="unicodeBoldItalic"><span class="bold italic">bold italic</span></button><br>
+<select id="unicode-mapper-mapping-select"><option>Loading...</select><button data-transform="unicodeAddMap">Add map</button><br><br>
+Unicode combining characters:<br>
+<button data-transform="UnicodeMapper.stripCombining">Strip combining chars</button>
+<button data-transform="unicodeUnderline"><span class="underline">underline</span></button> <button data-transform="unicodeStrike"><span class="strike">strike</span></button> <button data-transform="unicodeOverline"><span class="overline">overline</span></button><br>
+<select id="unicode-mapper-combining-select"  style="width: 220px"><option>Loading...</select><button data-transform="unicodeAddCombining">Combine</button><br><br>
+Unicode normalization: <select id="unicode-normalization-type"><option value="NFC">NFC<option value="NFD">NFD<option value="NFKC">NFKC<option value="NFKD">NFKD</select><button data-transform="unicodeNormalize">Normalize</button><br>Unicode tricks: <select id="unicode-tricks-select"><option>RTL Override<option>LTR Override<option>RTL Embed<option>LTR Embed<option>Prepend Arabic Letter Mark<option>Prepend RTL Mark<option>Prepend LTR Mark<option>Remove the above bidi characters</select><button data-transform="unicodeTricks">Apply</button>
+</div>
+<br>
+Beautify: <button data-transform="beautifyJSON">JSON</button><span data-ensureloaded="jsonxml.js"><button data-transform="doVKbeautifyXML">XML</button></span>, with indent: <input type="text" id="beautify-indent" value="   " size=7>
+<br>
+<div data-ensureloaded="jsonxml.js">
+<button data-transform="doJSON2XML">JSON to XML</button><button data-transform="doXML2JSON">XML to JSON</button> with indent above
+</div>
+<br>
+<div data-ensureloaded="jsonpath.js">
+<button data-transform="execJSONPath">Execute JSONPath:</button> => <label><input type="radio" name="jsonpath-ret" id="jsonpath-rv" checked>value</label> <label><input type="radio" name="jsonpath-ret" id="jsonpath-rp">path</label> <label><input type="radio" name="jsonpath-ret" id="jsonpath-rptr">pointer</label><br>
+<textarea style="width: 97%; box-sizing:border-box; height:40px;" id="jsonpath-path" spellcheck="false">
+</textarea>
+</div>
+<br>
+<button data-transform="execXPath">Execute XPath:</button>, input is <label><input type="radio" name="xpath-input" id="xpath-html">HTML</label> <label><input type="radio" name="xpath-input" id="xpath-xml" checked>XML</label><br>
+<textarea style="width: 97%; box-sizing:border-box; height:40px;" id="xpath-path" spellcheck="false">
+</textarea>
+<br><br>
+<button data-transform="execCSS">Execute CSS3 selector:</button> (for HTML; may break XML)<br>
+<textarea style="width: 97%; box-sizing:border-box; height:40px;" id="css-path" spellcheck="false">
+</textarea>
+<br><br>
+<div data-ensureloaded="jspack.js,binpack.js">
+<b>Binary pack tool:</b><br>
+Bytes I/O: <label><input type="radio" name="binpack-source" id="binpack-source-plain" checked>raw</label> <label><input type="radio" name="binpack-source" id="binpack-source-hex">hex</label> <label><input type="radio" name="binpack-source" id="binpack-source-hexified">hexified</label><br>
+<button data-transform="binpack.pack">Pack JSON array</button><button data-transform="binpack.unpack">Unpack as JSON array</button><br>
+Format (JSPack): <br><textarea id="binpack-formatstr" style="width: 97%; box-sizing:border-box; height:60px;" spellcheck="false">7i5x</textarea><br>
+Length in bytes: <span id="binpack-length-sayer" class="result">33</span>
+</div>
+
+</div></td></tr></table>
+<div id="lncoln"><span id="text-binary-mode"></span><span class="tube-separator"></span>Line: <span class="result" id="esc_lnsayer">1</span><span class="tube-separator"></span>Column: <span class="result" id="esc_colsayer">0</span><span class="tube-separator"></span>Position: <span class="result" id="esc_posayer">0</span><span class="tube-separator"></span>Length: <span id="lenSayer1" class="result">0</span> (<span id="slensayer" class="result">0</span>)<span class="tube-separator"></span>Selection: <input type="number" id="selection-start" value=0 min=0 onchange="readSelectionFromInput();"> to <input type="number" id="selection-end" value=0 min=0 onchange="readSelectionFromInput();"><span class="tube-separator"></span>Words: <span id="wordsSayer1" class="result">0</span> min. word length: <button onclick="plusthelen(); " style="width: 25px;">+</button> <span id="wlen1">1</span> <button onclick="minusthelen();" style="width: 25px;">-</button><br><label><input type="checkbox" id="auto-indent" onchange="autoIndent=this.checked;">Auto indent</label><span class="tube-separator"></span><label><input type="checkbox" id="regexo-no" checked onchange="updLen();">Non-overlapping</label> occurences of <label><input type="checkbox" id="regexo-mcase" onchange="updLen();">case sensitive</label> <label><input type="checkbox" id="regexo-multiline" onchange="updLen();">multiline</label> <label><input type="checkbox" id="regexo-municode" onchange="updLen();">unicode</label> <label><input type="checkbox" id="regexo-regex" onchange="updLen();">regex</label> <input type="text" id="regexo-rtext" size="14"  spellcheck="false" value="" oninput="updLen();">: <span id="ocrof1" class="result">0</span></div><button onclick="setValue('');updLen();">Clear</button><button onclick="setFocus();">Focus</button><input type="file" id="tools-load-from-file" style="display: none;"><button onclick="loadFromFile();">Load...</button><button onclick="trimToSelection();">Trim to selection</button><span class="tube-separator"></span>Shared <button onclick="sharedCopy();">copy</button><button onclick="sharedPaste();">paste</button><span class="tube-separator"></span><label><input id="tlconoff" type="checkbox" checked onchange="TLCstate(this.checked);">Line numbers</label><span class="tube-separator"></span><label><input type="checkbox" id="logonoff" checked onclick="switchLog(this.checked);" checked>Log diffs</label> <button onclick="undo()" id="undobutton" disabled>Undo</button><button onclick="redo()" id="redobutton" disabled>Redo</button><button onclick="resetLog();">Reset diff log</button> <label><input type="checkbox" id="log-diff-depth-on" onchange="setDiffDepth();">Max log depth: </label><input type="number" id="log-diff-depth" value=5 min=1 onchange="setDiffDepth();" style="width: 30px;"><br><a href="" class="button" download="textop" onclick="interceptDownloadClick(event);" oncontextmenu="interceptDownloadCtx(event);">Download</a><span class="tube-separator"></span><button style="display: none;" id="regextractor-button" data-transform="exportAllRegexAsJSONTree">RegExtractor!</button><button data-ensureloaded="highlight.js" onclick="tcDispatch('highlightRegex');">Highlight all</button><button data-transform="extractAllRegex">Extract all</button><button onclick="replaceRegex();">Replace</button><button data-transform="replaceAllRegex">All</button><button onclick="findNextRegex();">Next</button> <label><input type="checkbox" id="regex-search-mcase">case sensitive</label> <label><input type="checkbox" id="regex-search-multiline">multiline</label> <label><input type="checkbox" id="regex-search-municode">unicode</label> <label><input type="checkbox" id="regex-search-mextended">extended</label> <select id="regex-search-backend"><option>Text<option selected>RegExp<option data-ensureloadedonselect="libpcre16.js,PCRE.js">PCRE<option data-ensureloadedonselect="libonig.js,Onigmo.js,OnigmoX.js">Ruby regex</select><br>
+
+<textarea id="regex-search-rtext" spellcheck=false>(([^ ])[^ ]*\s*)</textarea> with/as <label><input type="checkbox" id="regex-search-rreplace-asjson">JS literal</label> <textarea id="regex-search-rreplace" spellcheck=false>$2</textarea>
+
+<br>Regex examples: <select id="regex-example-list"><option>Loading...</select> <button onclick="loadRegexExample();">Load</button><button onclick="loadRegexExample(function(){transformTextByFunction(replaceAllRegex)});">Load & Replace all</button><button onclick="loadRegexExample(function(){transformTextByFunction(extractAllRegex)});">Load & Extract all</button><button data-ensureloaded="highlight.js" onclick="loadRegexExample(function(){tcDispatch('highlightRegex')});">Load & Highlight all</button><br>
+
+
+<table class="regex-split-table"><tr>
+<td id="regex-status">
+<span id="regex-status-message" class="initial">Press 'Next' to start matching.</span><div id="regex-status-matchinfo">Match found @ position <span class="result" id="regex-status-matchinfo-position"></span>, match length: <span id="regex-status-matchinfo-length" class="result"></span><span id="regex-status-matchsteps-span">, steps: <span class="result" id="regex-status-matchsteps">0</span></span><span class="tube-separator"></span><button id="regex-status-show-groups" onclick="regexToggleMatchGroups(this);">Show groups</button>
+
+
+
+<table id="regex-status-matched-groups" data-shown="false"><tbody id="regex-status-matched-groups-tbody"></tbody></table></div>
+</td><td>More examples/tools: <select id="regex-interactive-example-list"><option>Loading...</select><div id="regex-interactive-area"><div id="regex-interactive-title"></div><div id="regex-interactive-ui"></div><div id="regex-interactive-buttons"><button onclick="loadIRegexExample();">Load</button><button onclick="loadIRegexExample(true);">Load & Replace all</button></div><div id="misctransform-interactive-buttons"><button data-transform="miscTransform">Apply transform</button></div></div></td>
+</tr></table>
+
+
+<table><tr><td><button data-transform="columnAdmin" data-args="0">Leave</button><button data-transform="columnAdmin" data-args="4">Reverse</button><button data-transform="columnAdmin" data-args="1">Remove</button> columns <input type="number" id="cadmin-column-start" spellcheck="false" value="0"> to <input type="number" id="cadmin-column-end" spellcheck="false" value="0"><br><button data-transform="columnAdmin" data-args="3">Insert</button> columns from additional textarea at column <input type="number" id="cadmin-column-insert" spellcheck="false" value="0"> <label><input type="checkbox" id="cadmin-column-insert-asone">as one</label></td><td rowspan=3 id="element-separator-td">Element/column separator: <label><input type="checkbox" id="element-separator-asjson" checked>JS literal</label> <input type="text" id="element-separator" size=5  spellcheck="false" value=","><br>
+<button data-transform="convertCSVSeparator" data-args="0">Convert to</button> <label><input type="checkbox" id="new-element-separator-asjson" checked>JS literal</label> <input type="text" id="new-element-separator" size=5  spellcheck="false" value="|">
+
+<br><br>Row separator: <label><input type="checkbox" id="row-separator-asjson" checked>JS literal</label> <input type="text" id="row-separator" size=5  spellcheck="false" value="\n"><br>
+<button data-transform="convertCSVSeparator" data-args="1">Convert to</button> <label><input type="checkbox" id="new-row-separator-asjson" checked>JS literal</label> <input type="text" id="new-row-separator" size=5  spellcheck="false" value=";">
+
+<br><br><label><input type="checkbox" id="csv-quote-enabled" onchange="setEnableCSVQuote(this.checked);">Enable quote escape character</label><br>
+<div id="quote-escape-settings">Quote escape character: <label><input type="checkbox" id="csv-quote-asjson">JS literal</label> <input type="text" id="csv-quote" size=5  spellcheck="false" value="" data-oldvalue="&quot;"> <label><input type="checkbox" id="csv-quote-always">always use quotes</label><br>
+<button data-transform="convertCSVSeparator" data-args="2">Convert to</button> <label><input type="checkbox" id="new-csv-quote-asjson" checked>JS literal</label> <input type="text" id="new-csv-quote" size=5  spellcheck="false" value="'"></div>
+<br>
+<button data-transform="elementsToArray">Elements to JSON array</button><button data-transform="arrayToCSV" data-args="false">JSON array to elements</button><br><button data-transform="transposeCSV">Transpose</button><button data-transform="CSVTo2DArray">CSV to 2D array</button><button data-transform="arrayToCSV" data-args="true">2D array to CSV</button>
+<br><br>Apply marked transform to: <button data-transform="elementWise" data-dont-update="true">elements (1D)</button><button data-transform="rowWise" data-dont-update="true">rows (1D)</button><button data-transform="CSVWise" data-dont-update="true">fields (2D)</button>
+<tr><td>
+
+<table><tr><td><button data-transform="columnAdmin" data-args="2">Sort</button> by column <input type="number" id="cadmin-column-colno" spellcheck="false" value="0"><td rowspan=2><label><input type="checkbox" id="cadmin-column-omode">as numbers</label><label><input type="checkbox" id="cadmin-column-odesc">descending</label><tr><td>
+<button id="eadmin-sort" data-transform="elAdmin" data-args="0">Sort elements</button>
+</table>
+<tr><td><button data-transform="elAdmin" data-args="3">Shuffle</button><button data-transform="elAdmin" data-args="1">Reverse</button><button data-transform="elAdmin" data-args="2">Remove duplicate</button> elements
+<br>
+<button data-transform="elAdmin" data-args="14">Pad</button> elements with <select id="eladmin-pad-type"><option>leading<option>trailing</option></select> <label><input type="checkbox" id="eladmin-pad-str-asjson">JS literal</label> <input type="text" id="eladmin-pad-str" size=5 spellcheck="false" value="0">, to <label><input type="checkbox" id="eladmin-pad-length-unicode">unicode</label> length <input type="number" id="eladmin-pad-length" value=3 min=0>
+<br>
+Set <button data-transform="elAdmin" data-args="10">Sum</button><button data-transform="elAdmin" data-args="11">Intersection</button><button data-transform="elAdmin" data-args="12">Difference</button><button data-transform="elAdmin" data-args="13">Complement</button> of elements here with elements in additional textarea
+<table id="eladmin-calc-table"style="width: 100%"><tr><td>
+
+<button data-transform="elAdmin" data-args="4" data-dont-update="true">Count</button><button data-transform="elAdmin" data-args="5" data-dont-update="true">numeric</button> elements<br> <button data-transform="elAdmin" data-args="6" data-dont-update="true">Sum</button><button data-transform="elAdmin" data-args="7" data-dont-update="true">Mean</button><button data-transform="elAdmin" data-args="8" data-dont-update="true">Median</button><button data-transform="elAdmin" data-args="9" data-dont-update="true">Mode</button> of elements
+</td><td id="eladmin-calc-result-td">Result:<br><span class="result" id="eladmin-calc-result"></span></td></table>
+</table><button data-transform="byteOP" data-args="&quot;XORStr&quot;">XOR</button><button data-transform="byteOP" data-args="&quot;ROR&quot;">ROR</button><button data-transform="byteOP" data-args="&quot;ADD&quot;">ADD</button> with <input type="text" id="xorkey" size="86" spellcheck="false" value="23,24"> (bytes separated with ",")<br>
+<button data-transform="_replaceAlphabet">Replace alphabet</button> <label><input type="checkbox" id="replace-alphabet-src-array" checked>JSON array</label> <input type="text" id="replace-alphabet-src" size="40" spellcheck="false" value="&quot;a&quot;,&quot;b&quot;,&quot;c&quot;"> with <label><input type="checkbox" id="replace-alphabet-dst-array">JSON array</label> <input type="text" id="replace-alphabet-dst" size="40" spellcheck="false" value="cba">
+<br><br>
+
+<a href="#" onclick="adtshow(); return false;" id="adtslink">+ Show additional textarea</a><a href="#" onclick="adthide(); return false;" id="adthlink" style="display: none;">- Hide additional textarea</a>
+<div id="adt">
+<textarea spellcheck="false" id="addarea1"></textarea>
+<button onclick="sharedPaste(true);">Shared paste</button><span class="tube-separator"></span>Interpret as <label><input type="radio" id="adt-mode-text" name="adt-mode" checked>Text</label><label><input type="radio" id="adt-mode-hex" name="adt-mode">Hex</label><label><input type="radio" id="adt-mode-hexified"  name="adt-mode">Hexified</label></div>
+
+<br><br>
+<div data-ensureloaded="dmp.js,diff.js">
+<button onclick="if (tcLoaded) tDiff.diff(getValue(), getAdditionalVal());">Display diff</button> (main and additional textarea) <label><input type="checkbox" id="diff-multiline"> Line level</label><span id="diff-multiline-only" style="display: none;"> <label><input type="checkbox" id="diff-interleave"> Interleave lines</label> </span><span id="diff-inline-only"><span class="tube-separator"></span>DMP cleanup: <select id="diff-dmpcleanup"><option>None<option>Efficiency<option>Semantic</select> </span><span class="tube-separator"></span><label><input type="checkbox" id="diff-linewrap" checked> Wrap lines</label> <label><input type="checkbox" id="diff-hexify"> Hexify before copying to clipboard</label>
+
+<div class="diff-output inline" oncopy="copyDiff(event);" id="diff-output-inline" style="display: none;"></div>
+<div class="diff-output" oncopy="copyDiff(event);" onscroll="inlineDiffFixLN(event);" id="diff-output-multiline" style="display: none;">
+<table class="nowrap"><tbody id="diff-output-multiline-tbody"></tbody></table>
+</div>
+
+
+<div id="diff-inline-changed" style="display: none;">
+Levenshtein distance: <span id="diff-inline-dist" class="result">0</span><br>
+First difference at position: <span id="diff-inline-firstpos" class="result">0</span>
+</div>
+<div id="diff-multiline-changed" style="display: none;">
+Different lines: <span id="diff-multiline-dist" class="result">0</span><br>
+First difference at line: <span id="diff-multiline-firstpos" class="result">0</span>
+</div>
+<div id="diff-output-same" style="display: none;">
+No difference
+</div>
+</div>
+<br><br>
+
+<br><b>Color converter:</b><br>
+This requires modern browsers (FF and chrome). All fields are editable, and you can also click on the preview box to open the system color picker. Note that non RGB values are not rounded, even if it would produce the same RGB value, that's on purpose.
+<table class="cconv-preview-table">
+<tr>
+<td id="cconv-preview" style="background-color: cyan;">
+<td>Mode: <select id="cconv-selmode"><option>RGB<option>HSV<option>HSL</select><br>
+
+<table>
+<tr><td id="cconv-cnA">R:<td><input type="range" id="cconv-rangeA" min=0 max=255 value=0 class="cconv-range" style="background: linear-gradient(to right, cyan, white)"><td><input type="text" id="cconv-valA" value="0" size=4><span id="cconv-postA"></span>
+<tr><td id="cconv-cnB">G:<td><input type="range" id="cconv-rangeB" min=0 max=255 value=255 class="cconv-range" style="background: linear-gradient(to right, blue, cyan)"><td><input type="text" id="cconv-valB" value="255" size=4><span id="cconv-postB"></span>
+<tr><td id="cconv-cnC">B:<td><input type="range" id="cconv-rangeC" min=0 max=255 value=255 class="cconv-range"  style="background: linear-gradient(to right, lime, cyan)"><td><input type="text" id="cconv-valC" value="255" size=4><span id="cconv-postC"></span>
+</table>
+</table>
+<table class="cconv-output">
+<tr><td>Hex:<td>RGB:<td>HSV:<td>HSL:
+<tr>
+<td><input type="text" id="cconv-outHex" value="#00ffff">
+<td><input type="text" id="cconv-outRGB" value="rgb(0,255,255)">
+<td><input type="text" id="cconv-outHSV" value="hsv(180,100%,100%)">
+<td><input type="text" id="cconv-outHSL" value="hsl(180,100%,50%)">
+</table>
+<br><br>
+
+
+<br><b>JS Expression Evaluator:</b><br>
+<table id="jxpr-table"><tr><td>Expression: </td><td><textarea id="jxpression" spellcheck="false">(function(){for(var t=0,ret=[];t<256;t++)ret.push(t);return ret+""})()</textarea></td><td><button onclick="EvalMEH();">Evaluate</button></td></tr></table>
+<textarea id="jsevt" readonly="" rows=7 spellcheck="false"></textarea>
+<br><br>
+
+<div data-ensureloaded="xor.js">
+<br><b>XOR brute tool: <span class="desc">(input = selection from textop)</span></b><br>
+<button id="xor-analyze-button">Display</button> best <input type="number" id="xor-edit-distance-no" min=1 value=3> edit distances for key lengths from <input type="number" id="xor-edit-distance-min" min=2 value=2> to <input type="text" id="xor-edit-distance-max" value="n"><br>
+Key mode: <label><input type=radio name="xor-keymode" checked id="xor-keymode-wholekey">whole key</label> <label><input type=radio name="xor-keymode" id="xor-keymode-singlebyte">single byte</label><br>
+<div id="xor-key-single-options">
+Byte of key: <input type="number" id="xor-key-block" min=0 value=0>, key length: <input type="number" id="xor-key-len" min=1 value=1><br>
+</div><label><input type="checkbox" id="xor-key-filter" checked> filter results so that more than <input type="number" id="xor-key-filter-threshold" min=0 max=100 value=80>% of bytes in result are from alphabet: <label><input type="checkbox" id="xor-filter-alphabet-asjson" checked>JS literal</label> <input type="text" id="xor-filter-alphabet" size="20" spellcheck="false" value=" \n1234567890-=qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM!@#$%^&*()_+[]{};':\&quot;,./|\\&lt;&gt;?"></label><br>
+<div id="xor-choose-key-range" style="display: none;">
+Key range: <input type="text" id="xor-key-start" size="20" spellcheck="false" value="0"> to <input type="text" id="xor-key-end" size="20" spellcheck="false" value="255"> (separate with comma, use $ before a number to fix it.)
+</div>
+<div id="xor-display-key">
+Key so far: <input type="text" id="xor-key-sofar" size="60" spellcheck="false" value=""> (separated with comma)
+</div>
+<button id="xor-start-button">Start</button> <label id="xor-display-affected-label" style="display: none;"><input type="checkbox" id="xor-display-affected"> display only affected parts of text</label><label><input type="checkbox" id="xor-display-hex"> display as hex</label><br>
+<div id="xor-result">
+<table id="xor-result-distance-table">
+<thead><tr><td>Key length</td><td>Distance</td><td></td></tr></thead>
+<tbody>
+</tbody>
+</table>
+<div id="xor-result-output">
+</div>
+</div>
+</div>
+
+<br><br>
+
+<b>Modulo Calculator:</b> <span class="desc">(uses native ints, for numbers less than 2<sup>52</sup> only, and some functions are brute-force, sorry...)</span><br>
+Modulus: <input type="number" min=0 value=0 id="mod-modulus"> <button id="set-modulo">OK</button> <span class="desc">(0 = off)</span><br>
+<table id="modcalc-table">
+<tr>
+<td>
+<table>
+<tr><td>A:</td><td><input type="number" id="mod-a" value="1000"></td><td><span id="mod-a-sayer"></span></td></tr>
+<tr><td></td><td class="mod-switch-button"><button id="mod-do-swap">A<->B</button></td><td></tr>
+<tr><td>B:</td><td><input type="number" id="mod-b" value="2000"></td><td><button id="mod-b-button"></button></td></tr>
+</table>
+<td>
+<button id="mod-op-add">A + B</button><button id="mod-op-sub">A - B</button><button id="mod-op-mul">A * B</button><button id="mod-op-div">A / B</button><button id="mod-op-inv">1 / A</button><button id="mod-op-sqrt">&radic;<span style="text-decoration:overline;">A</span></button><button id="mod-op-square">A<sup>2</sup></button><br><button id="mod-op-pow">A<sup>B</sup></button><button id="mod-op-root">A<sup>1/B</sup></button><button id="mod-op-log">log<sub>A</sub>B</sup></button><button id="mod-op-getorder">order(A)</button><button id="mod-op-isagen">Is A primitive root?</button><br><button id="mod-op-factorial">A!</button><button id="mod-op-totientm">&#966;(M)</button><button id="mod-op-carmichaelm">&lambda;(M)</button><button id="mod-op-findproot">Find primitive root</button><button id="mod-op-pfactors-m">Prime factors of M</button><br><br>Modulo independent:<br><button id="mod-op-gcd">GCD</button><button id="mod-op-xgcd">XGCD(A, B)</button><button id="mod-op-lcm">LCM</button><button id="mod-op-totient">&#966;(B)</button><button id="mod-op-carmichael">&lambda;(B)</button><button id="mod-op-pfactors">Prime factors of B</button><br><button id="mod-op-bcoeff">bcoeff(A, B)</button><button id="mod-op-mcoeff">mcoeff(A, B)</button><button id="mod-op-stirling1">Stirling1(A, B)</button><button id="mod-op-stirling2">Stirling2(A, B)</button><br><button id="mod-op-bell">Bell(B)</button><button id="mod-op-catalan">Catalan(B)</button><button id="mod-op-noofdiv">Number of divisors of B</button><button id="mod-op-findprime">Find prime between A and B</button><br><button id="mod-op-hand2">Factor 2 out of B</button><button id="mod-op-handq">Factor A out of B</button><button id="mod-op-part">Number partitions of B</button>
+
+
+</table>
+<div id="mod-result-view">
+<table>
+<tr><td>Result:</td><td id="mod-result"></td></tr>
+<tr><td></td><td><button id="mod-copy-result">Copy to A</button><button id="mod-copy-result-b">Copy to B</button><button id="mod-copy-result-mod">Set as modulus</button></td></tr>
+</table>
+</div>
+<br><br>
+<b>Chinese Remainder calculator:</b>
+<div id="mod-crt-rules">
+<div class="mod-crt-rule">x = <input type="number" class="mod-crt-rule-a" value="10" min="0"> mod <input type="number" class="mod-crt-rule-m" value="11" min="2"></div>
+<div class="mod-crt-rule">x = <input type="number" class="mod-crt-rule-a" value="8" min="0"> mod <input type="number" class="mod-crt-rule-m" value="23" min="2"></div>
+</div>
+<button id="mod-crt-solve">Solve</button><button id="mod-crt-addrule">Add rule</button>
+<div id="mod-crt-result-ok">x = <input type="number" class="mod-crt-rule-a" id="mod-crt-result-a" readonly=1> mod <input type="number" class="mod-crt-rule-m" id="mod-crt-result-m" readonly=1></div>
+<div id="mod-crt-result-error"></div>
+
+
+<br><br><br>
+<b>Number base converter:</b><br>Number base: <input type="text"  spellcheck="false" value="16" id="nbase" size="6"> (or "IP")<br>Number: <input type="text"  spellcheck="false" value="10" id="nmbr" size="12"><br><button onclick="tobase();">From dec to base</button> <button onclick="frombase();">From base to dec</button>
+
+<br><br><br>
+<b>Permutations tool:</b><br>
+Map form: <input type="text" id="pcalc-map" value="6,2,8,4,3,1,5,7" size="30"><button onclick="pcalcConvert();">Convert to cyclic form</button><br>
+Cyclic form: <input type="text" id="pcalc-cyclic" value="(1,6)(3,8,7,5)" size="30"><button onclick="pcalcConvert(true);">Convert to map form</button>
+<br>
+<table id="pcalc-aandb"><tr><td>A:</td><td></td><td>B:</td></tr><tr><td><input type="text" id="pcalc-A" value="(15)(24)"></td><td><button onclick="pcalcSwap();">&lt;-&gt;</button></td><td><input type="text" id="pcalc-B" value="(1243)"></td></tr></table>
+<button onclick="pcalc(0);">Order of A</button><button onclick="pcalc(1);">Sign of A</button><button onclick="pcalc(2);">A&#9702;B</button><button onclick="pcalc(3);">A<sup>-1</sup></button><br><br>
+Result: <input type="text" id="pcalc-result" readonly><button id="pcalc-result-copy" onclick="pcalcCopy();">Copy to A</button>
+
+
+<br><br><br><b>Link generator:</b><br><input type="text"  spellcheck="false" value="link here" id="forlink"><button onclick="genLink();">Generate Link!</button><div id="linkhere"></div>
+<br><br><b>Hamming distance (binary):</b><br><input type="text" id="hamming1" value="zb3!"><br><input type="text" id="hamming2" value="nope"><button onclick="steelHammer();">Go!</button><br><div id="hamming-result" style="display:none;">Hamming distance is: <span id="hamming-result-oreally"></span></div><br><br>
+
+<div data-ensureloaded="permute.js">
+<b>Combinatorics stuff:</b><br>
+Mode: <span class="permute-modetab-container"><button class="permute-modetab active" id="permute-tab-multiop" onclick="switchPermuteTabs(0);">Multiset operations</button><button class="permute-modetab" id="permute-tab-numberpart" onclick="switchPermuteTabs(1);">Number partitions</button><button class="permute-modetab" id="permute-tab-catalanstuff" onclick="switchPermuteTabs(2);">Dyck & parenthesis generator</button></span>
+
+
+
+
+<div id="permute-t0">
+Multiset: <input type="text" id="permute-input" size="20"  value="permute"> (<label><input type="checkbox" id="permute-comma">separated by comma</label>)
+<br><br>
+<button onclick="perm(4);">Subsets</button><br>
+<button onclick="perm(1);">Permutations</button><button onclick="perm(5);">with repetitions</button> of length <input type="text" id="permute-max-length" value=n size=3><br>
+<button onclick="perm(2);">Combinations</button><button onclick="perm(3);">with repetitions</button> of length <input type="text" id="permute-comb-length" value=3 size=4><br>
+<button onclick="perm(0);">Set partitions</button> into <input type="text" id="permute-sp-min" value=0 size=4> to <input type="text" id="permute-sp-max" value=n size=4> sets
+</div>
+
+<div id="permute-t1" style="display: none">
+Number: <input type="number" id="permute-numberpart-number" value="10" min=1 step=1><button onclick="numberpart();">Generate partitions</button><br><br>
+<label><input type="checkbox" id="permute-numberpart-allowed" onchange="numberPartSwitchAllowed(this);">With custom set of allowed terms</label>
+<div id="permute-numberpart-tset" style>
+Set of allowed terms: <input type="text" id="permute-numberpart-allowedterms" size="50"  value="500,200,100,50,20,10,5,2,1">
+</div>
+<div id="permute-numberpart-tlimit">
+With terms not smaller than: <input type="text" id="permute-numberpart-amin" value=1 size=4><br>
+With terms not bigger than: <input type="text" id="permute-numberpart-amax" value=n size=4><br>
+</div>
+<br>
+Minimum number of terms: <input type="text" id="permute-numberpart-nmin" value=1 size=4><br>
+Maximum number of terms: <input type="text" id="permute-numberpart-nmax" value=n size=4><br>
+<label><input type="checkbox" id="permute-numberpart-distinct">With distinct terms</label><br>
+<label><input type="checkbox" id="permute-numberpart-ascending">Print terms in ascending order</label>
+</div>
+
+<div id="permute-t2" style="display: none">
+<button onclick="dyckWords()">Dyck words</button> of length: 2*<input type="number" id="permute-cat-dl" value="5" min="2"><br><br>
+Complete parenthesizations for <input type="number" id="permute-cat-pl" value="5" min="2"> factors, in:<br> <button onclick="parenthesizations(0)">Lexicographical order</button><button  onclick="parenthesizations(1)">Wibbly wobbly order</button><button onclick="parenthesizations(2)">Logical order</button>
+
+<br><br>
+<label><input type="checkbox" id="permute-cat-backward">Reverse the order</label>
+</div>
+
+
+<br>
+Starting from: <input type="text" id="permute-startfrom" size="20"  value=""><br>
+Skip first <input type="text" id="permute-skip-first" value=0 size=4> items<br>
+Max items to generate: <input type="text" id="permute-limit-items" value=all size=4><br>
+<br>
+
+<textarea spellcheck="false" id="permutatearea" readonly="" rows=10 cols=90></textarea><br>
+Items generated: <span id="items-generated" class="result">0</span>
+</div>
+			<!-- end blob -->
+		</main>
+	<script src="js/tools.core.js"></script>
+	<script src="js/tools.stuff.js"></script>
+	<script src="js/hash.js"></script>
+	<script src="js/somemath.js"></script>
+	<script src="js/modcalc.js"></script>
+	<script src="js/color.js"></script>
+	<script src="js/colorUI.js"></script>
+	</body>
+</html>

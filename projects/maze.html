@@ -1,0 +1,428 @@
+<style>
+body
+{
+ background-color: black;
+ color:white;
+ font-family: arial;
+}
+#mazetable td
+{
+margin:0;
+padding:0;
+font-size: 0.1px;
+}
+#optionstable td
+{
+ vertical-align: top;
+ padding:0;
+ padding-right:20px;
+}
+</style>
+<style id="opt">
+.w411
+{
+ background-color: white;
+}
+.c311
+{
+ background-color: black;
+}
+.r0b0t
+{
+ background-color: cyan;
+}
+.s0l
+{
+ background-color: #404040;
+}
+</style>
+<style id="solstyle">
+.s0l
+{
+ background-color: black;
+}
+.t4r
+{
+ background-color: #404040;
+}
+</style>
+<b>Maze generator & game</b>
+<br>
+This game is very simple, generate a maze and use arrows to go to the target point ;)<br>Generating bigger mazes can freeze your browser!
+<br><br>
+<table id="optionstable" style="border:0; border-collapse: collapse; border-spacing:0;"><tr><td>
+<b>Maze options:</b><br>
+Maze dimensions: <input size="2" id="mazex" value="30">x<input size="2" id="mazey" value="30"><br>
+Player start point: <input size="2" id="playerx" value="1">x<input size="2" id="playery" value="1"><br>
+DFS Search start point: <span id="dfsrange" style="display: none;"><input size="2" id="dfsx" value="30">x<input size="2" id="dfsy" value="30"> </span><label><input type="checkbox" id="dfsrandom" checked onclick="dfscheckrandom(this);">Random</label><br>
+Target position: <input size="2" id="targetx" value="30">x<input size="2" id="targety" value="30"><br>
+</td><td>
+<br>
+Cell size: <input size="2" id="cellsize" value="12"><br>
+Wall size: <input size="2" id="wallsize" value="3"><br>
+<button onclick="changeSizing();">Change Size</button><br><br>
+</td><td>
+<b>Colors:</b><br>
+Cell color: <input size="5" id="cellcolor" value="black"><br>
+Wall color: <input size="5" id="wallcolor" value="white"><br>
+Player color: <input size="5" id="robotcolor" value="cyan"><br>
+Solution/target color: <input size="5" id="solcolor" value="#404040"><br>
+<button onclick="setColors();">Set Colors</button>
+</td></tr></table>
+<br>
+<button onclick="generateMaze();">Generate!</button> <button onclick="resetPlayer();" style="display: none;" id="resetplayer">Reset Player</button> <button onclick="toggleSol();" style="display: none;" id="togglesol">Show solution</button>
+<br><br>
+<table id=mazetable style="border-collapse: collapse;border-spacing:0; table-layout:fixed;"></table>
+<div id="robot" class="c311" style="position:absolute; width: 1px; height: 1px; font-size: 1px; padding:1px; display: none;left:0px;top:0px;"><div class="r0b0t" style="width: 100%; height: 100%;"></div></div>
+<script>
+function dfscheckrandom(e)
+{
+ document.getElementById("dfsrange").style.display=(e.checked)?("none"):("inline");
+}
+Array.prototype.clone = function()
+{
+ var arr1 = new Array(); 
+ for (var property in this)
+ {
+  arr1[property] = typeof (this[property]) == 'object' ? this[property].clone() : this[property];
+ }
+ return arr1;
+}
+var x=0, y=0, w=0, border=0, h=0, e, f, g="", solution, board, visol, startx, starty, genx, geny, on=0, sol=1;
+var ow, oh;
+function toggleSol()
+{
+ if ((document.getElementById("solcolor").value.match(/[^a-z0-9#; -]/g)) || (document.getElementById("cellcolor").value.match(/[^a-z0-9#; -]/g)))
+ {
+  alert("Invalid colors!\nUse css colors");
+  return false;
+ }
+ if (!sol)
+ {
+  document.getElementById("solstyle").innerHTML = document.getElementById("solstyle").cssText=".s0l{ background-color: "+document.getElementById("solcolor").value+";}.t4r{ background-color: "+document.getElementById("solcolor").value+";}";
+  document.getElementById("togglesol").innerHTML="Hide solution";
+  sol=1;
+ }
+ else
+ {
+  document.getElementById("solstyle").innerHTML = document.getElementById("solstyle").cssText=".s0l{ background-color: "+document.getElementById("cellcolor").value+";}.t4r{ background-color: "+document.getElementById("solcolor").value+";}";
+  document.getElementById("togglesol").innerHTML="Show solution";
+  sol=0;
+ }
+}
+function resetPlayer()
+{
+ goto([startx, starty]);
+}
+function changeSizing()
+{
+ if (!prepareSettings())
+ return false;
+ for(e=0;e<y;e++)
+ {
+  for(f=0;f<x;f++)
+  {
+   if (f%2==1 && e%2==1)
+   {
+    if (!e)
+    {document.getElementById("cell-"+(e*x+f)).style.width=w+'px';document.getElementById("cell-"+(e*x+f)).style.height=h+'px;';}
+    else
+    document.getElementById("cell-"+(e*x+f)).style.height=h+'px';
+   }
+   else
+   {
+    if (!e)
+    {document.getElementById("cell-"+(e*x+f)).style.width=((f%2==0)?(border):(w))+'px';document.getElementById("cell-"+(e*x+f)).style.height=((e%2==0)?(border):(h))+'px';}
+    else
+    {document.getElementById("cell-"+(e*x+f)).style.height=((e%2==0)?(border):(h))+'px;';}
+   }
+  }
+ }
+}
+function setColors()
+{
+ if ((document.getElementById("solcolor").value.match(/[^a-z0-9#; -]/g)) || (document.getElementById("wallcolor").value.match(/[^a-z0-9#; -]/g)) || (document.getElementById("cellcolor").value.match(/[^a-z0-9#; -]/g)) || (document.getElementById("robotcolor").value.match(/[^a-z0-9#; -]/g)))
+ {
+  alert("Invalid colors!\nUse css colors");
+  return false;
+ }
+ document.getElementById("opt").innerHTML = document.getElementById("solstyle").cssText = ".w411{ background-color: "+document.getElementById("wallcolor").value+";}.c311{ background-color: "+document.getElementById("cellcolor").value+";}.r0b0t{ background-color:"+document.getElementById("robotcolor").value+";}";
+ document.getElementById("solstyle").innerHTML = document.getElementById("solstyle").cssText + ".t4r{ background-color: "+document.getElementById("solcolor").value+";}";
+}
+function generateCells()
+{
+ board = new Array();
+ visol = new Array();
+ g="";
+ for(e=0;e<y;e++)
+ {
+  g += '<tr>';
+  board[e] = new Array();
+  visol[e] = new Array();
+  for(f=0;f<x;f++)
+  {
+   if (f%2==1 && e%2==1)
+   {
+    board[e][f] = 0;
+    visol[e][f] = 0;
+    if (!e)
+    g += '<td class="c311" id="cell-'+(e*x+f)+'" style="width: '+w+'px; height: '+h+'px"></td>';
+    else
+    g += '<td class="c311" id="cell-'+(e*x+f)+'" style="height: '+h+'px"></td>';
+   }
+   else
+   {
+    board[e][f] = 0;
+    visol[e][f] = 0;
+    if (!e)
+    g += '<td class="w411" id="cell-'+(e*x+f)+'" style="width: '+((f%2==0)?(border):(w))+'px; height: '+((e%2==0)?(border):(h))+'px"></td>';
+    else
+    g += '<td class="w411" id="cell-'+(e*x+f)+'" style="height: '+((e%2==0)?(border):(h))+'px"></td>';
+   }
+  }
+  g += '</tr>';
+ }
+ document.getElementById("mazetable").innerHTML=g;
+}
+function set(ra)
+{
+ board[ra[1]][ra[0]] = 1;
+ document.getElementById("cell-"+(ra[1]*x+ra[0])).setAttribute("class", "c311");
+}
+function goto(wut)
+{
+ var r = document.getElementById("cell-"+(wut[1]*x+wut[0])).getBoundingClientRect();
+ pos = wut;
+ document.getElementById("robot").style.left=r.left+window.pageXOffset+'px';
+ document.getElementById("robot").style.top=r.top+window.pageYOffset+'px';
+ if ((r.top)<0)
+ window.scrollBy(0, -document.body.clientHeight);
+ if ((r.left)<0)
+ window.scrollBy(-document.body.clientWidth, 0);
+ if ((r.bottom)>document.body.clientHeight)
+ window.scrollBy(0, document.body.clientHeight);
+ if ((r.right)>document.body.clientWidth)
+ window.scrollBy(document.body.clientWidth, 0);
+ if (wut[0]==(targetx) && wut[1]==(targety))
+ generateMaze();
+}
+function unset(ra)
+{
+ board[ra[1]][ra[0]] = 0;
+ document.getElementById("cell-"+(ra[1]*x+ra[0])).setAttribute("class", "w411");
+}
+function genfrom(start)
+{
+ set(start);
+ var arr=new Array(), rt;
+ if (start[0]>1 && !board[start[1]][start[0]-2])
+ arr.push([start[0]-2, start[1]]);
+ if (start[1]>1 && !board[start[1]-2][start[0]])
+ arr.push([start[0], start[1]-2]);
+ if (start[0]<(x-2) && !board[start[1]][start[0]+2])
+ arr.push([start[0]+2, start[1]]);
+ if (start[1]<(y-2) && !board[start[1]+2][start[0]])
+ arr.push([start[0], start[1]+2]);
+ if (arr.length)
+ {
+  rt = Math.round(Math.random()*((arr.length)-1));
+  set([(start[0]+arr[rt][0])/2, (start[1]+arr[rt][1])/2]);
+  genfrom(arr[rt], 0);
+  for(ox=0;ox<(arr.length);ox++)
+  {
+   if (ox!=rt)
+   {
+    if (!board[arr[ox][1]][arr[ox][0]])
+    {
+     set([(start[0]+arr[ox][0])/2, (start[1]+arr[ox][1])/2]);
+     genfrom(arr[ox], 0);
+    }
+   }
+  }
+ }
+}
+function makesol(start, sol)
+{
+ var ox;
+ setsol(start);
+ var sol2 = sol.clone();
+ var arr;
+ sol2.push(start);
+ do
+ {
+  if (start[0]==(x-2) && start[1]==(y-2))
+  {
+   solution=sol2;
+   return 1;
+  }
+  arr=new Array();
+  if (start[0]>1 && board[start[1]][start[0]-1] && !(visol[start[1]][start[0]-2]))
+  arr.push([start[0]-2, start[1]]);
+  if (start[1]>1 && board[start[1]-1][start[0]] && !(visol[start[1]-2][start[0]]))
+  arr.push([start[0], start[1]-2]);
+  if (start[0]<(x-2) && board[start[1]][start[0]+1] && !(visol[start[1]][start[0]+2]))
+  arr.push([start[0]+2, start[1]]);
+  if (start[1]<(y-2) && board[start[1]+1][start[0]] && !(visol[start[1]+2][start[0]]))
+  arr.push([start[0], start[1]+2]);
+  if (arr.length==1)
+  {
+   setsol(arr[0]);
+   start = arr[0].clone();
+  }
+ } while (arr.length==1)
+ if (arr.length)
+ {
+  for(ox=0;ox<(arr.length);ox++)
+  {
+   if (!(visol[arr[ox][1]][arr[ox][0]]))
+   {
+    makesol(arr[ox], sol2);
+   }
+  }
+ }
+}
+function setsol(wat)
+{
+ visol[wat[1]][wat[0]]=1;
+}
+function tracesol()
+{
+ var e, arr, start=[], prev=[];
+ for(e=0;e<solution.length;e++)
+ {
+  document.getElementById("cell-"+(solution[e][1]*x+solution[e][0])).setAttribute("class", "s0l");
+  prev=start;
+  start=solution[e].clone();
+  if (prev.length)
+  {
+   document.getElementById("cell-"+(((prev[1]+start[1])/2)*x+(prev[0]+start[0])/2)).setAttribute("class", "s0l");
+  }
+  do
+  {
+   if (start[0]==targetx && start[1]==targety)
+   return;
+   arr=new Array();
+   if (start[0]>1 && board[start[1]][start[0]-1] && (prev[0]!=(start[0]-2) || prev[1]!=(start[1])))
+   arr.push([start[0]-2, start[1]]);
+   if (start[1]>1 && board[start[1]-1][start[0]] && (prev[0]!=(start[0]) || prev[1]!=(start[1]-2)))
+   arr.push([start[0], start[1]-2]);
+   if (start[0]<(x-2) && board[start[1]][start[0]+1] && (prev[0]!=(start[0]+2) || prev[1]!=(start[1])))
+   arr.push([start[0]+2, start[1]]);
+   if (start[1]<(y-2) && board[start[1]+1][start[0]] && (prev[0]!=(start[0]) || prev[1]!=(start[1]+2)))
+   arr.push([start[0], start[1]+2]);
+   if (arr.length==1)
+   {
+    document.getElementById("cell-"+(arr[0][1]*x+arr[0][0])).setAttribute("class", "s0l");
+    document.getElementById("cell-"+(((start[1]+arr[0][1])/2)*x+(arr[0][0]+start[0])/2)).setAttribute("class", "s0l");
+    prev=start;
+    start = arr[0].clone();
+   }
+  } while (arr.length==1)
+ }
+}
+function trytogo(event)
+{
+ if (!on)
+ return true;
+ if (event.keyCode==37)// || event.keyCode==65)
+ {
+  if ((pos[0]>1) && board[pos[1]][pos[0]-1])
+  {
+   goto([pos[0]-2, pos[1]]);
+  }
+  event.preventDefault();
+ }
+ else if (event.keyCode==39)// || event.keyCode==68)
+ {
+  if ((pos[0]<(x-2)) && board[pos[1]][pos[0]+1])
+  {
+   goto([pos[0]+2, pos[1]]);
+  }
+  event.preventDefault();
+ }
+ else if (event.keyCode==38)// || event.keyCode==87)
+ {
+  if ((pos[1]>1) && board[pos[1]-1][pos[0]])
+  {
+   goto([pos[0], pos[1]-2]);
+  }
+  event.preventDefault();
+ }
+ else if (event.keyCode==40)// || event.keyCode==83)
+ {
+  if ((pos[1]<(y-2)) && board[pos[1]+1][pos[0]])
+  {
+   goto([pos[0], pos[1]+2]);
+  }
+  event.preventDefault();
+ }
+}
+function prepareSettings()
+{
+ x = parseInt(document.getElementById("mazex").value)*2+1;
+ y = parseInt(document.getElementById("mazey").value)*2+1;
+ if (x<2 || y<2)
+ {
+  alert("Invalid maze size!");
+  return false;
+ }
+ startx = parseInt(document.getElementById("playerx").value)*2-1;
+ starty = parseInt(document.getElementById("playery").value)*2-1;
+ if (startx<1 || starty<1 || startx>x || starty>y)
+ {
+  alert("Invalid start point!");
+  return false;
+ }
+ targetx = parseInt(document.getElementById("targetx").value)*2-1;
+ targety = parseInt(document.getElementById("targety").value)*2-1;
+ if (targetx<1 || targety<1 || targetx>x || targety>y)
+ {
+  alert("Invalid target!");
+  return false;
+ }
+ genx = parseInt(document.getElementById("dfsx").value)*2-1;
+ geny = parseInt(document.getElementById("dfsy").value)*2-1;
+ if ((!document.getElementById("dfsrandom").checked) && (genx<1 || geny<1 || genx>x || geny>y))
+ {
+  alert("Invalid search point!");
+  return false;
+ }
+ border = parseInt(document.getElementById("wallsize").value);
+ if (border<1)
+ {
+  alert("Invalid wall size!");
+  return false;
+ }
+ w = h = parseInt(document.getElementById("cellsize").value);
+ if (w<1)
+ {
+  alert("Invalid cell size!");
+  return false;
+ }
+ return true;
+}
+function generateMaze()
+{
+ if (!prepareSettings())
+ return false;
+ generateCells();
+ if (document.getElementById("dfsrandom").checked)
+ genfrom([Math.round(Math.random()*Math.floor((x-2)/2))*2+1, Math.round(Math.random()*Math.floor((y-2)/2))*2+1]);
+ else
+ genfrom([genx, geny]);
+ makesol([startx, starty], []);
+ tracesol();
+ document.getElementById("cell-"+((targety)*x+targetx)).setAttribute("class", "t4r");
+ var pos = [startx, starty];
+ on=1;
+ if (sol)
+ toggleSol();
+ document.getElementById("robot").style.width=(w-(2*parseInt(document.getElementById("robot").style.padding)))+'px';
+ document.getElementById("robot").style.height=(h-(2*parseInt(document.getElementById("robot").style.padding)))+'px';
+ document.getElementById("robot").style.display='block';
+ document.getElementById("togglesol").style.display="inline";
+ document.getElementById("resetplayer").style.display="";
+ goto(pos);
+}
+document.onkeydown = trytogo;
+</script>

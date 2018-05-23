@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<style>
+body {background-color: black; color: white; font-family: arial;}
+#maincont
+{
+ width: 800px;
+ margin:auto;
+}
+#maincont h1
+{
+ text-align: center;
+}
+#rs4-cont
+{
+ position: relative;
+}
+.cdiv
+{
+ box-sizing: border-box;
+ position: absolute;
+ transition: opacity 0.2s linear, left 0.2s ease-in, top 0.2s ease-in;
+}
+#layout td
+{
+ vertical-align: top;
+}
+#layout > tbody > tr > td:nth-child(2)
+{
+ padding-left: 16px;
+}
+#layout > tbody > tr > td:nth-child(2) zm-zc14 input
+{
+ width: 23px !important;
+}
+#layout > tbody > tr > td:nth-child(2) input[type=range]
+{
+ margin: 0px;
+ margin-top: 2px;
+}
+.silver
+{
+ color: #bbb;
+}
+#rs4-boxes, #rs4-moves, #rs4-optimal
+{
+ color: #bff;
+}
+#rs4-overlay
+{
+ position: absolute;
+ width: 100%;
+ height: 100%;
+ background-color: rgba(0, 0, 0, 0.4);
+ z-index: 1;
+}
+#rs4-pmenu
+{
+ position: absolute;
+ top: 0; left: 0; bottom: 0; right: 0;
+ margin:auto;
+ width: 140px;
+ height: 92px;
+}
+.rs4-pbutton
+{
+ background-color: rgba(0, 0, 0, 0.6);
+ padding: 9px;
+ width: 120px;
+ height: 26px;
+ font-family: Arial;
+ font-size: 24px;
+ border: 1px solid #999;
+ cursor: pointer;
+ text-align: center;
+}
+.rs4-pbutton:hover
+{
+ color: #bff;
+}
+.nobr
+{
+ white-space: nowrap;
+}
+</style>
+<style title="rs4-cfg">
+.cdiv
+{
+ width:60px; height:60px;
+}
+</style>
+<style id="rs4-colorscss">
+.color1
+{
+ background-color: #7777aa;
+}
+.color1.hil
+{
+ background-color: #8c8cc8;
+}
+.color2
+{
+ background-color: #77aa77;
+}
+.color2.hil
+{
+ background-color: #8cc88c;
+}
+.color3
+{
+ background-color: #77aaaa;
+}
+.color3.hil
+{
+ background-color: #8cc8c8;
+}
+.color4
+{
+ background-color: #aaaa77;
+}
+.color4.hil
+{
+ background-color: #c8c88c;
+}
+</style>
+<div id="maincont">
+<h1><span class="silver">RS</span>4 encore</h1>
+This is a classic game in which you remove groups of blocks of the same color by clicking. Your goal is to clear as much as possible (in most cases, you can clear the entire board).<br>Here you can bookmark or share the URL to replay the same board, view the solution, setup the size, colors and more though :)<br><br>This uses CSS3 transitions and other cool features, so the latest browser version is required (you should have updated it anyway)<br><br>
+<table id="layout"><tr><td>
+<div id="rs4-cont"><div id="rs4-overlay"><div id="rs4-pmenu"><div class="rs4-pbutton" id="rs4-newgame">New Game</div><div class="rs4-pbutton last" id="rs4-retry">Restart</div></div></div></div>
+<td>
+Game size:<br>
+<zm-zc14 data-min="4" data-type="int" data-rs4-key="x"></zm-zc14> x <zm-zc14 data-min="4" data-type="int" data-rs4-key="y"></zm-zc14><br>
+Number of colors:<br>
+<zm-zc14 data-min="2" data-type="int" data-rs4-key="cnum"></zm-zc14>
+<br><br><button id="rs4-new">New Game</button> <button id="rs4-restart">Restart</button><br><button id="rs4-playaim">Play</button> <button id="rs4-playaio">Play one</button><br><button id="rs4-undo">Undo</button><br><br>Boxes left: <span id="rs4-boxes">0</span><br>Moves made: <span id="rs4-moves">0</span><br><span class="nobr">AI would score: <button id="rs4-showai">Show</button><span id="rs4-optimal"></span></span>
+<br><br><hr><button id="rs4-resetpref">Reset preferences</button><br><br>Animation speed:<br><input type="range" min="3" max="55" data-rs4-key="speed"><br><br>Box size:<br><input id="rs4-csize" type="range" min=30 max=100 data-rs4-key="bsize"><br><br>AI delay:<br><input id="rs4-aispeed" type="range" min="0" max="3000" data-rs4-key="aispeed"><br><br>Colors:<br><div id="rs4-colorsarea"></div>
+</table>
+</div>
+<script src="seedrandom.js"></script>
+<script src="zm.js"></script>
+<script>
+var bestscore, bestline, hash, plai;
+
+function check(board, line, cursize)
+{
+ if (hash[board.toString()]) return;
+ hash[board.toString()] = 1;
+ if (cursize<bestscore)
+ {
+  bestscore = cursize;
+  bestline = line.slice(0);
+ }
+
+ var groups = getGroups(board), t, tl=groups.length;
+ for(t=0;t<tl && bestscore;t++)
+ {
+  if (groups[t].length==1) continue;
+  check(removeGroup(board, groups[t]), line.concat(t), cursize-groups[t].length)
+ }
+}
+function solve()
+{
+ bestscore = Infinity; hash = {};
+ var t, tl = 0;
+ for(var t=0;t<x*y;t++)
+ if (ctable[t]) tl++;
+ check(ctable, [], tl);
+ return bestscore;
+}
+
+function playAINext()
+{
+ if (!ai_playing) return;
+ if (bestline.length)
+ {
+  playAINext.hil = setTimeout(function(){highlightGroup(null, true, null, bestline[0])}, aispeed/2);
+  playAINext.sweep = setTimeout(function(){sweepGroup(null, null, bestline[0], playAINext)}, aispeed);
+ }
+ else
+ playAI();
+}
+
+function playAI()
+{
+ if (ai_playing)
+ {
+  ai_playing=0;
+  //clear timeouts
+  clearTimeout(playAINext.hil);
+  clearTimeout(playAINext.sweep);
+  var t;
+  for(t=0;t<groups.length;t++)
+  {
+   highlightGroup(null, false, null, t);
+  }
+  updateUI();
+  return;
+ }
+ ai_playing = 1;
+ if (!bestline)
+ solve();
+
+ updateUI();
+ playAINext();
+}
+function playAIO()
+{
+ if (!bestline)
+ solve();
+ 
+ sweepGroup(null, null, bestline[0], playAIO)
+ updateUI();
+}
+
+function _visit(ctable, what, no, arr, visited)
+{
+ visited[what] = 1;
+ arr.push(what);
+ 
+ if (what%x && ctable[what-1]==ctable[what] && !visited[what-1])
+ _visit(ctable, what-1, no, arr, visited);
+
+ if (what%x<x-1 && ctable[what+1]==ctable[what] && !visited[what+1])
+ _visit(ctable, what+1, no, arr, visited);
+
+ if ((what/x>>0) && ctable[what-x]==ctable[what] && !visited[what-x])
+ _visit(ctable, what-x, no, arr, visited);
+
+ if ((what/x>>0)<y-1 && ctable[what+x]==ctable[what] && !visited[what+x])
+ _visit(ctable, what+x, no, arr, visited);
+}
+function getGroups(board)
+{
+ var visited = {}, groups = [];
+ var t, ng = 0, tl=board.length;
+ for(t=0;t<tl;t++)
+ {
+  if (board[t] && !visited[t])
+  {
+   groups.push([]);
+   _visit(board, t, ng, groups[ng++], visited);
+  }
+ }
+ return groups;
+}
+
+function dbg(board)
+{
+var t, t2, row, h=[' ', 'v', 'g', 'b', 'y'];
+for(t=0;t<y;t++)
+{
+ row = '';
+ for(t2=0;t2<x;t2++)
+ {
+  row += board[t*x+t2]?h[board[t*x+t2]] :' ';
+ }
+ console.log(row);
+}
+}
+function removeGroup(board, group)
+{
+ //uses global x and y
+ var t, t2, rl, cur, nboard = board.slice(0), gl = group.length;
+ for(t=0;t<gl;t++)
+ {
+  nboard[group[t]] = 0;
+ }
+ //vertical
+ for(t=0;x-t;t++)
+ {
+  for(t2=rl=y-1;t2>=0;t2--)
+  {
+   cur = t2*x+t;
+   if (nboard[cur] && rl-t2)
+   {
+    nboard[rl*x+t]=nboard[cur];
+    nboard[cur] = 0;
+    rl--;
+   } else if (nboard[cur]) rl--;
+  }
+ }
+ //horizontal
+ for(rl=t=0;x-t;t++)
+ {
+  cur = (y-1)*x+t;
+  if (nboard[cur] && t-rl)
+  {
+   for(t2=0;t2<y;t2++) 
+   {
+    cur = t2*x+t;
+    nboard[t2*x+rl] = nboard[cur];
+    nboard[cur] = 0;
+   }
+   rl++;
+  } else if (nboard[cur]) rl++;
+ }
+ return nboard;
+}
+
+var x = 8, y = 6, cnum = 4, bsize = 60, bborder=2, bspace = 62, aispeed, ctable = [], last = [], movehistory = [], gameon = 1;
+var grid, ltable, mc, cells = [], ms, ms2, mm, csize, bt, gravity = 12, pref = {}, ai_playing, anim_on, hpoke = 0;
+var group = {}, visited = {}, groups = [], dcolors = ['#7777aa', '#77aa77', '#77aaaa', '#aaaa77'], factory = {'x': 8, 'y': 8, 'speed': 12, 'bsize': 60, 'aispeed': 200, cnum: 4, colors: dcolors.slice(0)};
+
+function gameOver()
+{
+ gameon=0;
+ grid.firstChild.style.display = 'block';
+}
+function visitThat(what, no, arr, lvl)
+{
+ visited[what] = 1;
+ group[what] = no;
+ arr.push(what);
+ 
+ if (what%x && ctable[what-1]==ctable[what] && !visited[what-1])
+ visitThat(what-1, no, arr);
+
+ if (what%x<x-1 && ctable[what+1]==ctable[what] && !visited[what+1])
+ visitThat(what+1, no, arr);
+
+ if ((what/x>>0) && ctable[what-x]==ctable[what] && !visited[what-x])
+ visitThat(what-x, no, arr);
+
+ if ((what/x>>0)<y-1 && ctable[what+x]==ctable[what] && !visited[what+x])
+ visitThat(what+x, no, arr);
+}
+function setGroups()
+{
+ visited = {}; groups = []; group = {};
+ var t, ng = 0;
+ for(t=0;t<x*y;t++)
+ {
+  if (ctable[t] && !visited[t])
+  {
+   groups.push([]);
+   visitThat(t, ng, groups[ng++]);
+  }
+ }
+ for(t=0,ng=groups.length;t<ng;t++)
+ {
+  if (groups[t].length>1) break;
+ }
+ return t<ng?true:false;
+}
+function highlightGroup(sample, mode, ev, ng)
+{
+ if (anim_on || !gameon || (ai_playing && ng==undefined)) return;
+ var no = ng!=undefined?ng:group[sample.coord], t, gcl = groups[no].length;
+ if (gcl<2) return;
+ for(t=0;gcl-t;t++)
+ {
+  cells[groups[no][t]].classList[mode?'add':'remove']('hil');
+ }
+}
+function globalPos(evt)
+{
+ gmx = evt.clientX; gmy = evt.clientY;
+}
+function sweepGroup(sample, event, ng, xf)
+{
+ var no, t, t2, t4, t6, t8, gcl;
+ no = ng!=undefined?ng:group[sample.coord];
+console.log(groups[no].length);
+ if (((!gameon || anim_on || (ai_playing && ng==undefined)))) return;
+ gcl = groups[no].length;
+ if (gcl<2) return;
+ anim_on = 1;
+ if (event)
+ {
+  gmx = event.clientX; gmy = event.clientY;
+  document.onmousemove = globalPos;
+  bestline=null;
+ }
+
+ movehistory.push([ctable.slice(0), bt, last.slice(0)]);
+ for(t=0;gcl-t;t++)
+ {
+  ctable[groups[no][t]] = 0; bt--;
+  cells[groups[no][t]].style.opacity = '0';
+ }
+ mm++; 
+ 
+ if (ai_playing || xf==playAIO) bestline.splice(0, 1);
+ updateUI();
+
+ function nextStep0()
+ {
+  cells[groups[no][0]].removeEventListener('transitionend', nextStep0);
+  for(t=0;gcl-t;t++)
+  {
+   try //yes legally, because if transition ends before we're here, the elem will not be there. fixed
+   {
+    grid.removeChild(cells[groups[no][t]]);
+   }
+   catch(e){}
+  }
+  var cur, rl, longest = 0, lelem;
+  for(t=0;x-t;t++)
+  {
+   for(t2=rl=y-1;t2>=0;t2--)
+   {
+    cur = t2*x+t;
+    if (ctable[cur] && rl-t2)
+    {
+     ctable[rl*x+t]=ctable[cur];
+     ctable[cur] = 0;
+     cells[rl*x+t] = cells[cur];
+     cells[cur].style.top = rl*bspace+'px';
+     cells[cur].coord = rl*x+t;
+     cells[cur].style.transitionDuration = Math.sqrt(2*(rl-t2))/gravity+'s';
+     if (rl-t2>longest)
+     {
+      longest = rl-t2;
+      lelem = cells[cur];
+     }
+     rl--;
+    } else if (ctable[cur]) rl--;
+   }
+  }
+  function nextStep1()
+  {
+   if (lelem)
+   lelem.removeEventListener('transitionend', nextStep1);
+
+   longest = 0; lelem = null;
+   for(rl=t=0;x-t;t++)
+   {
+    cur = (y-1)*x+t;
+    if (ctable[cur] && t-rl)
+    {
+     if (t-rl>longest)
+     {
+      longest = t-rl;
+      lelem = cells[cur];
+     }
+     for(t2=0;t2<y;t2++) 
+     {
+      cur = t2*x+t;
+      ctable[t2*x+rl] = ctable[cur];
+      ctable[cur] = 0;
+      cells[t2*x+rl] = cells[cur];
+      if (cells[cur])
+      {
+       cells[cur].style.left = rl*bspace+'px';
+       cells[cur].coord = t2*x+rl;
+       cells[cur].style.transitionDuration = Math.sqrt(2*(t-rl))/gravity+'s';
+      }
+     }
+     rl++;
+    } else if (ctable[cur]) rl++;
+   }
+   
+   function nextStep2()
+   {
+    if (lelem)
+    lelem.removeEventListener('transitionend', nextStep2);
+    var t, el, gps;
+    for(t=0;t<x*y;t++)
+    {
+     if (cells[t])
+     cells[t].style.transitionDuration = '';
+    }
+    anim_on=0;
+    gps = setGroups();
+    if (event && (el = document.elementFromPoint(gmx, gmy)) && el.classList.contains('cdiv'))
+    highlightGroup(document.elementFromPoint(gmx, gmy), 1);
+    document.onmousemove = null;
+
+    if (!gps)
+    {
+     if (ai_playing) playAI();
+     gameOver();
+    }
+    if (ai_playing)
+    playAINext();
+    updateUI();
+   }
+
+   if (lelem)
+   lelem.addEventListener('transitionend', nextStep2);
+   else nextStep2();
+  }
+  if (lelem)
+  lelem.addEventListener('transitionend', nextStep1);
+  else nextStep1();
+ }
+ //cells[groups[no][0]].addEventListener('transitionend', nextStep0);
+ 
+ function relem()
+ {
+  for(t=0;gcl-t;t++)
+  {
+   try
+   {
+    grid.removeChild(cells[groups[no][t]]);
+   }
+   catch(e){}
+  }
+ }
+ cells[groups[no][0]].addEventListener('transitionend', relem);
+ setTimeout(nextStep0, 120);
+ /*
+  okay I DO know that the fading part is nonsense and it won't work like I wanted when I wrote this
+  but the way it works now has been well tested and I am happy with the result, so I'll leave this nonsense piece of code
+ */
+}
+function newGame(retry, undo, seed)
+{
+ var t, t2, t4 = 0, row, cell, div, lmove;
+ cells.length=0;
+ div = grid.firstChild;
+ while (grid.firstChild)
+ {
+  grid.removeChild(grid.firstChild);
+ }
+ grid.appendChild(div);
+ div.style.display = 'none';
+
+console.log(seed);
+ if (!retry && !undo)
+ {
+  if (!seed)
+  {
+   x = pref['x'];
+   y = pref['y'];
+   cnum = pref.cnum;
+   csettings();
+  }
+  grid.style.width = x*bspace+'px';
+  grid.style.height = y*bspace+'px';
+ }
+ ctable.length=0;
+
+ if (!undo)
+ {
+  movehistory.length = 0;
+  mm = 0;
+  bt = x*y;
+ }
+ else
+ {
+  lmove = movehistory.pop();
+  bt = lmove[1];
+  mm--;
+ }
+ bestline = null;
+ gameon=1;
+
+ if (!retry && !undo)
+ {
+  var newseed = Date.now().toString();
+  Math.seedrandom((seed?seed:newseed)+'x');
+  if (!seed)
+  {
+   hpoke++;
+   window.location.hash = x+'x'+y+'x'+cnum+'x'+newseed;
+  }
+ }
+ for(t=0;t<y;t++)
+ for(t2=0;t2<x;t2++)
+ {
+  ctable[t4] = retry?last[t4]:undo?lmove[0][t4]:Math.floor(Math.random()*cnum)+1;
+  if (!ctable[t4]) 
+  {
+   t4++;
+   continue;
+  }
+  div = document.createElement('div');
+
+  div.coord = t4;
+  div.addEventListener('mouseover', highlightGroup.bind(this, div, 1));
+  div.addEventListener('mouseout', highlightGroup.bind(this, div, 0));
+  div.addEventListener('click', sweepGroup.bind(this, div));
+  div.className = 'cdiv color'+ctable[t4];
+  div.style.left = bspace*t2+'px';
+  div.style.top = bspace*t+'px';
+  cells[t4] = div;
+  grid.appendChild(div);
+  t4++;
+ }
+
+ if (!undo)
+ last = ctable.slice(0);
+ else
+ last = lmove[2];
+
+ if (!setGroups())
+ {
+  newGame();
+  return;
+ }
+ dbgtable = ctable.slice(0);
+ setSize();
+
+ updateUI();
+}
+function updateUI()
+{
+ document.getElementById('rs4-new').disabled=(!ai_playing && !anim_on)?false:true;
+ document.getElementById('rs4-showai').disabled=(anim_on || !gameon)?true:false;
+ document.getElementById('rs4-restart').disabled=(!ai_playing && !anim_on)?false:true;
+ document.getElementById('rs4-undo').disabled=(!ai_playing && !anim_on && movehistory.length)?false:true;
+ document.getElementById('rs4-csize').disabled = (!ai_playing && !anim_on)?false:true;
+ document.getElementById('rs4-resetpref').disabled = anim_on || ai_playing;
+ document.getElementById('rs4-playaim').textContent = ai_playing?'Stop':'Play';
+ document.getElementById('rs4-playaim').disabled = ai_playing?false:(!anim_on && gameon)?false:true;
+ document.getElementById('rs4-playaio').disabled = !gameon || ai_playing || anim_on;
+ var mhidden = bestline?false:true;
+ document.getElementById('rs4-showai').style.display = mhidden?'inline':'none';
+ document.getElementById('rs4-optimal').style.display = mhidden?'none':'inline';
+ document.getElementById('rs4-optimal').textContent = bestscore;
+
+ ms.textContent = bt;
+ ms2.textContent = mm;
+}
+function setSize()
+{
+ mc.style.width = ltable.getBoundingClientRect().width+'px';
+}
+window.onhashchange = function()
+{
+ if (!ai_playing && !anim_on)
+ {
+  if (hpoke) {hpoke--; return}
+  var h = window.location.hash.substr(1).split('x'), ox, oy, oc;
+  ox = x = parseInt(h[0]); oy = y = parseInt(h[1]); oc = cnum = parseInt(h[2]);
+  if (isNaN(x)) x = pref.x; if (isNaN(y)) y = pref.y; if (isNaN(cnum)) cnum = pref.cnum; 
+  x = Math.max(2, x); y = Math.max(2, y); cnum = Math.max(2, cnum);
+  if (ox!=x || oy!=y || oc!=cnum)
+  {
+   window.location.hash = x+'x'+y+'x'+cnum+'x'+h[3];
+   hpoke++;
+  }
+  csettings();
+  newGame(false, false, h[3]);
+ }
+}
+function updateColors()
+{
+ var t, ct = document.querySelectorAll('.rs4Color'), nstyle='';
+ for(t=0;t<cnum;t++)
+ {
+  pref.colors[t] = ct[t].value;
+  nstyle += '.color'+(t+1)+' {background-color: '+pref.colors[t]+';}\n.color'+(t+1)+'.hil {background-color: '+makeBright(pref.colors[t])+';}\n';
+ }
+ localStorage.setItem('zb3.rs4e.pref', JSON.stringify(pref));
+ document.getElementById('rs4-colorscss').innerHTML = nstyle;
+}
+function csettings()
+{
+ var t, cont = document.getElementById('rs4-colorsarea'), nel;
+ cont.innerHTML='';
+ for(t=0;t<cnum;t++)
+ {
+  if (pref.colors.length==t) pref.colors.push('#777777');
+  nel = document.createElement('input'); nel.className = 'rs4Color';
+  nel.type = 'color'; nel.value=pref.colors[t];
+  nel.addEventListener('change', updateColors);
+  cont.appendChild(nel);
+  if (t<cnum-1) cont.appendChild(document.createTextNode(' '));
+ }
+ updateColors();
+}
+
+function init()
+{
+ zm.elements.init();
+
+ pref = localStorage.getItem('zb3.rs4e.pref');
+ if (pref && pref!='undefined')
+ {
+  pref = JSON.parse(pref);
+ }
+ else pref = JSON.parse(JSON.stringify(factory));
+ grid = document.getElementById('rs4-cont');
+ grid.ondragstart = function(){return false};
+ mc = document.getElementById('maincont');
+ ltable = document.getElementById('layout');
+ ms = document.getElementById('rs4-boxes');
+ ms2 = document.getElementById('rs4-moves');
+ csize = document.getElementById('rs4-csize');
+
+ document.getElementById('rs4-new').addEventListener('click', function()
+ {
+  newGame();
+ });
+ document.getElementById('rs4-newgame').addEventListener('click', function()
+ {
+  newGame();
+ });
+ document.getElementById('rs4-retry').addEventListener('click', function()
+ {
+  newGame(true);
+ });
+ document.getElementById('rs4-restart').addEventListener('click', function()
+ {
+  newGame(true);
+ });
+ document.getElementById('rs4-playaim').addEventListener('click', function()
+ {
+  playAI();
+ });
+ document.getElementById('rs4-playaio').addEventListener('click', function()
+ {
+  playAIO();
+ });
+ document.getElementById('rs4-showai').addEventListener('click', function()
+ {
+  solve();
+  updateUI();
+ });
+ document.getElementById('rs4-undo').addEventListener('click', function()
+ {
+  newGame(false, true);
+ });
+ document.getElementById('rs4-resetpref').addEventListener('click', function()
+ {
+  var npref = JSON.parse(JSON.stringify(factory)), t, el, ell;
+  npref.x=pref.x;npref.y=pref.y;npref.cnum=pref.cnum;
+  pref=npref;
+  for(t=0, el = document.querySelectorAll('[data-rs4-key]'), ell=el.length;t<ell;t++)
+  {
+   if (el[t].tagName.substr(0, 2)=='ZM')
+   el[t].dataset.value = pref[el[t].dataset.rs4Key];
+   else if (el[t].tagName.substr(0, 2)=='SE')
+   {
+    el[t].selectedIndex = pref[el[t].dataset.rs4Key];
+    el[t].dispatchEvent(new CustomEvent('change'));
+   }
+   else
+   {el[t].value = pref[el[t].dataset.rs4Key];    el[t].dispatchEvent(new CustomEvent('change'));}
+  }
+  csettings();
+ });
+ 
+ 
+ function getVal(el)
+ {
+  if (el.tagName.substr(0, 2)=='ZM')
+  return el.dataset.value;
+  else
+  return el.value;
+ }
+ var stylecfg, t, el;
+ for(t=0,el=document.styleSheets.length;t<el;t++)
+ {
+  if (document.styleSheets[t].title=='rs4-cfg')
+  {
+   stylecfg=document.styleSheets[t];
+   break;
+  }
+ }
+ function setBsize(to)
+ {
+  bsize = to;
+  bspace = to+2;
+  stylecfg.cssRules[0].style.width = bsize+'px';
+  stylecfg.cssRules[0].style.height = bsize+'px';
+  grid.style.width = x*bspace+'px';
+  grid.style.height = y*bspace+'px';
+  setSize(); var t, od;
+  for(t=0;t<cells.length;t++)
+  {
+   od = cells[t].style.transitionDuration;
+   cells[t].style.transitionDuration = '0s';
+   cells[t].style.left = (cells[t].coord%x)*bspace+'px';
+   cells[t].style.top = (cells[t].coord/x>>0)*bspace+'px';
+   cells[t].clientHeight;
+   cells[t].style.transitionDuration = od;
+  }
+ }
+ for(t=0, el = document.querySelectorAll('[data-rs4-key]'), ell=el.length;t<ell;t++)
+ {
+  if (el[t].tagName.substr(0, 2)=='ZM')
+  el[t].dataset.value = pref[el[t].dataset.rs4Key];
+  else
+  el[t].value = pref[el[t].dataset.rs4Key];
+  if (el[t].dataset.rs4Key=='speed')
+  gravity = pref[el[t].dataset.rs4Key];
+  else if (el[t].dataset.rs4Key=='bsize')
+  setBsize(pref['bsize']);
+  else if (el[t].dataset.rs4Key=='aispeed')
+  aispeed = pref['aispeed'];
+
+  (function(t)
+  {
+   el[t].addEventListener('change', function(event)
+   {
+    pref[el[t].dataset.rs4Key] = ((el[t].dataset.rs4Type=='int')?parseInt:(el[t].dataset.rs4Type=='text')?n:parseFloat)(getVal(el[t]));
+    if (el[t].dataset.rs4Key=='speed')
+    gravity = pref[el[t].dataset.rs4Key];
+    else if (el[t].dataset.rs4Key=='bsize')
+    setBsize(pref['bsize']);
+    else if (el[t].dataset.rs4Key=='aispeed')
+    aispeed = pref['aispeed'];
+    localStorage.setItem('zb3.rs4e.pref', JSON.stringify(pref));
+   }, false);
+  })(t);
+ }
+ if (window.location.hash)
+ window.onhashchange()
+ else
+ newGame();
+}
+document.addEventListener('DOMContentLoaded', init);
+
+function makeBright(wat)
+{
+ return '#'+('0'+Math.min(parseInt(parseInt(wat.substr(1, 2), 16)*1.17647058824), 255).toString(16)).slice(-2)+('0'+Math.min(parseInt(parseInt(wat.substr(3, 2), 16)*1.17647058824), 255).toString(16)).slice(-2)+('0'+Math.min(parseInt(parseInt(wat.substr(5, 2), 16)*1.17647058824), 255).toString(16)).slice(-2);
+ 
+}
+</script>
+<script>
+//click
+function hey()
+{
+ var evt = new MouseEvent('click', {'view': window, 'bubbles': true,'cancelable': true});
+ var x = Math.floor(Math.random()*document.body.clientWidth), y = Math.floor(Math.random()*document.body.clientHeight);
+ if (document.elementFromPoint(x, y))
+ document.elementFromPoint(x, y).dispatchEvent(evt);
+ window.setTimeout(hey, 100);
+}
+function visible(element) {
+  if (element.offsetWidth === 0 || element.offsetHeight === 0) return false;
+  var rects = element.getClientRects(),
+      on_top = function(r) {
+        var x = (r.left + r.right)/2, y = (r.top + r.bottom)/2;
+        return document.elementFromPoint(x, y) === element;
+      };
+  for (var i = 0, l = rects.length; i < l; i++) {
+    var r = rects[i];
+    if (on_top(r)) return true;
+  }
+  return false;
+}
+function hey2()
+{
+var candidates = document.querySelectorAll('button,input,div');
+ var who = Math.floor(Math.random()*candidates.length);
+ var evt = new MouseEvent('click', {'view': window, 'bubbles': true,'cancelable': true});
+ if (visible(candidates[who]))
+ candidates[who].dispatchEvent(evt);
+ window.setTimeout(hey2, 50);
+}
+</script>
+<br><br>

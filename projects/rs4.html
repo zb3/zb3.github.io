@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<style>
+body {background-color: black; color: white; font-family: arial;}
+#maincont
+{
+ width: 800px;
+ margin:auto;
+}
+#maincont h1
+{
+ text-align: center;
+}
+#rs4-cont
+{
+ position: relative;
+}
+.cdiv
+{
+ box-sizing: border-box;
+ position: absolute;
+}
+.selBox
+{
+ border:3px solid black;
+}
+.selHint
+{
+ border:3px solid #93d5ff;
+}
+#layout td
+{
+ vertical-align: top;
+}
+#layout > tbody > tr > td:nth-child(2)
+{
+ padding-left: 16px;
+}
+.silver
+{
+ color: #bbb;
+}
+#rs4-target
+{
+ margin-left: 4px;
+}
+#rs4-moves, #rs4-slength
+{
+ color: #bff;
+}
+#rs4-overlay
+{
+ display: none;
+ position: absolute;
+ width: 100%;
+ height: 100%;
+ background-color: rgba(0, 0, 0, 0.4);
+ z-index: 1;
+}
+#rs4-pmenu
+{
+ position: absolute;
+ top: 0; left: 0; bottom: 0; right: 0;
+ margin:auto;
+ width: 140px;
+ height: 92px;
+}
+.rs4-pbutton
+{
+ background-color: rgba(0, 0, 0, 0.6);
+ padding: 9px;
+ width: 120px;
+ height: 26px;
+ font-family: Arial;
+ font-size: 24px;
+ border: 1px solid #999;
+ cursor: pointer;
+ text-align: center;
+}
+.rs4-pbutton:hover
+{
+ color: #bff;
+}
+.rs4-anim
+{
+ -webkit-perspective: 600px;
+ perspective: 600px;
+ position: absolute;
+}
+zm-zc14 input
+{
+ width: 20px !important;
+}
+input[type=range]
+{
+ margin: 0px;
+ margin-top: 2px;
+}
+</style>
+<style title="rs4-cfg">
+.cdiv
+{
+ width:60px; height:60px;
+}
+.rs4-anim
+{
+ transition: all 0.4s linear;
+}
+.color0
+{
+ background-color: #7777aa;
+}
+.color0.hil
+{
+ background-color: #8c8cc8;
+}
+.color1
+{
+ background-color: #77aa77;
+}
+.color1.hil
+{
+ background-color: #8cc88c;
+}
+.color2
+{
+ background-color: #77aaaa;
+}
+.color2.hil
+{
+ background-color: #8cc8c8;
+}
+.color3
+{
+ background-color: #aaaa77;
+}
+.color3.hil
+{
+ background-color: #c8c88c;
+}
+</style>
+<div id="maincont">
+<h1><span class="silver">RS</span>4 game</h1>
+In this game, you select a box and then select another, and reverse the part between them(including them). That's when the name came from although it's a bit misleading because RS4 means "reverse 5 boxes" :)<br>Your goal is to arrange the boxes so that there are four squares on the board (order matters). Press "show target" to see it.<br><br>This game uses cool CSS3 3D features, as well as Workers for solver, so that the UI won't be frozen during the search process.<br>You can bookmark the URL to play the same board again.<br>If this game is not what you initially thought it was, then maybe the <a href="index.php5?page=misc&tool=rs4e">encore</a> version will be what you thought it was :)<br><br>
+<button id="rs4-target">Show target</button>
+<table id="layout"><tr><td>
+<div id="rs4-cont"><div id="rs4-overlay"><div id="rs4-pmenu"><div class="rs4-pbutton" id="rs4-newgame">New Game</div><div class="rs4-pbutton last" id="rs4-retry">Restart</div></div></div></div>
+<td>
+Game type:<br><select id="rs4-type" data-rs4-key="type"><option>RS4<option>RS5<option>Custom</select>
+<div><div id="rs4-cconfig"><br>
+Square size:<br><zm-zc14 data-min=2 data-type="int" id="rs4-zsize" data-rs4-key="csize"></zm-zc14><br>
+RS:<br><zm-zc14 data-min=2 data-type="int" id="rs4-zrs" data-rs4-key="crs"></zm-zc14>
+</div></div>
+<br><button id="rs4-new">New Game</button><br><button id="rs4-restart">Restart</button> <button id="rs4-undo">Undo</button><br><br>Moves: <span id="rs4-moves">0</span><div id="rs4-sol"><hr>
+Search method: <select id="rs4-soltype" data-rs4-key="solver"><option>1 (Fastest)<option>2<option>3<option>4<option>5<option>6 (shortest)<option>7 (shortest)</select><br>
+<button id="rs4-searchsol">Search solution</button>
+<div id="rs4-solarea"><br>Solution length: <span id="rs4-slength"></span><br><button id="rs4-playone">Play one</button> <button id="rs4-playsol">Play</button></div></div>
+<hr><button id="rs4-resetpref">Reset preferences</button><br><br>Animation speed:<br><input type="range" min=-1.0 max=-0.06 step=0.01 data-rs4-key="animSpeed"><br><br>Box size:<br><input id="rs4-csize" type="range" min=30 max=100 data-rs4-key="bsize"><br><br>AI delay:<br><input id="rs4-aispeed" type="range" min=0 max=3000 data-rs4-key="aispeed"><br><br>Colors:<br><input type="color" data-rs4-key="c0" id="rs4-c0" data-rs4-type="text"> <input type="color" data-rs4-key="c1" id="rs4-c1" data-rs4-type="text"><br><input type="color" data-rs4-key="c2" id="rs4-c2" data-rs4-type="text"> <input type="color" data-rs4-key="c3" id="rs4-c3" data-rs4-type="text"> 
+</table>
+</div>
+<script src="seedrandom.js"></script>
+<script src="zm.js"></script> 
+<script>
+//"omg u extend Arary!!111"
+//yes I do, because there is no .extend function that performs good
+Array.prototype.extend = function(array)
+{
+ for (var t=0,tl = array.length;t<tl;++t)
+ this.push(array[t]);  
+ return this; 
+}
+var x = 6, y = 6, rs = 4, ctable = [], t, t2, t4=0, sel = -1, gameon = 1, anim_on = 0, solution_on = 0, pref, act = 0;
+var grid, ltable, mc, cells = [], solved, ms, mm = 0, tmoves = [], solution=null, sol_index=-1, gm, spos=0, hpoke=0;
+var aispeed, bspace, bsize, factory={type: 0, csize: 3, crs: 4, solver: 0, animSpeed: -0.4, bsize: 60, aispeed:100, c0: '#7777aa', c1: '#77aa77', c2: '#77aaaa', c3: '#aaaa77'};
+function updateUI()
+{
+ ms.textContent = tmoves.length;
+ document.getElementById('rs4-new').disabled = anim_on || solution_on;
+ document.getElementById('rs4-restart').disabled = anim_on || solution_on;
+ document.getElementById('rs4-undo').disabled = anim_on || solution_on || tmoves.length==0;
+ document.getElementById('rs4-csize').disabled = anim_on || solution_on;
+ document.getElementById('rs4-resetpref').disabled = anim_on || solution_on;
+ document.getElementById('rs4-overlay').style.display=gameon?'none':'block';
+ document.getElementById('rs4-target').disabled = anim_on || solution_on || !gameon;
+ document.getElementById('rs4-playsol').disabled = !gameon || (anim_on && !solution_on);
+ document.getElementById('rs4-playsol').textContent = solution_on?'Stop':'Play';
+ document.getElementById('rs4-playone').disabled = anim_on || solution_on || !gameon;
+ document.getElementById('rs4-searchsol').disabled = anim_on || solution_on || !gameon;
+}
+function newGame(restart, undo, seed)
+{
+ cancelSolution();
+ if (!restart && !undo && !seed)
+ {
+  x=y=pref.type==2?2*pref.csize:6;
+  rs=pref.type==2?pref['crs']:pref.type==1?5:4;
+ }
+ var t, t2, t4 = 0, row, cell, div;
+ cells.length=0;
+ if (!undo)
+ {
+  ctable.length=0;
+  tmoves.length=0;
+ }
+ div = grid.firstChild;
+ while (grid.firstChild)
+ {
+  grid.removeChild(grid.firstChild);
+ }
+ grid.appendChild(div);
+
+ grid.style.width = x*bspace+'px';
+ grid.style.height = y*bspace+'px';
+ 
+ if (undo)
+ {
+  var l = tmoves.pop();
+  doReverse(l[0], l[1]);
+  tmoves.pop();
+ }
+ else if (restart) ctable=gm.slice(0);
+
+ if (restart || undo)
+ {
+  if (tmoves.length<sol_index)
+  solutionOff();
+  else spos = Math.min(spos, tmoves.length-sol_index);
+ } else solutionOff();
+
+ for(t=0;t<y;t++)
+ for(t2=0;t2<x;t2++)
+ {
+  if (!undo && !restart)
+  ctable[t4] = ((t<(y/2)?0:2)|(t2<(x/2)?0:1));
+  div = document.createElement('div');
+  div.className = 'cdiv color'+ctable[t4];
+  div.addEventListener('click', (function(div, t4, t2, t){return function(){processClick(div, t4, t2, t);}})(div, t4, t2, t));
+  div.style.left = bspace*t2+'px';
+  div.style.top = bspace*t+'px';
+  cells.push(div);
+  grid.appendChild(div);
+  t4++;
+ }
+ setSize();
+ if (!undo && !restart)
+ solved = ctable.slice(0);
+ gameon = 1;
+ if (!undo && !restart)
+ {
+  var newseed = Date.now().toString();
+  Math.seedrandom((seed?seed:newseed)+'x');
+  if (!seed)
+  {
+   hpoke++;
+   window.location.hash = x+'x'+rs+'x'+newseed;
+  }
+  scramble(50*x*y);
+ }
+ if (!undo)
+ gm=ctable.slice(0);
+ updateUI();
+}
+function paintBoxes(tbl)
+{
+ if (!tbl) tbl = ctable;
+ var t;
+ for(t=0;t<x*y;t++)
+ {
+  cells[t].classList.remove('color0', 'color1', 'color2', 'color3');
+  cells[t].classList.add('color'+tbl[t]);
+ }
+}
+function doReverse(no, sel, board)
+{
+ if (!board)
+ {
+  tmoves.push([no, sel]);
+  board=ctable;
+ }
+ var tt, tt2, tt4 = Math.floor((rs+1)/2), pt = Math.min(no, sel), step = (Math.abs(no-sel)<x)?1:x;
+ for(tt=0;tt<tt4;tt++)
+ {
+  board[pt+tt*step] ^= board[pt+(rs-tt)*step];
+  board[pt+(rs-tt)*step] ^= board[pt+tt*step];
+  board[pt+tt*step] ^= board[pt+(rs-tt)*step];
+ }
+}
+function moveStamp(board, no, sel, rev)
+{
+ var tt, tt2, tt4 = rs+1, pt = Math.min(no, sel), step = (Math.abs(no-sel)<x)?1:x, ret = pt+'x'+Math.max(no.sel)+'x';
+ for(tt=rev?tt4-1:0;rev?tt>=0:tt<tt4;rev?tt--:tt++)
+ {
+  ret+=(board[pt+tt*step]+'');
+ }
+ return ret;
+}
+function isChanged(no, sel, board)
+{
+ var tt, tt2, tt4 = rs+1, pt = Math.min(no, sel), step = (Math.abs(no-sel)<x)?1:x;
+ for(tt=0;tt<tt4;tt++)
+ {
+  if (board[pt+tt*step]) return true;
+ }
+ return false;
+}
+function oneVal(no, sel, board)
+{
+ var tt, tt2, tt4 = rs+1, pt = Math.min(no, sel), step = (Math.abs(no-sel)<x)?1:x, ret = board[no];
+ for(tt=0;tt<tt4;tt++)
+ {
+  if (board[pt+tt*step]!=ret) return -1;
+ }
+ return ret;
+}
+function markMove(no, sel, board, mark)
+{
+ var tt, tt2, tt4 = rs+1, pt = Math.min(no, sel), step = (Math.abs(no-sel)<x)?1:x;
+ for(tt=0;tt<tt4;tt++)
+ {
+  board[pt+tt*step] = mark;
+ }
+}
+function startMove(no, m, callback)
+{
+ if (m!==undefined) sel=m;
+ cancelSolution();
+ var type = Math.abs(no-sel)<x?0:1, t;
+ var start = Math.min(no, sel), cx = start%x, cy = start/x>>0;
+ var step = type?x:1;
+
+ for(t=0;t<x*y;t++)
+ cells[t].classList.remove('selBox',  'selHint');
+
+ doReverse(no, sel);
+
+ var div = document.createElement('div'), d2;
+ div.className = 'rs4-anim';
+ div.style.left = cx*bspace+'px'; div.style.top = cy*bspace+'px';
+ div.style.width = (type?1:Math.abs(no-sel)+1)*bspace+(type?0:-2)+'px';
+ div.style.height = (type?Math.abs(no-sel)/x+1:1)*bspace+(type?-2:0)+'px';
+
+ for(t=0;t<=rs;t++)
+ {
+  d2 = cells[start+t*step].cloneNode();
+  cells[start+t*step].style.display = 'none';
+  d2.style.left = parseInt(d2.style.left)-cx*bspace+'px';
+  d2.style.top = parseInt(d2.style.top)-cy*bspace+'px';
+  div.appendChild(d2);
+ }
+
+ grid.appendChild(div);
+ paintBoxes();
+
+ anim_on=1;
+ updateUI();
+ div.style.transform = 'rotate'+(type?'X':'Y')+'(0deg)';
+ div.style.webkitTransform = 'rotate'+(type?'X':'Y')+'(0deg)';
+ var hack = div.clientHeight;
+ div.addEventListener('transitionend', function()
+ {
+  grid.removeChild(div);
+  for(t=0;t<=rs;t++)
+  {
+   cells[start+t*step].style.display = 'block';
+  }
+  anim_on=0;
+  if (!notTheSame(ctable, solved))
+  {
+   solvedAnim(callback);
+  }
+  else if (m!==undefined)
+  {
+   if (callback)
+   callback();
+  }
+  updateUI();
+ });
+ div.style.transform = 'rotate'+(type?'X':'Y')+'(180deg)';
+ div.style.webkitTransform = 'rotate'+(type?'X':'Y')+'(180deg)';
+}
+animate=1
+function processClick(el, no, cx, cy)
+{
+ if (!gameon || anim_on || solution_on) return;
+ var t, hint = el.classList.contains('selHint'), box = el.classList.contains('selBox');
+ for(t=0;t<x*y;t++)
+ cells[t].classList.remove('selBox',  'selHint');
+ if (hint)
+ {
+  startMove(no);
+ }
+ else if (!box)
+ {
+  el.classList.add('selBox'); sel = no;
+  if (cy>(rs-1)) cells[x*(cy-rs)+cx].classList.add('selHint');
+  if (cy<(y-rs)) cells[x*(cy+rs)+cx].classList.add('selHint');
+  if (cx>(rs-1)) cells[x*cy+cx-rs].classList.add('selHint');
+  if (cx<(x-rs)) cells[x*cy+cx+rs].classList.add('selHint');
+ }
+}
+function r(min, max)
+{
+ return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function _visit(ctable, what, no, arr, visited)
+{
+ visited[what] = 1;
+ arr.push(what);
+ 
+ if (what%x && ctable[what-1]==ctable[what] && !visited[what-1])
+ _visit(ctable, what-1, no, arr, visited);
+
+ if (what%x<x-1 && ctable[what+1]==ctable[what] && !visited[what+1])
+ _visit(ctable, what+1, no, arr, visited);
+
+ if ((what/x>>0) && ctable[what-x]==ctable[what] && !visited[what-x])
+ _visit(ctable, what-x, no, arr, visited);
+
+ if ((what/x>>0)<y-1 && ctable[what+x]==ctable[what] && !visited[what+x])
+ _visit(ctable, what+x, no, arr, visited);
+}
+function getGroups(board)
+{
+ var visited = {}, groups = [];
+ var t, ng = 0, tl=board.length;
+ for(t=0;t<tl;t++)
+ {
+  if (!visited[t])
+  {
+   groups.push([]);
+   _visit(board, t, ng, groups[ng++], visited);
+  }
+ }
+ return groups.length;
+}
+function scramble(moves)
+{
+ var made = 0, tx, ty, mv, ch = {};
+ while(made<moves)
+ {
+  tx = r(0, x-1); ty = r(0, y-1); mv = r(0, 3);
+  made++; ch[ctable.toString()] = 1;
+  if(mv==0 && tx>(rs-1)) doReverse(ty*x+tx, ty*x+tx-rs);
+  else if(mv==1 && tx<(x-rs)) doReverse(ty*x+tx, ty*x+tx+rs);
+  else if(mv==2 && ty>(rs-1)) doReverse(ty*x+tx, (ty-rs)*x+tx);
+  else if(mv==3 && ty<(y-rs)) doReverse(ty*x+tx, (ty+rs)*x+tx);
+  else {made--;continue;}
+  if (ch[ctable.toString()])
+  {
+   doReverse(tmoves[tmoves.length-1][0], tmoves[tmoves.length-1][1]);
+   tmoves.length -= 2;
+   made--;continue;
+  } else {ch[ctable.toString()]=1;}
+ }
+ tmoves.length=0;
+ paintBoxes();
+}
+function notTheSame(a, b)
+{
+ for(var t=0;t<a.length;t++) if (a[t]!=b[t]) return true;
+ return false;
+}
+function setSize()
+{
+ mc.style.width = x*bspace+270+'px';
+}
+function undoCustomMoves()
+{
+ var m;
+ if (m=tmoves.length-sol_index-spos)
+ {
+  var c = confirm('To play the next segment of the solution, I need to undo '+m+' moves you made. If you want to play the solution from this point, you must search for a new one. Undo these moves?'), t, l;
+  if (c)
+  {
+   for(t=0;t<m;t++)
+   {
+    l = tmoves.pop();
+    doReverse(l[0], l[1]);
+    tmoves.pop();
+   }
+   return true;
+  }
+  return false;
+ }
+ return true;
+}
+function init()
+{
+ zm.elements.init();
+
+ pref = localStorage.getItem('zb3.rs4.pref');
+ if (pref && pref!='undefined')
+ {
+  pref = JSON.parse(pref);
+ }
+ else pref = JSON.parse(JSON.stringify(factory));
+
+ grid = document.getElementById('rs4-cont');
+ mc = document.getElementById('maincont');
+ ltable = document.getElementById('layout');
+ ms = document.getElementById('rs4-moves');
+
+ document.getElementById('rs4-type').addEventListener('change', function(e)
+ {
+  document.getElementById('rs4-cconfig').style.display = e.target.selectedIndex==2?'block':'none';
+ });
+ document.getElementById('rs4-zsize').addEventListener('change', function(e)
+ {
+  document.getElementById('rs4-zrs').dataset.max = 2*parseInt(e.target.dataset.value)-1;
+ });
+ document.getElementById('rs4-new').addEventListener('click', function()
+ {
+  newGame();
+ });
+ document.getElementById('rs4-newgame').addEventListener('click', function()
+ {
+  newGame();
+ });
+ document.getElementById('rs4-restart').addEventListener('click', function()
+ {
+  newGame(true);
+ });
+ document.getElementById('rs4-retry').addEventListener('click', function()
+ {
+  newGame(true);
+ });
+ document.getElementById('rs4-undo').addEventListener('click', function()
+ {
+  newGame(false, true);
+ });
+ document.getElementById('rs4-searchsol').addEventListener('click', function()
+ {
+  if (solver) cancelSolution();
+  else
+  {
+   if ((x!=6 || (rs!=4 && rs!=5)) && x!=4)
+   {
+    var c = confirm('Solver was made to work with 6x6 board in RS4 and RS5 only. It may not find any solution or behave slowly. Do you want to continue?');
+    if (c) requestSolution();
+   }
+   else requestSolution();
+  }
+  updateUI();
+ });
+ document.getElementById('rs4-playone').addEventListener('click', function()
+ {
+  cancelSolution();
+  if (undoCustomMoves())
+  startMove(solution[spos][0], solution[spos][1]); spos++;
+ });
+ document.getElementById('rs4-playsol').addEventListener('click', function()
+ {
+  cancelSolution();
+  if (!solution_on && undoCustomMoves())
+  startSolver();
+  else
+  {
+   clearTimeout(mt);
+   solution_on = 0;
+   updateUI();
+  }
+ });
+ document.getElementById('rs4-target').addEventListener('mousedown', function()
+ {
+  paintBoxes(solved);
+ });
+ document.getElementById('rs4-target').addEventListener('mouseup', function()
+ {
+  paintBoxes();
+ });
+ document.getElementById('rs4-resetpref').addEventListener('click', function()
+ {
+  var npref = JSON.parse(JSON.stringify(factory)), t, el, ell;
+  npref.type=pref.type;npref.size=pref.size;npref.crs=pref.crs;npref.solver=pref.solver;
+  pref=npref;
+  for(t=0, el = document.querySelectorAll('[data-rs4-key]'), ell=el.length;t<ell;t++)
+  {
+   if (el[t].tagName.substr(0, 2)=='ZM')
+   el[t].dataset.value = pref[el[t].dataset.rs4Key];
+   else if (el[t].tagName.substr(0, 2)=='SE')
+   {
+    el[t].selectedIndex = pref[el[t].dataset.rs4Key];
+    el[t].dispatchEvent(new CustomEvent('change'));
+   }
+   else
+   {el[t].value = pref[el[t].dataset.rs4Key];    el[t].dispatchEvent(new CustomEvent('change'));}
+  }
+ });
+
+ function getVal(el)
+ {
+  if (el.tagName.substr(0, 2)=='ZM')
+  return el.dataset.value;
+  else if (el.tagName.substr(0, 2)=='SE')
+  return el.selectedIndex;
+  else
+  return el.value;
+ }
+ var stylecfg, t, el;
+ for(t=0,el=document.styleSheets.length;t<el;t++)
+ {
+  if (document.styleSheets[t].title=='rs4-cfg')
+  {
+   stylecfg=document.styleSheets[t];
+   break;
+  }
+ } 
+ function setBsize(to)
+ {
+  bsize = to;
+  bspace = to+2;
+  stylecfg.cssRules[0].style.width = bsize+'px';
+  stylecfg.cssRules[0].style.height = bsize+'px';
+  grid.style.width = x*bspace+'px';
+  grid.style.height = y*bspace+'px';
+  var t, od;
+  for(t=0;t<cells.length;t++)
+  {
+   cells[t].style.left = (t%x)*bspace+'px';
+   cells[t].style.top = (t/x>>0)*bspace+'px';
+   cells[t].clientHeight;
+  }
+  setSize(); 
+ }
+ function syncColors()
+ {
+  stylecfg.cssRules[2].style.backgroundColor = document.getElementById('rs4-c0').value;
+  stylecfg.cssRules[3].style.backgroundColor = makeBright(document.getElementById('rs4-c0').value);
+  stylecfg.cssRules[4].style.backgroundColor = document.getElementById('rs4-c1').value;
+  stylecfg.cssRules[5].style.backgroundColor = makeBright(document.getElementById('rs4-c1').value);
+  stylecfg.cssRules[6].style.backgroundColor = document.getElementById('rs4-c2').value;
+  stylecfg.cssRules[7].style.backgroundColor = makeBright(document.getElementById('rs4-c2').value);
+  stylecfg.cssRules[8].style.backgroundColor = document.getElementById('rs4-c3').value;
+  stylecfg.cssRules[9].style.backgroundColor = makeBright(document.getElementById('rs4-c3').value);
+ }
+ function setAnimSpeed(to)
+ {
+  stylecfg.cssRules[1].style.transitionDuration = to+'s';
+ }
+ function n(a) {return a;}
+ for(t=0, el = document.querySelectorAll('[data-rs4-key]'), ell=el.length;t<ell;t++)
+ {
+  if (el[t].tagName.substr(0, 2)=='ZM')
+  el[t].dataset.value = pref[el[t].dataset.rs4Key];
+  else if (el[t].tagName.substr(0, 2)=='SE')
+  {
+   el[t].selectedIndex = pref[el[t].dataset.rs4Key];
+   el[t].dispatchEvent(new CustomEvent('change'));
+  }
+  else
+   {el[t].value = pref[el[t].dataset.rs4Key];    el[t].dispatchEvent(new CustomEvent('change'));}
+  if (el[t].dataset.rs4Key=='animSpeed')
+  setAnimSpeed(-pref[el[t].dataset.rs4Key]);
+  else if (el[t].dataset.rs4Key=='bsize')
+  setBsize(pref['bsize']);
+  else if (el[t].dataset.rs4Key=='aispeed')
+  aispeed = pref['aispeed'];
+  else if (el[t].getAttribute('type')=='color')
+  syncColors();
+
+  (function(t)
+  {
+   el[t].addEventListener('change', function(event)
+   {
+    pref[el[t].dataset.rs4Key] = ((el[t].dataset.rs4Type=='int')?parseInt:(el[t].dataset.rs4Type=='text')?n:parseFloat)(getVal(el[t]));
+    if (el[t].dataset.rs4Key=='animSpeed')
+    setAnimSpeed(-pref[el[t].dataset.rs4Key]);
+    else if (el[t].dataset.rs4Key=='bsize')
+    setBsize(pref['bsize']);
+    else if (el[t].dataset.rs4Key=='aispeed')
+    aispeed = pref['aispeed'];
+    else if (el[t].getAttribute('type')=='color')
+    syncColors();
+   
+    localStorage.setItem('zb3.rs4.pref', JSON.stringify(pref));
+   }, false);
+  })(t);
+ }
+
+ if (window.location.hash) window.onhashchange();
+ else
+ newGame();
+ 
+}
+function solvedAnim(callback)
+{
+ anim_on=1;
+ for(var t=0;t<x*y;t++)
+ cells[t].classList[act%2?'remove':'add']('hil');
+ act++;
+ if (act<6)
+ {
+  setTimeout(solvedAnim.bind(this, callback), 170);
+ }
+ else
+ {
+  act=0;
+  anim_on=0;
+  gameon=0;
+  solution_on=0;
+  if (callback)
+  callback();
+  updateUI();
+ }
+}
+document.addEventListener('DOMContentLoaded', init);
+var solver;
+function requestSolution()
+{
+ if (solver)
+ {
+  solver.terminate();
+  solver=null;
+ }
+ solver = new Worker('rs4_solver.js');
+ solver.onmessage = function(msg)
+ {
+  if (msg.data=='fail') 
+  {
+   console.log('failed to solve');
+  }
+  else
+  {
+   if (msg.data && msg.data.type && msg.data.type=='debug')
+   {
+    console.log(msg.data.msg);
+    return;
+   }
+   if (msg.data.board)
+   {
+    nb = msg.data.board;
+    return;
+   }
+   solution = msg.data.moves;
+   console.timeEnd('sol');
+   console.log('got solution: ', solution.length);
+   sol_index=tmoves.length;
+   spos=0;
+   document.getElementById('rs4-slength').textContent=solution.length;
+   document.getElementById('rs4-solarea').style.display = 'block';
+   cancelSolution();
+  }
+ }
+ document.getElementById('rs4-soltype').disabled=true;
+ document.getElementById('rs4-searchsol').textContent='Stop searching...';
+ solver.postMessage({x: x, y: y, solved: solved, ctable: ctable, rs: rs, type: pref.solver});
+}
+function solutionOff()
+{
+ document.getElementById('rs4-solarea').style.display = 'none';
+ spos=0; sol_index=-1;
+}
+function cancelSolution()
+{
+ if (solver)
+ {
+  solver.terminate();
+  solver=null;
+ }
+ document.getElementById('rs4-soltype').disabled=false;
+ document.getElementById('rs4-searchsol').textContent='Search solution';
+}
+
+function setTick()
+{
+ if (solution_on)
+ mt = window.setTimeout(nextTick, aispeed);
+}
+function nextTick()
+{
+ if (spos>=solution.length)
+ {
+  solution_on=0;
+  updateUI();
+  return;
+ }
+ startMove(solution[spos][0], solution[spos][1], setTick);spos++;
+}
+function startSolver()
+{
+ if (!solution) return;
+ solution_on=1; updateUI();
+ nextTick();
+}
+window.onhashchange = function()
+{
+ if (!solution_on && !anim_on)
+ {
+  if (hpoke) {hpoke--; return}
+  var h = window.location.hash.substr(1).split('x');
+  y=x=parseInt(h[0]); rs = parseInt(h[1]);
+ 
+  var ox = x, ors=rs;
+  if (isNaN(x)) x=3;
+  if (isNaN(rs)) rs=4;
+  if (x%2) {x++;y++;}
+  if (x<2) x=y=2;
+  if (rs<2) rs = 2;
+  if (rs>2*x-1) rs=2*x-1;
+
+  if (ox!=x || ors!=rs)
+  {
+   window.location.hash = x+'x'+rs+'x'+h[2];
+   hpoke++;
+  }
+  newGame(false, false, h[2]);
+ }
+}
+
+
+function makeBright(wat)
+{
+ return '#'+('0'+Math.min(parseInt(parseInt(wat.substr(1, 2), 16)*1.17647058824), 255).toString(16)).slice(-2)+('0'+Math.min(parseInt(parseInt(wat.substr(3, 2), 16)*1.17647058824), 255).toString(16)).slice(-2)+('0'+Math.min(parseInt(parseInt(wat.substr(5, 2), 16)*1.17647058824), 255).toString(16)).slice(-2);
+ 
+}
+function visible(element) {
+  if (element.offsetWidth === 0 || element.offsetHeight === 0) return false;
+  var rects = element.getClientRects(),
+      on_top = function(r) {
+        var x = (r.left + r.right)/2, y = (r.top + r.bottom)/2;
+        return document.elementFromPoint(x, y) === element;
+      };
+  for (var i = 0, l = rects.length; i < l; i++) {
+    var r = rects[i];
+    if (on_top(r)) return true;
+  }
+  return false;
+}
+function hey2()
+{
+var candidates = document.querySelectorAll('button,input,div');
+ var who = Math.floor(Math.random()*candidates.length);
+ var evt = new MouseEvent('click', {'view': window, 'bubbles': true,'cancelable': true});
+ if (visible(candidates[who]))
+ candidates[who].dispatchEvent(evt);
+ window.setTimeout(hey2, 50);
+}
+
+
+</script><br><br>

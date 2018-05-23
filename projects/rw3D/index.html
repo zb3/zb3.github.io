@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <link href="css/main.css" rel="stylesheet">
+  <link href="css/arrows.css" rel="stylesheet">
+</head>
+
+<body>
+  <div id="loading-overlay">
+    <div class="loader"></div>
+  </div>
+  <div id="msg-overlay">
+    <div>
+      <span>Random Walk 3D</span> by zb3
+      <br>
+      <br> Hey! This is not a game (it has no objective), but a visualization of how a random walk (almost) from the inside or outside (free mode). If you want, you can actually control the construction, but you don't have to - it will just go in the random direction.
+      <br>
+      <br> To open settings, click/tap on "Open controls". Here are some more controls:
+      <br>
+      <div class="ctrl-table">
+        <div><span>arrows/WSAD</span>&nbsp;- schedule a move (space to go straight), or move the camera in free mode</div>
+        <div><span>f / double click/tap </span>&nbsp;- enter/exit free mode</div>
+        <div><span>left drag</span>&nbsp;- look around</div>
+        <div><span>right drag</span>&nbsp;- move camera</div>
+        <div><span>mouse wheel</span>&nbsp;- rotate camera in Z axis</div>
+        <div><span>long press/tap</span>&nbsp;- reset camera</div>
+      </div>
+      <br>
+      <div id="okbutton">OK</div>
+    </div>
+  </div>
+</body>
+<script src="js/msg.js"></script>
+<script src="js/dat.gui.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js/ArrowCanvas.js"></script>
+<script src="js/Frame.js"></script>
+<script src="js/Manager.js"></script>
+<script src="js/Controls.js"></script>
+<script src="js/SettingsIO.js"></script>
+<script src="js/main.js"></script>
+
+</html>

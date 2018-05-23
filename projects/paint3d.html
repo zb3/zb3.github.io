@@ -1,0 +1,317 @@
+<style>body{background: black; color: white;font-family:arial;}</style>
+<b>Paint3D</b><br>
+This tool allows you to draw something, then rotate it as if it was in 3D space.<br>
+I know tools like this already existed, but I wanted to make my own version<br><br>
+<span style="color: #bff;">UPDATE 2014: 8 bugs fixed, optimized for speed (it's now 5x faster!),<br>added new functionality: Z scrolling, line mode, erase mode, undo rotation, clear board</span>
+<br><br>
+<table id="tbl" style="border-collapse: collapse; border-spacing: 0; border: 0; width: 100%">
+<tr><td><div style="position: relative; width: 802px; height: 402px;">
+<canvas id="vancas" width="800" height="400" style="border: 1px solid grey;position: absolute; width:800px;height:400px;"></canvas><canvas id="cnavas" width="800" height="400" style="border: 1px solid grey;position: absolute; width:800px;height:400px;" onmousedown="mdown2(event); return false;"></canvas></div><span id="mode">Point</span> mode | <span style="color: grey; padding-top: 2px;">(Hold shift to rotate x axis; ctrl to rotate y axis, scroll to move Z, p=Point, l=Line , e=Erase)</span>
+</td><td valign="top" align="left" style="width: 100%;padding-left: 4px;">Near: <input size=2 id="near" value="800" onchange="readval();"><br>Grid Z: <input size=2 id="gridz" value="10" onchange="readval();"><br>Paint Z: <input size=2 id="paintz" value="10" onchange="readval();"><br><br><button onclick="rotmeX();">Rotate x by:</button> <input size=2 id="rotx" value="10"><br><button onclick="rotmeY();">Rotate y by: </button> <input size=2 id="roty" value="10"><br><br><button onclick="points.length=0;lines.length=0;">Clear board</button><br><br>Line from: <input size=2 id="lfx" value="0">, <input size=2 id="lfy" value="0"><br>Line to: <input size=2 id="ltx" value="770">, <input size=2 id="lty" value="770"><br><button onclick="drawLine();">Draw Line</button><br><br><b>Current rotation:</b><br>x axis: <span style="color: cyan;" id="xtotalrot">0.00</span><br>y axis: <span style="color: cyan;" id="ytotalrot">0.00</span><br><button onclick="cClear();">Clear axis</button><br><br><button onclick="undoRotation();">Undo last rotation</button></td></tr></table>
+<script>
+var canvas = document.getElementById('vancas'), ocanvas = document.getElementById('cnavas');
+ocanvas.addEventListener('wheel', processWheel, false);
+var mdown=0, shiftdown=0, ctrldown=0, mposx, mposy, rnowx=0, rnowy=0, totalrotx=0, totalroty=0;
+var ctx = canvas.getContext('2d'), octx = cnavas.getContext('2d'), rect;
+ctx.fillStyle = "rgb(255,255,255)"; ctx.strokeStyle = "rgb(255,255,255)";
+octx.fillStyle = "rgba(0,0,0,0.7)"; octx.strokeStyle = "rgb(255,255,255)"; 
+document.onkeydown = kdown;
+document.onkeyup = keyup;
+function readval()
+{
+ zfar = parseInt(document.getElementById("near").value);
+ paintz = parseInt(document.getElementById("paintz").value);
+ viewz = parseInt(document.getElementById("gridz").value);
+}
+function rotmeX()
+{
+ rhist.push([parseInt(document.getElementById("rotx").value)*Math.PI/180, 0]);
+ rotate(parseInt(document.getElementById("rotx").value)*Math.PI/180, 0);
+}
+function rotmeY()
+{
+ rhist.push([0, parseInt(document.getElementById("roty").value)*Math.PI/180]);
+ rotate(0, parseInt(document.getElementById("roty").value)*Math.PI/180);
+}
+function drawLine()
+{
+ pxline(parseInt(document.getElementById("lfx").value), parseInt(document.getElementById("lfy").value), parseInt(document.getElementById("ltx").value), parseInt(document.getElementById("lty").value));
+}
+function pxline(a, b, c, d)
+{
+ lines.push([a, b, (-viewz+paintz)*zfar, c, d, (-viewz+paintz)*zfar]);
+}
+function kdown(e)
+{
+ if (e.keyCode==16)
+ shiftdown=1;
+ else if (e.keyCode==17)
+ ctrldown=1;
+ else if (e.keyCode==76)
+ {
+  octx.fillStyle = "rgb(255,255,255)";
+  mode=1; document.getElementById('mode').textContent='Line';
+ }
+ else if (e.keyCode==80)
+ {
+  octx.fillStyle = "rgb(255,255,255)";
+  if (nline) endLine({clientX: mposx, clientY: mposy});
+  mode=0; document.getElementById('mode').textContent='Point';
+ }
+ else if (e.keyCode==69)
+ {
+  if (nline) endLine({clientX: mposx, clientY: mposy});
+  mode=2; document.getElementById('mode').textContent='Erase';
+  octx.fillStyle = "rgba(0,0,0,0.7)";
+ }
+}
+function keyup(e)
+{
+ if (e.keyCode==16)
+ {shiftdown=0;if (rnowx) rhist.push([rnowx, 0]);rnowx=0;}
+ else if (e.keyCode==17)
+ {ctrldown=0;if (rnowy) rhist.push([0, rnowy]);rnowy=0;}
+ tmpboard=new Array();
+}
+function mdown2(e)
+{
+ mdown=1;
+ if (!shiftdown && !ctrldown)
+ {
+  maybepaint(e);
+ }
+ if (mode==2) estack=1;
+ e.preventDefault();
+ e.stopPropagation();
+ e.returnValue=false;
+}
+
+function mup(e)
+{
+ mdown=0;
+ tmpboard=new Array();
+ if (nline)
+ endLine(e);
+}
+function processWheel(evt)
+{
+ viewz += (evt.deltaY>0)?2:-2;
+ document.getElementById("gridz").value = viewz;
+ if (mode==1 && nline)
+ {
+  var x, y, ll = lines.length-1;
+  x = Math.round(lines[ll][0]/(viewz+(lines[ll][2]/zfar)));
+  y = Math.round(lines[ll][1]/(viewz+(lines[ll][2]/zfar)));
+  nline[0] = x+400; nline[1] = -y+200;
+  octx.clearRect(0, 0, 800, 400);
+  bline(nline[0], nline[1], mposx-rect.left, mposy-rect.top, octx)
+ }
+ evt.preventDefault();
+}
+var paintz = 10, viewz = 10, zfar = 800, mode=0, nline=0, clip = 1, estack = 0, epointx, epointy, rhist = [];
+function cancelLine()
+{
+ nline = null;
+ octx.clearRect(0, 0, 800, 400);
+ //when switching to erase mode, paint initial at nx ny
+}
+function endLine(event)
+{
+ var x, y;
+ x = Math.round((event.clientX-rect.left-400)*(paintz));
+ y = Math.round((-event.clientY+200+rect.top)*(paintz));
+ lines[lines.length-1].push(x, y, (-viewz+paintz)*zfar);
+ cancelLine();
+}
+function maybepaint(event)
+{
+ var x, y; rect = canvas.getBoundingClientRect();
+ if (mdown && !shiftdown && !ctrldown && mode==0)
+ {
+// ny = (-event.clientY+200)
+  x = Math.round((event.clientX-rect.left-400)*(paintz));
+  y = Math.round((-event.clientY+200+rect.top)*(paintz));
+  if (!tmpboard[y] || !tmpboard[y][x])
+  {
+   tmpboard[y] = new Array();
+   tmpboard[y][x] = 1;
+   points.push([x, y, (-viewz+paintz)*zfar]);
+   //do NOT rerender the whole canvas!
+   //paint only the last dot where mouse X and Y!!
+   ctx.fillRect(event.clientX-rect.left,event.clientY-rect.top,1,1);
+  }
+ }
+ else if (mdown && !shiftdown && !ctrldown && mode==1 && !nline)
+ {
+  x = Math.round((event.clientX-rect.left-400)*(paintz));
+  y = Math.round((-event.clientY+200+rect.top)*(paintz));
+  lines.push([x, y, (-viewz+paintz)*zfar]); nline=[event.clientX-rect.left,event.clientY-rect.top];
+ }
+ else if (mode==1 && nline)
+ {
+  octx.clearRect(0, 0, 800, 400);
+  bline(nline[0], nline[1], event.clientX-rect.left, event.clientY-rect.top, octx)
+ }
+ else if (mdown && shiftdown)
+ {
+  rotate(((event.clientX-mposx)*0.011), 0);
+  rnowx += (event.clientX-mposx)*0.011; 
+ }
+ else if (mdown && ctrldown)
+ {
+  rotate(0, (-(event.clientY-mposy)*0.011));
+  rnowy += -(event.clientY-mposy)*0.011; 
+ }
+ if (mode==2)
+ {
+  octx.clearRect(0, 0, 800, 400);
+  octx.fillRect((epointx=event.clientX-rect.left)-6, (epointy=event.clientY-rect.top)-6, 12, 12);
+  if (mdown && !shiftdown && !ctrldown) estack=1;
+ }
+ mposx=event.clientX; mposy=event.clientY;
+}
+
+//document.onmousedown = mdown2;
+document.onmouseup = mup;
+document.onmousemove = maybepaint;
+function rotate(a, b)
+{
+ var t, t2, e, e2, tmp;
+ if (a)
+ {
+  totalrotx += a*180/Math.PI;
+  if (totalrotx>360)
+  totalrotx-=360;
+ }
+ if (b)
+ {
+  totalroty += b*180/Math.PI;
+  if (totalroty>360)
+  totalroty-=360;
+ }
+ for(e=0;e<points.length;e++)
+ {
+  if (a)
+  {
+   t = points[e][0]*Math.cos(a) - points[e][2]*Math.sin(a);
+   t2 = points[e][2]*Math.cos(a) + points[e][0]*Math.sin(a);
+   points[e][0] = t; points[e][2] = t2;
+  }
+  if (b)
+  {
+   t = points[e][1]*Math.cos(b) - points[e][2]*Math.sin(b);
+   t2 = points[e][2]*Math.cos(b) + points[e][1]*Math.sin(b);
+   points[e][1] = t; points[e][2] = t2;
+  }
+ }
+ for(e=0;e<lines.length;e++)
+ {
+  for(e2=0;e2<2;e2++)
+  {
+   if (a)
+   {
+    t = lines[e][e2*3+0]*Math.cos(a) - lines[e][e2*3+2]*Math.sin(a);
+    t2 = lines[e][e2*3+2]*Math.cos(a) + lines[e][e2*3+0]*Math.sin(a);
+    lines[e][e2*3+0] = t; lines[e][e2*3+2] = t2;
+   }
+   if (b)
+   {
+    t = lines[e][e2*3+1]*Math.cos(b) - lines[e][e2*3+2]*Math.sin(b);
+    t2 = lines[e][e2*3+2]*Math.cos(b) + lines[e][e2*3+1]*Math.sin(b);
+    lines[e][e2*3+1] = t; lines[e][e2*3+2] = t2;
+   }
+  }
+ }
+ updTotal();
+ tmpboard=new Array();
+}
+function undoRotation()
+{
+ var me = rhist.pop();
+ if (me)
+ {
+  rotate(-me[0], -me[1]);
+ }
+}
+function updTotal()
+{
+ document.getElementById("xtotalrot").innerHTML=totalrotx.toFixed(2);
+ document.getElementById("ytotalrot").innerHTML=totalroty.toFixed(2);
+}
+function cClear()
+{
+ totalrotx=totalroty=0;
+ updTotal();
+}
+function render()
+{
+ var i, x, y, x2, y2, t, lstr, l1, l2, mf;
+ ctx.clearRect(0,0,800,400);
+ for(i=0;i<points.length;i++)
+ {
+  if ((viewz+(points[i][2]/zfar))>clip)
+  {
+   x = Math.round(points[i][0]/(viewz+(points[i][2]/zfar)));
+   y = Math.round(points[i][1]/(viewz+(points[i][2]/zfar)));
+   if (mode==2 && estack && (x+400>=epointx-6 && x+400<=epointx+6 && -y+200>=epointy-6 && -y+200<=epointy+6))
+   {
+    points.splice(i--, 1);
+    continue;
+   }
+   ctx.fillRect(x+400,-y+200,1,1);
+  } 
+ }
+ for(t=0;t<lines.length;t++)
+ {
+  if (lines[t].length<6 || ((viewz+(lines[t][2]/zfar))<=clip && (viewz+(lines[t][5]/zfar))<=clip)) continue;
+  lstr = lines[t].slice(0);
+  l1=0;l2=0;
+  if ((viewz+(lines[t][2]/zfar))<=clip) {l1=5; l2=2;}
+  else if ((viewz+(lines[t][5]/zfar))<=clip) {l1=2; l2=5;}
+  if (l1!=0)
+  {
+   mf = ((-viewz+clip)*zfar - lines[t][l1])/(lines[t][l1]-lines[t][l2]);
+   lstr[l2-2] = lines[t][l1-2] + mf*(lines[t][l1-2]-lines[t][l2-2]);
+   lstr[l2-1] = lines[t][l1-1] + mf*(lines[t][l1-1]-lines[t][l2-1]);
+   lstr[l2]   = lines[t][l1]   + mf*(lines[t][l1]  -lines[t][l2]);
+  }
+  x = Math.round(lstr[0]/(viewz+(lstr[2]/zfar)));
+  y = Math.round(lstr[1]/(viewz+(lstr[2]/zfar)));
+  x2 = Math.round(lstr[3]/(viewz+(lstr[5]/zfar)));
+  y2 = Math.round(lstr[4]/(viewz+(lstr[5]/zfar)));
+  if (mode==2 && estack && ((x+400>=epointx-5 && x+400<=epointx+5 && -y+200>=epointy-5 && -y+200<=epointy+5) || (x2+400>=epointx-5 && x2+400<=epointx+5 && -y2+200>=epointy-5 && -y2+200<=epointy+5)))
+  {
+   lines.splice(t--, 1);
+   continue;
+  }
+  bline(x+400, -y+200, x2+400, -y2+200, ctx);
+ }
+ estack=0;
+ requestAnimationFrame(render);
+}
+function bline(x0, y0, x1, y1, tx)
+{
+ var dx = Math.abs(x1-x0), dy = Math.abs(y1-y0), sx = x0<x1?1:-1, sy = y0<y1?1:-1, err=dx-dy, e2;
+ while(1)
+ {
+  tx.fillRect(x0,y0, 1, 1);
+  if (x0==x1 && y0==y1) break;
+  e2 = 2*err;
+  if (e2>-dy)
+  {
+   err -= dy;
+   x0 += sx;
+  }
+  if (e2<dx)
+  {
+   err += dx;
+   y0 += sy;
+  }
+ }
+}
+var points = new Array();
+var lines = new Array();
+var tmpboard = new Array();
+render();
+</script>
+</body>

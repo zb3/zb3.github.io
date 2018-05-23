@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<style>
+body
+{
+ background: black; color: white; font-family: arial;
+}
+h2
+{
+ margin-top: 30px;
+ margin-bottom:10px;
+}
+#dist-maincont
+{
+ margin: auto;
+}
+#dist-table td
+{
+ height: 100%;
+}
+.dist-bar
+{
+ text-align: center;
+ padding: 0;
+}
+.dist-barborder
+{
+ width: 100%;
+ height: 100%;
+ position: relative;
+ z-index: -1;
+ left: 0px; top: 0px;
+}
+.dist-barcont
+{
+ position: absolute;
+ width: 100%;
+ bottom: 0px;
+ z-index: -1;
+ background: linear-gradient(to right, #555, #ccc);
+ box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset;
+}
+.dist-p-desc
+{
+ margin-top: 10px;
+ margin-bottom: 4px;
+ font-size: 12px;
+ color: #888;
+}
+.dist-p-desc span
+{
+ color: #eeeeee;
+}
+.dist-control
+{
+ background-color: #1a1a1a;
+ border-radius: 5px;
+ box-sizing: border-box;
+ width: 600px;
+ padding: 4px;
+}
+.dist-control div:first-child
+{
+ display: inline-block;
+ width: 40%;
+}
+.dist-control div:nth-child(2)
+{
+ display: inline-block;
+ width: 60%;
+}
+.dist-control zm-zc14 input
+{
+ width: 30px !important;
+}
+#dist-continue, #dist-stop
+{
+ display: none;
+}
+#dist-function-content
+{
+ margin-top: 3px;
+ margin-bottom: 7px;
+ width: calc(100% - 2px);
+ height: 200px;
+}
+#dist-parameters-box
+{
+ padding: 10px;
+ padding-top: 5px;
+}
+.b
+{
+ font-weight: bold;
+}
+#dist-param-table
+{
+ border-spacing: 10px 10px;
+}
+#dist-param-table td:first-child
+{
+ text-align: right;
+}
+#dist-param-table td input
+{
+ margin: 0px;
+}
+#dist-resolution-input
+{
+ width: 50px;
+}
+.dist-parameter-editor
+{
+ margin-top: 4px;
+ margin-left: 5px;
+ border-spacing: 0px 0px;
+}
+.dist-parameter-editor
+{
+ table-layout: fixed;
+}
+.dist-parameter-editor thead > tr > td:nth-child(1)
+{
+ width: 18px;
+}
+.dist-parameter-editor thead > tr > td:nth-child(2)
+{
+ width: 150px;
+}
+.dist-parameter-editor thead > tr > td:nth-child(3)
+{
+ width: 80px;
+}
+.dist-parameter-editor thead > tr > td:nth-child(4)
+{
+ width: 147px;
+}
+.dist-parameter-editor thead > tr > td:nth-child(5)
+{
+ width: 90px;
+}
+.dist-parameter-editor > tbody > tr > td, #dist-parameter-editor > thead > tr > td
+{
+ padding-left: 5px;
+ padding-top: 5px;
+ padding-bottom: 3px;
+}
+.dist-parameter-editor .handle:hover
+{
+ background-color: #332;
+ cursor: move;
+}
+.dist-parameter-editor tbody tr:hover td
+{
+ background-color: #222;
+ border-color: #222;
+}
+.dist-parameter-editor table
+{
+ border-spacing: 3px 7px;
+}
+.dist-parameter-editor table td:first-child
+{
+ text-align: right;
+}
+.dist-parameter-editor thead td
+{
+ border-bottom: 1px solid #888888;
+}
+.dist-parameter-editor thead td:last-child
+{
+ border-bottom: none;
+}
+.dist-parameter-editor > tbody > tr > td:last-child
+{
+ padding-left: 10px;
+}
+.dist-parameter-editor > tbody > tr > td:first-child
+{
+ font-size: 18px;
+ padding-right: 5px;
+}
+.dist-parameter-editor td:nth-child(2) input[type=text]
+{
+ width: 140px;
+}
+.dist-parameter-editor tfoot td
+{
+ padding-top: 3px;
+ padding-left: 5px;
+}
+.dist-parameter-editor table
+{
+ border-collapse: collapse;
+ margin-bottom: 4px;
+ margin-top: 3px;
+ margin-right: 3px;
+}
+.dist-parameter-editor table td
+{
+ padding-left: 4px; padding-right: 1px;
+ padding-top: 5px; padding-bottom: 4px;
+}
+.dist-parameter-editor table tr.opt:hover td
+{
+ background-color: #232;
+ cursor: pointer;
+}
+.dist-parameter-editor table td:nth-child(2)
+{
+ padding-right: 4px;
+}
+.dist-parameter-editor td:nth-child(5)
+{
+ padding-left: 2px;
+}
+.dist-parameter-editor .disabled
+{
+ color: #555;
+}
+#dist-banner
+{
+ font-size: 36px;
+ text-align: center;
+}
+.browser
+{
+ color: #aff;
+}
+</style>
+<style title="dist-conf">
+#dist-table, #dist-maincont, .dist-control
+{
+ width: 600px;
+}
+.dist-barcont
+{
+ transition: height 0.4s;
+ background: linear-gradient(to right, #555, #ccc);
+}
+#dist-table
+{
+ height: 350px;
+}
+.dist-barborder, .dist-barcont
+{
+ border-radius: 5px;
+}
+.dist-barborder
+{
+ background: #0a0a0a;
+}
+#dist-table
+{
+ border-spacing: 6px 4px;
+}
+</style>
+<script src="jquery-1.10.2.js"></script>
+<script src="jquery-ui-1.11.0.js"></script>
+<div id="dist-maincont">
+<div id="dist-banner">Distribution analysis tool</div>
+<br><br><span class="browser">
+Note: This project uses alot of exotic new features like: HTML native templates, MutationObservers, CSS3 Transitions, classList, etc, so it requires an up-to-date browser like Firefox or Chromium ("is a" applies here, so Chrome counts as well)<br>It also stores your preferences using localStorage. (stupid EU law requires me to tell ya)</span><br><br>
+If you want to generate uniformly distributed random value between 0 and 1 in let's say JS, you can use Math.random(). Easy. If you want normally distributed number you can use Box-Muller transform. But what would the chart look like if I generated like 4000 normally distributed numbers using Box-Muller transform? Would it look like a bell curve or not?<br>Another question: What would the distribution of something like Math.pow(Math.random(), 2) look like? What about Math.random()+Math.random()?<br><br>If you're interested in questions above, this tool is for you. You will also see how Math.random()+Math.random() is different from 2*Math.random() :)<br>First, define a function or pick an existing one, then click on New Seed and see how the distribution really looks like. That simple!<br><br>When defining functions, write them in JS language. The main function will be named map, and should return values using the function put. To access a parameter named X from that function, use param['X']. To prevent unnecessary allocations, prefer using tmp.tmp to var tmp.<br><br><br>
+<button id="dist-reset">Reset preferences</button>
+<h2>Transform function</h2>
+<zm-show data-dist-key="functionView" data-dist-type="text">
+Transform function: &nbsp;<select id="dist-select-function"></select>
+<zm-content>
+<button id="dist-create-function">New function</button> <button id="dist-delete-function">Delete function</button> <button id="dist-rename-function">Rename function</button><br><br>
+<div id="dist-parameter-conf-area">
+<span class="b">Function parameters:</span><br>
+<template id="dist-parameter-editor-row">
+<tr><td class="handle">&#8286;&#8286;<td><input type="text" class="dist-param-new-name" placeholder="Parameter name"><td><select><option>Range<option>Number<option>Boolean</select><td class="options"><table><tbody><tr class="opt"><td>Min:<td><zm-zc14 data-value=1></zm-zc14><tr><td>Step:<td><zm-zc14 data-value=1></zm-zc14><tr class="opt"><td>Max:<td><zm-zc14 data-value=1></zm-zc14></table><td><label><input type="checkbox">Checked</label><zm-zc14 data-value=1></zm-zc14><td><button class="delbutton">Delete</button></tr>
+</template>
+<table class="dist-parameter-editor">
+<thead><tr><td><td>Name<td>Type<td>Options<td>Default value<td></tr></thead>
+<tbody id="dist-parameter-editor">
+</tbody>
+<tfoot>
+<tr><td><td><button id="dist-new-parameter">New parameter</button></tr>
+</tfoot>
+</table>
+</div>
+<br>
+<span class="b">Function code:</span>
+<textarea id="dist-function-content"></textarea>
+<br><button id="dist-update-function">Update function</button> <button id="dist-revert-function">Revert to saved</button>
+</zm-content>
+</zm-show>
+<div id="dist-parameters-cont"><br>
+<span class="b">Parameters:&nbsp;</span> <button id="dist-reset-parameters">Reset parameters</button>
+<div id="dist-parameters-box">
+</div>
+</div>
+<zm-show data-dist-key="configView" data-dist-type="text">
+<h2>Configuration</h2>
+<zm-content>
+Numbers per frame:<br><zm-zc14 data-type="int" data-min="1" data-step="1" data-dist-key="spt"></zm-zc14><br><br>
+Frame every[ms]:<br><zm-zc14 data-type="int" data-min="4" data-step="1" data-dist-key="tick"></zm-zc14><br><br>
+Interpolation time:<br><zm-zc14 data-min="0" data-step="0.05" data-dist-key="ttime" id="dist-interpolation-time"></zm-zc14>
+</zm-content>
+</zm-show>
+<zm-show data-dist-key="displayView" data-dist-type="text">
+<h2>Display settings</h2>
+<zm-content>
+Display width:<br><zm-zc14 data-type="int" data-min="600" data-step="10" id="dist-width-input" data-dist-key="dwidth"></zm-zc14><br><br>
+Bar height:<br><zm-zc14 data-type="int" data-min="10" data-step="10" id="dist-height-input" data-dist-key="bheight"></zm-zc14><br><br>
+Bar radius:<br><zm-zc14 data-type="int" data-min="0" data-step="1" id="dist-bradius-input" data-dist-key="bradius"></zm-zc14><br><br>
+Bar spacing:<br><zm-zc14 data-type="int" data-min="0" data-step="1" id="dist-spacing-input" data-dist-key="spacing"></zm-zc14><br><br>
+Bar gradient:<br><zm-gradient id="dist-bgradient-input" data-dist-key="barGradient" data-dist-type="text"></zm-gradient><br>
+Bar background gradient:<br><zm-gradient id="dist-bbackground-input" data-dist-key="barBackground" data-dist-type="text"></zm-gradient>
+</zm-content>
+</zm-show>
+<br>
+<div class="dist-control"><div><button id="dist-stop">Stop</button> <button id="dist-continue">Continue seed</button> <button id="dist-new">New seed</button></div><div>Resolution: &nbsp;<zm-zc14 data-min="2" data-type="int" data-step="1" id="dist-resolution-input" data-dist-key="resolution"></zm-zc14>, Max bar fill: &nbsp;<zm-zc14 data-min="1" data-type="int" data-step="5" data-dist-key="percentFill"></zm-zc14>%</div></div>
+<br>
+<template id="dist-table-cells">
+<td class="dist-bar"><div class="dist-barborder"><div class="dist-barcont"></div></div></td>
+</template>
+<table id="dist-table">
+<tbody>
+<tr id="dist-table-row">
+</tr>
+</tbody>
+</table>
+<div class="dist-p-desc">Generated <span id="dist-cp">0</span> numbers.</div>
+</div>
+<br><br>
+<script src="zm.js"></script>
+<script>
+//"omg u extend Arary!!111"
+//yes I do, because there is no .extend function that performs good
+Array.prototype.extend = function(array)
+{
+ for (var t=0,tl = array.length;t<tl;++t)
+ this.push(array[t]);   
+}
+
+//JSON sucks
+function censor(key, value)
+{
+ if (value == Infinity)
+ {
+  return "Infinity";
+ }
+ else if (value == -Infinity)
+ {
+  return "-Infinity";
+ }
+ return value;
+}
+function uncensor(key, value)
+{
+ if (key != 'min' && key != 'max') return value;
+ if (value=='Infinity') return Infinity;
+ if (value=='-Infinity') return -Infinity;
+ return value;
+}
+var dist = {started: false, failed: true, dict: [], max: 0, tmp: {}, factory: {resolution: 30, spt: 45, tick: 100, ttime: 0.4, active_function: 1, functions: [["Uniform distribution","//view Box-muller function to understand how to write custom ones\nfunction map()\n{\n put(random());\n}",[],{}],["Box-muller transform","function map()\n{\n tmp.r = Math.sqrt(-2*Math.log(1-random())); tmp.o = 2*Math.PI*(1-random());\n put(tmp.r*Math.cos(tmp.o)*param['Variance'] + 0.5);\n put(tmp.r*Math.sin(tmp.o)*param['Variance'] + 0.5);\n}",[{"name":"Variance","type":1,"min":-Infinity,"step":0.001,"max":Infinity,"default":0.1,"oldname":"Variance"}],{"Variance":0.1}],["Power","function map()\n{\n put(Math.pow(Math.random(),param['Power']));\n}",[{"name":"Power","type":1,"min":-Infinity,"step":0.25,"max":Infinity,"default":1.5,"oldname":"Power"}],{"Power":0.75}],["Multiply operator","function map()\n{\n put(param['Factor']*Math.random());\n}",[{"name":"Factor","type":1,"min":-Infinity,"step":0.25,"max":Infinity,"default":2,"oldname":"Factor"}],{"Factor":2}],["Multiply loop","function map()\n{\n tmp.res = 0;\n for(tmp.t=0;tmp.t<param['Factor'];tmp.t++)\n tmp.res += Math.random();\n put(tmp.res);\n}",[{"name":"Factor","type":1,"min":-Infinity,"step":1,"max":Infinity,"default":2,"oldname":"Factor"}],{"Factor":2}],["Random-Random","function map()\n{\n put(Math.random()-Math.random());\n}",[],{}]], functionView: '', configView: 'shown', displayView: '', dwidth: 600, bheight: 350, bradius: 5, barGradient: '#555555, #cccccc', barBackground: '#0a0a0a', spacing: 6, percentFill: 75}};
+dist.resetPref = function()
+{
+ var of, af;
+ if (dist.pref && dist.pref.functions)
+ {
+  of = dist.pref.functions; af = dist.pref.active_function;
+ }
+ dist.pref = JSON.parse(JSON.stringify(dist.factory, censor), uncensor);
+ if (of)
+ {
+  dist.pref.functions = of;
+  dist.pref.active_function = af;
+ }
+};
+dist.display = {};
+dist.display.init = function()
+{
+ var node, t;
+ dist.display.row.innerHTML = '';
+ for(t=0;t<dist.pref.resolution;t++)
+ {
+  node = document.importNode(dist.display.template.content, true);
+  dist.display.row.appendChild(node);
+ }
+ dist.display.elements = dist.display.row.querySelectorAll('.dist-barcont');
+};
+dist.display.load = function()
+{ 
+ for(dist.at=0;dist.display.elements[dist.at];dist.at++) //ufgthgh
+ {
+  if (dist.max>0)
+  dist.display.elements[dist.at].style.height = (dist.pref.percentFill*dist.dict[dist.at]/(dist.max))+'%';
+  else
+  dist.display.elements[dist.at].style.height = '0%';
+ }
+};
+dist.display.gradientValue = function(ge)
+{
+ return 'linear-gradient(to right, '+ge.join(', ')+');';
+};
+dist.editor = {factory: 6, unsaved: false};
+dist.editor.param = {};
+dist.editor.param.init = function()
+{
+ dist.editor.param.add = document.getElementById('dist-new-parameter');
+ dist.editor.param.table = document.getElementById('dist-parameter-editor');
+ dist.editor.param.template = document.getElementById('dist-parameter-editor-row');
+ dist.editor.param.area = document.getElementById('dist-parameter-conf-area');
+
+ dist.editor.param.add.addEventListener('click', function(event)
+ {
+  dist.editor.param.insert();
+ });
+};
+dist.editor.param.invalid = function()
+{
+ var names = dist.editor.param.table.querySelectorAll('.dist-param-new-name'), t, used = {};
+ for(t=0;t<names.length;t++)
+ {
+  if (!names[t].value || used[names[t].value]) return names[t];
+  used[names[t].value] = 1;
+ }
+ return null;
+};
+dist.editor.param.updateNames = function()
+{
+ var rows = document.querySelectorAll('#dist-parameter-editor > tr'), l = rows.length, t, params = [];
+ var nlabel, tselect, zc;
+ for(t=0;t<l;t++)
+ {
+  nlabel = rows[t].querySelector('.dist-param-new-name');
+  nlabel.dataset.oldname = nlabel.value;
+ }
+};
+dist.editor.param.read = function()
+{
+ var rows = document.querySelectorAll('#dist-parameter-editor > tr'), l = rows.length, t, params = [];
+ var nlabel, tselect, zc;
+ for(t=0;t<l;t++)
+ {
+  params[t] = {};
+  nlabel = rows[t].querySelector('.dist-param-new-name');
+  params[t].name = nlabel.value;
+  tselect = rows[t].querySelector('select');
+  params[t].type = tselect.selectedIndex;
+  zc = rows[t].querySelectorAll('zm-zc14'); 
+  params[t].min = (zc[0].dataset.disabled=='true')?-Infinity:parseFloat(zc[0].dataset.value);
+  params[t].step = parseFloat(zc[1].dataset.value);
+  params[t].max = (zc[2].dataset.disabled=='true')?Infinity:parseFloat(zc[2].dataset.value);
+  params[t].default = (params[t].type==2)?rows[t].querySelector('input[type=checkbox]').checked:parseFloat(zc[3].dataset.value);
+  params[t].oldname = nlabel.dataset.oldname;
+ }
+ return params;
+}
+dist.editor.param.insert = function(param, readonly)
+{
+ var node, we, handle, nlabel, tselect, otable, zc, opt, min, step, max, det, dclabel, dchecked, delbutton;
+ param = param || {min: 0, max: 1, step: 0.5};
+ node = document.importNode(dist.editor.param.template.content, true);
+ handle = node.querySelector('.handle');
+ if (readonly)
+ {
+  handle.textContent = ' ';
+  handle.className='';
+ } 
+ we = node.querySelector('tr');
+ nlabel = node.querySelector('input[type=text]');
+ nlabel.value = param.name || '';
+ nlabel.dataset.oldname = param.name || '';
+ tselect = node.querySelector('select');
+ tselect.selectedIndex = param.type || 0;
+ //tselect.addEventListener
+ otable = node.querySelector('table');
+
+ if (tselect.selectedIndex==2)
+ otable.style.display = 'none';
+
+ zc = node.querySelectorAll('zm-zc14');
+ opt = node.querySelectorAll('.opt');
+
+ min = zc[0];
+ min.dataset.value = param.min==-Infinity?0:param.min;
+ min.dataset.max = param.max;
+ if (param.min==-Infinity) 
+ {
+  opt[0].classList.add('disabled');
+  min.dataset.disabled = 'true';
+ }
+
+ step = zc[1];
+ step.dataset.value = param.step || 1;
+
+ max = zc[2];
+ max.dataset.value = param.max==Infinity?0:param.max;
+ max.dataset.min = param.min;
+ if (param.max==Infinity) 
+ {
+  opt[1].classList.add('disabled');
+  max.dataset.disabled = 'true';
+ }
+ 
+ det = zc[3];
+ if (isNaN(parseFloat(param.default)))
+ det.dataset.value = 0;
+ else
+ det.dataset.value = parseFloat(param.default);
+
+ det.dataset.min = param.min;
+ det.dataset.max = param.max;
+ det.dataset.step = param.step || 1;
+ det.style.display = tselect.selectedIndex==2?'none':'inline';
+
+ dclabel = node.querySelector('label');
+ dclabel.style.display = tselect.selectedIndex==2?'inline':'none';
+
+ dchecked = node.querySelector('input[type=checkbox]');
+ dchecked.checked = param.default;
+
+ delbutton = node.querySelector('.delbutton');
+
+ dist.editor.param.table.appendChild(node); 
+
+ tselect.addEventListener('change', function(event)
+ {
+  dist.editor.setChanged();
+  otable.style.display = (tselect.selectedIndex==2)?'none':'block';
+  det.style.display = tselect.selectedIndex==2?'none':'inline';
+  dclabel.style.display = tselect.selectedIndex==2?'inline':'none';
+
+  if (!tselect.selectedIndex)
+  {
+   opt[0].classList.remove('opt'); opt[0].classList.remove('disabled');
+   opt[1].classList.remove('opt'); opt[1].classList.remove('disabled');
+   min.dataset.disabled='false'; max.dataset.disabled='false';
+  }
+  else
+  {
+   opt[0].classList.add('opt'); opt[1].classList.add('opt');
+  }
+ });
+
+ min.addEventListener('change', function(event)
+ {
+  dist.editor.setChanged();
+  det.dataset.min = (min.dataset.disabled=='true')?-Infinity:min.dataset.value;
+  max.dataset.min = (min.dataset.disabled=='true')?-Infinity:min.dataset.value;
+ });
+
+ step.addEventListener('change', function(event)
+ {
+  dist.editor.setChanged();
+  det.dataset.step = step.dataset.value;
+ });
+
+ max.addEventListener('change', function(event)
+ {
+  dist.editor.setChanged();
+  det.dataset.max = (max.dataset.disabled=='true')?Infinity:max.dataset.value;
+  min.dataset.max = (max.dataset.disabled=='true')?Infinity:max.dataset.value;
+ });
+
+ if (!readonly)
+ {
+  opt[0].addEventListener('click', function(event)
+  {
+   dist.editor.setChanged();
+   if (min.dataset.disabled=='true')
+   {
+    min.dataset.disabled='false';
+    opt[0].classList.remove('disabled');
+    det.dataset.min = min.dataset.value;
+    max.dataset.min = min.dataset.value;
+   }
+   else
+   {
+    min.dataset.disabled='true';
+    opt[0].classList.add('disabled');
+    det.dataset.min = -Infinity;
+    max.dataset.min = -Infinity; 
+   }
+  });
+
+  opt[1].addEventListener('click', function(event)
+  {
+   dist.editor.setChanged();
+   if (max.dataset.disabled=='true')
+   {
+    max.dataset.disabled='false';
+    opt[1].classList.remove('disabled');
+    det.dataset.max = max.dataset.value;
+    min.dataset.max = max.dataset.value;
+   }
+   else
+   {
+    max.dataset.disabled='true';
+    opt[1].classList.add('disabled');
+    det.dataset.max = Infinity;
+    min.dataset.max = Infinity; 
+   }
+  });
+ }
+ else
+ {
+  opt[0].classList.remove('opt'); opt[1].classList.remove('opt'); 
+ }
+
+ delbutton.addEventListener('click', function(event)
+ {
+  dist.editor.setChanged();
+  dist.editor.param.table.removeChild(we);
+ });
+
+ if (readonly)
+ {
+  delbutton.style.display = 'none';
+  nlabel.disabled = true;
+  tselect.disabled = true;
+  zc[0].dataset.disabled = 'true';
+  zc[1].dataset.disabled = 'true';
+  zc[2].dataset.disabled = 'true';
+  zc[3].dataset.disabled = 'true';
+  dchecked.disabled = true;
+ }
+
+ nlabel.addEventListener('change', function()
+ {
+  dist.editor.setChanged();
+ });
+ det.addEventListener('change', function()
+ {
+  dist.editor.setChanged();
+ });
+ dchecked.addEventListener('change', function()
+ {
+  dist.editor.setChanged();
+ });
+ nlabel.focus();
+};
+dist.editor.param.load = function()
+{
+ var params = dist.pref.functions[dist.pref.active_function][2], readonly = dist.pref.active_function<dist.editor.factory;
+ dist.editor.param.table.innerHTML = '';
+ if (!params.length && readonly)
+ {
+  dist.editor.param.area.style.display = 'none';
+ }
+ else
+ {
+  dist.editor.param.area.style.display = 'block';
+  dist.editor.param.add.style.display = readonly?'none':'inline';
+  var t, node, nte;
+  for(t=0;t<params.length;t++)
+  {
+   dist.editor.param.insert(params[t], readonly);
+  }
+ }
+};
+dist.editor.init = function()
+{
+ dist.editor.select = document.getElementById('dist-select-function');
+ dist.editor.cbutton = document.getElementById('dist-create-function');
+ dist.editor.rbutton = document.getElementById('dist-rename-function');
+ dist.editor.dbutton = document.getElementById('dist-delete-function');
+ dist.editor.pbutton = document.getElementById('dist-update-function');
+ dist.editor.vbutton = document.getElementById('dist-revert-function');
+ dist.editor.rebutton = document.getElementById('dist-reset-parameters');
+ dist.editor.area = document.getElementById('dist-function-content');
+ dist.editor.pbox = document.getElementById('dist-parameters-box');
+ dist.editor.pcont = document.getElementById('dist-parameters-cont');
+ dist.editor.options = [];
+
+ dist.editor.param.init();
+
+ for(dist.editor.tmp=0;dist.editor.tmp<dist.pref.functions.length;dist.editor.tmp++)
+ {
+  dist.editor.addFunction(dist.pref.functions[dist.editor.tmp][0]);
+ }
+ dist.editor.setFunction();
+
+ dist.editor.select.addEventListener('change', dist.editor.updateActive, false);
+ dist.editor.area.addEventListener('change', dist.editor.setChanged, false);
+ dist.editor.area.addEventListener('keydown', dist.editor.keyDown, false);
+
+ dist.editor.pbutton.addEventListener('click', dist.editor.updateFunction, false);
+ dist.editor.cbutton.addEventListener('click', dist.editor.newFunction, false);
+ dist.editor.rbutton.addEventListener('click', dist.editor.renameFunction, false);
+ dist.editor.dbutton.addEventListener('click', dist.editor.deleteFunction, false);
+ dist.editor.vbutton.addEventListener('click', dist.editor.revert, false);
+ dist.editor.rebutton.addEventListener('click', dist.editor.resetParams, false);
+};
+dist.editor.buildParameter = function(parameter, values, row)
+{
+ var rc = 0, input, header;
+ if (parameter.type==0)
+ {
+  input = document.createElement('input'); input.type = 'range';
+  input.min = parameter.min; input.step = parameter.step; input.max = parameter.max;
+  input.value = values[parameter.name];
+  row.insertCell(0).appendChild(document.createTextNode(parameter.name+':'));
+  row.insertCell(1).appendChild(input);
+
+  input.addEventListener('change', function()
+  {
+   values[parameter.name] = parseFloat(input.value);
+  });
+ }
+ else if (parameter.type==1)
+ {
+  input = document.createElement('zm-zc14');
+  row.insertCell(0).appendChild(document.createTextNode(parameter.name+':'));
+  
+  input.dataset.type = parameter.type; input.dataset.min = parameter.min; input.dataset.max = parameter.max;
+  input.dataset.step = parameter.step;
+  input.dataset.value = values[parameter.name];
+  row.insertCell(1).appendChild(input);
+
+  input.addEventListener('change', function()
+  {
+   values[parameter.name] = parseFloat(input.dataset.value);
+  });
+ }
+ else
+ {
+  input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = values[parameter.name];
+  header = document.createElement('label');
+  header.appendChild(input);
+  header.appendChild(document.createTextNode(parameter.name));
+  row.insertCell(0);
+  row.insertCell(1).appendChild(header);
+ }
+ dist.editor.pe.push(input);
+};
+dist.editor.buildParameters = function(parameters, values)
+{
+ var t, tl = parameters.length, rc = 0;
+ dist.editor.pbox.innerHTML = '';
+ dist.editor.pe = [];
+ table = document.createElement('table');
+ table.id = 'dist-param-table';
+ for(t=0;t<tl;t++)
+ {
+  row = table.insertRow(rc++);
+  dist.editor.buildParameter(parameters[t], values, row);
+ }
+ dist.editor.pbox.appendChild(table);
+ dist.editor.pcont.style.display = (parameters.length)?'block':'none';
+ dist.editor.param.updateNames();
+};
+dist.editor.resetParams = function()
+{
+ var t, tl = dist.params.length;
+ for(t=0;t<tl;t++)
+ {
+  if (dist.params[t].type==0)
+  dist.editor.pe[t].value = dist.params[t].default;
+  else if (dist.params[t].type==1)
+  dist.editor.pe[t].dataset.value = dist.params[t].default;
+  else
+  dist.editor.pe[t].checked = dist.params[t].default;
+ }
+};
+dist.editor.revert = function()
+{
+ dist.editor.area.value = dist.pref.functions[dist.pref.active_function][1];
+ dist.editor.param.load();
+ dist.editor.setSaved();
+};
+dist.editor.buttonUpdate = function() //because when clicking update function directly after modifying it's content, the button flashes
+{
+ if (dist.editor.unsaved)
+ {
+  dist.editor.vbutton.style.display = 'inline';
+ }
+};
+dist.editor.keyDown = function(event)
+{
+ if (event.ctrlKey && event.keyCode==83)
+ {
+  dist.editor.updateFunction();
+  event.preventDefault();
+ }
+}
+dist.editor.setChanged = function()
+{
+ if (!dist.editor.unsaved)
+ {
+  dist.editor.unsaved = 1;
+  setTimeout(dist.editor.buttonUpdate, 100);
+  dist.editor.select.children[dist.pref.active_function].textContent = '*'+dist.editor.select.children[dist.pref.active_function].textContent;
+ }
+};
+dist.editor.setSaved = function()
+{
+ if (dist.editor.unsaved)
+ {
+  dist.editor.unsaved = 0;
+  dist.editor.vbutton.style.display = 'none';
+  dist.editor.select.children[dist.pref.active_function].textContent = dist.editor.select.children[dist.pref.active_function].textContent.substr(1);
+ }
+};
+dist.editor.updateFunction = function()
+{
+ var ok = dist.pref.functions[dist.pref.active_function][1];
+ dist.pref.functions[dist.pref.active_function][1] = dist.editor.area.value;
+ dist.compile();
+ if (dist.failed)
+ dist.pref.functions[dist.pref.active_function][1] = ok;
+ else dist.editor.setSaved();
+};
+dist.editor.newFunction = function()
+{
+ if (dist.editor.unsaved)
+ {
+  var really = confirm('You have unsaved changes, continue?');
+  if (!really)
+  return;
+ }
+ var name = prompt('Enter function name:');
+ if (name)
+ {
+  //the trick is that we do not .compile()
+  dist.pref.active_function = 
+
+  dist.pref.functions.push([name, dist.pref.functions[dist.pref.active_function][1], JSON.parse(JSON.stringify(dist.pref.functions[dist.pref.active_function][2], censor), uncensor), JSON.parse(JSON.stringify(dist.pref.functions[dist.pref.active_function][3], censor), uncensor)])-1;
+  dist.editor.addFunction(name);
+  dist.editor.setFunction();
+ }
+};
+dist.editor.addFunction = function(name)
+{
+ var tmp;
+ tmp = document.createElement('option');
+ tmp.textContent = name;
+ dist.editor.select.appendChild(tmp);
+ dist.editor.options.push(tmp);
+};
+dist.editor.setFunction = function()
+{
+ dist.editor.param.load();
+ dist.editor.area.value = dist.pref.functions[dist.pref.active_function][1];
+ dist.editor.select.selectedIndex = dist.pref.active_function;
+
+ dist.editor.vbutton.style.display = 'none';
+ dist.editor.pbutton.style.display = (dist.pref.active_function<dist.editor.factory)?'none':'inline';
+ dist.editor.dbutton.style.display = (dist.pref.active_function<dist.editor.factory)?'none':'inline';
+ dist.editor.rbutton.style.display = (dist.pref.active_function<dist.editor.factory)?'none':'inline';
+
+ dist.editor.area.readOnly = (dist.pref.active_function<dist.editor.factory)?true:false;
+ dist.compile();
+};
+dist.editor.renameFunction = function()
+{
+ var name = prompt('Enter new function name:');
+ if (name)
+ {
+  dist.pref.functions[dist.pref.active_function][0] = name;
+  dist.editor.options[dist.pref.active_function].textContent = name;
+ }
+};
+dist.editor.deleteFunction = function()
+{
+ var really = confirm('Delete current function?');
+ if (really)
+ {
+  dist.editor.tmp = dist.pref.active_function;
+
+  dist.pref.functions.splice(dist.editor.tmp, 1);
+  dist.editor.select.removeChild(dist.editor.options[dist.editor.tmp]);
+  dist.editor.options.splice(dist.editor.tmp, 1);
+  
+  dist.pref.active_function = Math.max(dist.pref.active_function-1, 0);
+  dist.editor.setFunction();
+ }
+};
+dist.editor.updateActive = function()
+{
+ if (dist.editor.unsaved)
+ {
+  var really = confirm('You have unsaved changes, continue?');
+  if (!really)
+  {
+   dist.editor.select.selectedIndex = dist.pref.active_function;
+   return;
+  }
+ }
+ dist.pref.active_function = dist.editor.select.selectedIndex;
+ dist.editor.setFunction();
+};
+dist.compile = function() //compile2 after DOMContentloaded. use it with loadModel
+{
+ dist.failed = true;
+ try
+ {
+  var parameters, random = Math.random, checkbox = 'checkbox', range = 'range', number = 'number', t, put = dist._put, mdx, param = {}, reload = true, failparam;
+ 
+  if (failparam = dist.editor.param.invalid())
+  {
+   alert(failparam.value?'Parameter names must be unique':'Parameter names cannot be empty'); 
+   failparam.focus();
+   return;
+  }
+
+  eval(dist.pref.functions[dist.pref.active_function][1].replace(/([^a-z])(tmp\.)/g, '$1dist.tmp.'));
+
+  if (typeof map == "function")
+  dist.failed = false;
+  else throw 1;
+
+  dist.mapby = (dist.pref.functions[dist.pref.active_function][1].match(/random\(\)/g) || []).length;
+
+  parameters = dist.editor.param.read();
+  pvalue = dist.pref.functions[dist.pref.active_function][3];
+  dist.pref.functions[dist.pref.active_function][3] = param;
+  dist.pref.functions[dist.pref.active_function][2] = parameters;
+
+  for(t=0;t<parameters.length;t++)
+  {
+   if (parameters[t].oldname && pvalue[parameters[t].oldname]<=parameters[t].max && pvalue[parameters[t].oldname]>=parameters[t].min)
+   param[parameters[t].name] = pvalue[parameters[t].oldname];
+   else
+   param[parameters[t].name] = parameters[t].default;
+  }
+
+  dist.editor.buildParameters(parameters, param);
+  dist.params = parameters;
+
+  dist.map = map;
+ }
+ catch(e){}
+ if (dist.failed)
+ {
+  alert('Compilation failed!');
+ }
+};
+dist.update = function()
+{
+ dist.display.cp.innerHTML = dist.cstep*dist.mapby;
+ dist.display.load();
+};
+dist.startSeed = function()
+{
+ dist.dict.length=0;
+ while(dist.dict.length<dist.pref.resolution) dist.dict.push(0);
+ 
+ dist.max = 0; dist.ntx = dist.cstep = 0;
+ dist.update();
+
+ dist.wasstarted = dist.started;
+ dist.started = true;
+ document.getElementById('dist-resolution-input').dataset.disabled = "true";
+ document.getElementById('dist-continue').style.display = 'none';
+ document.getElementById('dist-stop').style.display = 'inline';
+
+ if (!dist.wasstarted)
+ dist.seedBit();
+};
+dist.stopSeed = function()
+{
+ document.getElementById('dist-stop').style.display = 'none';
+ document.getElementById('dist-continue').style.display = 'inline';
+ document.getElementById('dist-resolution-input').dataset.disabled = "false";
+ dist.started = false;
+};
+dist.continueSeed = function()
+{
+ document.getElementById('dist-stop').style.display = 'inline';
+ document.getElementById('dist-continue').style.display = 'none';
+ dist.started = true;
+ dist.seedBit();
+};
+dist._put = function(bit)
+{
+ dist.k = Math.floor(bit*dist.pref.resolution);
+ if (dist.k>=0 && dist.k<dist.pref.resolution)
+ {
+  dist.dict[dist.k]++;
+  dist.max = Math.max(dist.max, dist.dict[dist.k]);
+ }
+};
+dist.seedBit = function()
+{
+ dist.ts = 0;
+ 
+ while(dist.ts<dist.pref.spt)
+ {
+  dist.map();
+
+  dist.cstep++;
+  dist.ts++;
+ }
+ dist.update();
+ 
+ if (dist.started)
+ dist.tout = window.setTimeout(dist.seedBit, dist.pref.tick)
+};
+dist.init = function()
+{
+ zm.elements.init();
+
+ var lpref = localStorage.getItem('zb3.dist.pref');
+ if (lpref && lpref!='undefined')
+ {
+  dist.pref = JSON.parse(lpref, uncensor);
+ }
+ else
+ {
+  dist.resetPref();
+  dist.syncPref();
+ }
+
+ dist.display.template = document.getElementById('dist-table-cells');
+ dist.display.row = document.getElementById('dist-table-row');
+ dist.display.cp = document.getElementById('dist-cp');
+ for(var t=0, tl=document.styleSheets.length;t<tl;t++)
+ {
+  if (document.styleSheets[t].title=='dist-conf')
+  {
+   dist.display.style = document.styleSheets[t];
+   break;
+  }
+ }
+
+ dist.editor.init();
+ dist.display.init();
+
+ document.getElementById('dist-continue').addEventListener('click', dist.continueSeed);
+ document.getElementById('dist-stop').addEventListener('click', dist.stopSeed);
+ document.getElementById('dist-new').addEventListener('click', dist.startSeed);
+ document.getElementById('dist-reset').addEventListener('click', function()
+ {
+  var really = confirm('Reset preferences?');
+  if (!really) return;
+  dist.stopSeed();
+  dist.resetPref();
+  for(var t=0, el = document.querySelectorAll('[data-dist-key]'), ell=el.length;t<ell;t++)
+  {
+   el[t].dataset.value = dist.pref[el[t].dataset.distKey];
+  }
+  dist.display.init();
+  dist.editor.setFunction();
+ }, false);
+
+
+ function n(a) {return a;}
+ for(var t=0, el = document.querySelectorAll('[data-dist-key]'), ell=el.length;t<ell;t++)
+ {
+  el[t].dataset.value = dist.pref[el[t].dataset.distKey];
+  (function(t)
+  {
+   el[t].addEventListener('change', function(event)
+   {
+    dist.pref[el[t].dataset.distKey] = ((el[t].dataset.distType=='int')?parseInt:(el[t].dataset.distType=='text')?n:parseFloat)(el[t].dataset.value);
+   }, false);
+  })(t);
+ }
+
+ document.getElementById('dist-interpolation-time').addEventListener('change', function(event)
+ {
+  dist.display.style.cssRules[1].style.transition = 'height '+event.target.dataset.value+'s';
+ }, false);
+ document.getElementById('dist-width-input').addEventListener('change', function(event)
+ {
+  dist.display.style.cssRules[0].style.width = event.target.dataset.value+'px';
+ }, false);
+ document.getElementById('dist-height-input').addEventListener('change', function(event)
+ {
+  dist.display.style.cssRules[2].style.height = event.target.dataset.value+'px';
+ }, false);
+ document.getElementById('dist-bradius-input').addEventListener('change', function(event)
+ {
+  dist.display.style.cssRules[3].style.borderRadius = event.target.dataset.value+'px';
+ }, false);
+ document.getElementById('dist-spacing-input').addEventListener('change', function(event)
+ {
+  dist.display.style.cssRules[5].style.borderSpacing = event.target.dataset.value+'px 4px';
+ }, false);
+ document.getElementById('dist-bgradient-input').addEventListener('change', function(event)
+ {
+  if (event.target.dataset.value.indexOf(',')!=-1)
+  dist.display.style.cssRules[1].style.background = 'linear-gradient(to right, '+event.target.dataset.value+')';
+  else
+  dist.display.style.cssRules[1].style.background = event.target.dataset.value;
+ }, false);
+ document.getElementById('dist-bbackground-input').addEventListener('change', function(event)
+ {
+  if (event.target.dataset.value.indexOf(',')!=-1)
+  dist.display.style.cssRules[4].style.background = 'linear-gradient(to right, '+event.target.dataset.value+')';
+  else
+  dist.display.style.cssRules[4].style.background = event.target.dataset.value;
+ }, false);
+
+ document.getElementById('dist-resolution-input').addEventListener('change', function(event)
+ {
+  document.getElementById('dist-continue').style.display = 'none';
+  dist.pref.resolution = parseInt(event.target.dataset.value);
+  dist.display.init();
+ }, false);
+
+ $("#dist-parameter-editor").sortable({handle: '.handle', helper: function(e, tr)
+ {
+  var $originals = tr.children();
+  var $helper = tr.clone();
+  $helper.children().each(function(index)
+  {
+   $(this).width($originals.eq(index).width());
+  });
+  return $helper;
+ }, update:function( event, ui ) {dist.editor.setChanged()}});
+ window.setInterval(dist.syncPref, 700);
+};
+dist.syncPref = function()
+{
+ localStorage.setItem('zb3.dist.pref', JSON.stringify(dist.pref, censor));
+};
+window.addEventListener('load', dist.init, false);
+window.addEventListener('beforeunload', dist.syncPref, false);
+</script>

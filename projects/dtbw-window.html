@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+</head>
+<div id="arrow">➜</div>
+<style>
+body {
+  background-color: black;
+  overflow:hidden;
+}
+#arrow {
+  color: white;
+  width: 40px;
+  height: 40px;
+  font-size: 40px;
+  line-height: 1;
+  text-align: center;
+  transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  transform-origin: center;
+  position: absolute;
+  top: -80px;
+  left: -80px;
+}
+</style>
+
+<script>
+var master; //this "should" be the main window
+var posx, posy;
+
+function init(m, x, y) {
+  moveTo2(x, y);
+  master = m;
+  storeSize();
+  window.addEventListener('resize', restoreSize);
+  window.addEventListener('mousedown', mdown);
+  window.addEventListener('mousemove', mmove);
+  window.addEventListener('mouseup', mup);
+  window.onbeforeunload = master.over;
+  report();
+}
+
+function storeSize() {
+  winx = window.outerWidth;
+  winy = window.outerHeight;
+}
+
+function restoreSize() {
+  window.resizeTo(winx, winy);
+}
+
+function report() {
+  if ((posx !== screenX || posy !== screenY) /* && ((!dx && !dy) || rawx!==screenX || rawy!==screenY)*/ ) {
+    master.update(screenX, screenY);
+    posx = screenX;
+    posy = screenY;
+  }
+  setTimeout(report, 4);
+}
+
+
+function setupArrow(rot, as) {
+  var el = document.getElementById('arrow');
+  el.style.fontSize = el.style.width = el.style.height = el.style.lineHeight = el.style.fontSize = as + 'px';
+  el.style.transform = 'translateX(-50%) translateY(-50%) rotate(' + rot + 'rad)';
+}
+
+function arrowColor(c) {
+  var el = document.getElementById('arrow');
+  el.style.color = c;
+}
+
+function placeArrow(x, y) {
+  var el = document.getElementById('arrow');
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+}
+
+var isDown = false,
+  dx, dy, ox, oy;
+
+function mdown(e) {
+  if (isDown) return;
+
+  isDown = true;
+  ox = window.screenX - e.screenX;
+  oy = window.screenY - e.screenY;
+  e.preventDefault();
+}
+
+function mmove(e) {
+  if (!isDown) return false;
+  e.preventDefault();
+
+  moveTo2(ox + e.screenX, oy + e.screenY);
+}
+
+function mup(e) {
+  isDown = false;
+}
+
+var tmpScreen;
+
+function initScreen() {
+  tmpScreen = [100, 100];
+  window.moveTo(100, 100);
+  setTimeout(initScreen2, 110);
+}
+
+function initScreen2() {
+  dx = window.screenX - tmpScreen[0];
+  dy = window.screenY - tmpScreen[1];
+  var bsize = getBorderSize();
+
+  if (typeof loadCallback === 'undefined')
+    loadCallback = opener.onWindowLoaded;
+
+  loadCallback(Math.max(dx, bsize[0]), Math.max(dy, bsize[1]));
+}
+
+function getBorderSize() {
+  if (typeof window.mozInnerScreenY !== 'undefined')
+    return [window.mozInnerScreenX - screenX, window.mozInnerScreenY - screenY];
+  else
+    return [window.outerWidth - window.innerWidth, window.outerHeight - window.innerHeight];
+}
+
+
+function moveTo2(x, y) {
+  window.moveTo(x - dx, y - dy);
+}
+
+window.addEventListener('load', initScreen);
+</script>
+</html>

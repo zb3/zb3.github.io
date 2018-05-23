@@ -1,0 +1,34 @@
+#modcalc-table td {
+	padding: 3px;
+}
+#modcalc-table {
+	margin-bottom: 4px;
+	margin-top: 4px;
+}
+#mod-result-view table td {
+	padding: 2px;
+}
+#mod-result-view table tr:first-child td:first-child {
+	padding-right: 10px;
+}
+#mod-result {
+	border: 2px inset;
+	background-color: #001313;
+	width: 480px;
+	color: #7ff;
+}
+.mod-switch-button {
+	text-align: center;
+}
+#mod-a, #mod-b, #mod-modulus, .mod-crt-rule-a, .mod-crt-rule-m {
+	width: 130px;
+}
+#mod-b-button, #mod-copy-result, #mod-copy-result-b, #mod-copy-result-mod, #mod-crt-result-ok, #mod-crt-result-error {
+	display: none;
+}
+#mod-crt-result-ok, #mod-crt-result-error {
+	margin-top: 5px; 
+}
+#mod-crt-rules {
+	margin-bottom: 5px;
+}

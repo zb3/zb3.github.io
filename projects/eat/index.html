@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="style.css" type="text/css">
+<title>Equal Area Test</title>
+</head>
+<style title="pshare">
+#pshare span.c0
+{
+ color: #aaaaff;
+}
+#pshare span.c1
+{
+ color: #aaffaa;
+}
+#pshare span.c2
+{
+ color: #ffffaa;
+}
+</style>
+<header>Equal Area Test</header>
+
+<main id="scorescreen" style="display: none;">
+<span>Your total score:</span>
+<div id="totalscore" class="goodscore">100</div>
+<span>Level scores:</span>
+<table id="levelscoretable">
+<tr><td>Level 1<td class="score">60.6
+<tr><td>Level 2<td class="score goodscore">92.6
+<tr><td>Level 3<td class="score">60.6
+<tr><td>Level 4<td class="score">60.6
+<tr><td>Level 5<td class="score">60.6
+<tr><td>Level 6<td class="score">60.6
+<tr><td>Level 7<td class="score">60.6
+<tr>
+</table>
+<button id="restartgame">Start again</button>
+</main>
+<main id="gamescreen">
+
+Drag the canvas so that all polygons inside a frame have the same area!<br>Polygons of all colors must be included.<br><br>
+
+<div id="level-picker" data-tooltip="You can use these buttons to choose any level at any time">
+Level:
+<button class="current">1</button>
+<button>2</button>
+<button>3</button>
+<button>4</button>
+<button>5</button>
+<button>6</button>
+<button>7</button>
+</div>
+<div id="loadingoverlay"></div>
+<div id="mixarea" style="display: none;">
+<canvas id="shape" width="1100" height="1100"></canvas>
+<canvas id="frame" width="500" height="500" oncontextmenu="return false"></canvas>
+<div id="scoreoverlay" style="display: none;"><div>
+<p>Level score:</p>
+<span id="score">8.6</span>
+<br>
+<p>Percentage area share:</p>
+<div id="pshare">
+<span class="c1">20.33</span><span class="c2">50.36</span><span class="c3">30.33</span>
+</div>
+<div class="vcenter"><span></span><div>
+<button id="showsolution">Show solution</button>
+<button id="tryagain">Try again</button>
+</div></div>
+</div></div>
+
+<div id="infooverlay" data-content="Drag this" style="display: none;"></div>
+
+</div>
+
+<div id="buttonarea">
+<button id="submitlevel">Submit</button>
+<button id="nextlevel" style="display: none;">Next level</button>
+<button id="viewtotalscore" style="display: none;">View total score</button>
+</div>
+
+<div class="settingsarea">
+<div>Settings</div>
+Sensitivity:
+<input type=range id="sensitivity-slider" min=0.1 max=3 step=0.1 value=2.1>
+<div class="sep"></div>
+<label><span class="checkbox"><input type=checkbox id="monochromatic-toggle"><label for="monochromatic-toggle"></label></span><span> Use monochromatic theme</span></label>
+<div class="sep"></div>
+<label><span class="checkbox"><input type=checkbox id="pixelmeter-toggle"><label for="pixelmeter-toggle"></label></span><span> Calculate area by counting pixels (slower)</span></label>
+</div>
+
+</main>
+<script>
+var eat = {};
+
+//we need to preload images
+eat.images = {};
+
+eat.images['level7-outline'] = new Image();
+eat.images['level7-outline'].src = 'img/zframe.png';
+eat.images['level7-frame'] = new Image();
+eat.images['level7-frame'].src = 'img/zframeint.png';
+
+</script>
+<script src="util.js"></script>
+<script src="eat.js"></script>
+<style><body></body></style>
+</html>

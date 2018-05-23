@@ -1,0 +1,715 @@
+<link rel="stylesheet" type="text/css" href="mathquill.css">
+<style>
+body{background-color:black;color:white;font-family:arial;}
+.onlysep {margin: 0; border: 0; border-spacing: 0; padding: 0;}
+.onlysep td {border: 0; margin: 0; padding: 0; vertical-align: top;}
+</style>
+<b>zb3D Grapher</b><br>
+This little tool can graph implicit 3d equations, parametric surfaces and parametric curves. This means you can also plot implicit 2d equations, 2d function graphs, 3d surface plots etc. Summing up, this is a powerful toy ;)<br>Note = sign in an implicit equation doesn't really mean =, it means "goes through", but that shouldn't be a problem. I haven't heard about any grapher that could plot "(x^2+y^2+z^2-16)^2=0"<br>This uses THREE.js, mathquill (desmos branch) and marching cubes to draw implicit surfaces. I had to write "math parser" on my own, so if something doesn't work, its probably my parser as it is the most buggy thing ever. Of course you will need a WebGL capable browser, I recommend firefox. You can use latex commands in an equation box like "nthroot", "sqrt" etc. To navigate through blocks use arrow keys.<br>Use mouse to control the camera, left click + drag to rotate, right click + drag to pan and middle click + drag to zoom.<br><br>
+<table class="onlysep"><tr><td width="405px;">
+<div id="render-main" style="width: 450px; height: 300px; background-color: black; margin:0;border: 1px solid grey;"></div>
+<div style="border: 1px solid grey;"><div style="float: left; margin-top: 3px;">Color:</div><div id="finalcolor" style="margin-left: 2px; margin-top: 2px; width: 10px; height: 10px; background-color: #ffffff; float: left; border: 1px solid grey;" onclick="openPicker(event);"></div><label><input type="checkbox" id="boundingboxshow" checked onchange="cat();">Axis box</label><label><input type="checkbox" id="sh-model" checked onchange="cat();">Smooth shading (if available)</label><label><input type="checkbox" id="c-locklight" checked onchange="cat();">Rotate light with camera</label></div>
+<script src="more.js"></script>
+<script src="three.min.js"></script>
+<script src="mdata.js"></script>
+</td><td width="100%" style="padding-left: 3px;" id="taber">
+Graph type: <select onchange="changeType(this);"><option value="Implicit" selected>Implicit Surface</option><option value="Parametrics">Parametric Surface</option><option value="Parametricc">Parametric Curve</option></select> <button onclick="fire();">Graph!</button><br>
+<div data-tab="Implicit">
+Equation: <span id="eqI" class="mathquill-editable">ax^2+by^2+cz^2-d</span> = 0
+</div>
+<div data-tab="Parametrics" style="display: none;">
+x = f(z, t) = <span id="eqPx" class="mathquill-editable">csinzcost</span><br>
+y = f(z, t) = <span id="eqPy" class="mathquill-editable">csinzsint</span><br>
+z = f(z, t) = <span id="eqPz" class="mathquill-editable">ccosz</span><br>
+</div>
+<div data-tab="Parametricc" style="display: none;">
+x = f(t) = <span id="eqPcx" class="mathquill-editable">cost</span><br>
+y = f(t) = <span id="eqPcy" class="mathquill-editable">sint</span><br>
+z = f(t) = <span id="eqPcz" class="mathquill-editable">t</span><br>
+</div>
+<br><b>Parameters:</b><br> 
+a: <button style="width: 2px;" onclick="minusp('a');">-</button> <input type="text" value="1" size="1" id="parameter-a" onchange="isf(this)" data-oval="1"> <button style="width: 2px;" onclick="plusp('a');">+</button>&nbsp; b: <button style="width: 2px;" onclick="minusp('b');">-</button> <input type="text" value="1" size="1" id="parameter-b" onchange="isf(this)" data-oval="1"> <button style="width: 2px;" onclick="plusp('b');">+</button><br>
+c: <button style="width: 2px;" onclick="minusp('c');">-</button> <input type="text" value="4" size="1" id="parameter-c" onchange="isf(this)" data-oval="4"> <button style="width: 2px;" onclick="plusp('c');">+</button>&nbsp; d: <button style="width: 2px;" onclick="minusp('d');">-</button> <input type="text" value="16" size="1" id="parameter-d" onchange="isf(this)" data-oval="16"> <button style="width: 2px;" onclick="plusp('d');">+</button><br><br>
+<div data-tab="Parametrics" style="display: none;">
+For:<br>
+<span>z</span> from <input type="text" value="0" size="2" onchange="isf(this)" data-oval="0" id="v-zmin"> to <input type="text" value="3.14" size="2" onchange="isf(this)" data-oval="3.14" id="v-zmax"><br>
+<span>t</span> from <input type="text" value="0" size="2" onchange="isf(this)" data-oval="0" id="v-bmin"> to <input type="text" value="6.28" size="2" onchange="isf(this)" data-oval="6.28" id="v-bmax"><br><br>
+z, t quality: <input type="text" value="70" size="1" onchange="isn(this)" data-oval="70" id="v-qz">, <input type="text" value="70" size="1" onchange="isn(this)" data-oval="70" id="v-qb"> values per graph<br>
+<br>
+</div>
+<div data-tab="Parametricc" style="display: none;">
+For:<br>
+<span>t</span> from <input type="text" value="-10" size="2" onchange="isf(this)" data-oval="-10" id="v-tmin"> to <input type="text" value="10" size="2" onchange="isf(this)" data-oval="10" id="v-tmax"><br><br>
+t quality: <input type="text" value="310" size="1" onchange="isn(this)" data-oval="310" id="v-ks"> values per graph<br><br>
+</div>
+<div data-tab="Implicit">
+For:<br>
+</div>
+<div data-tab="Parametrics" style="display: none;">
+Box for:<br>
+</div>
+<div data-tab="Parametricc" style="display: none;">
+Box for:<br>
+</div>
+<span style="color: #c80000;">x</span> from <input type="text" value="-10" size="1" onchange="isf(this)" data-oval="-10" id="v-clx0"> to <input type="text" value="10" size="1" onchange="isf(this)" data-oval="10" id="v-clx1"><br>
+<span style="color: #00c800;">y</span> from <input type="text" value="-10" size="1" onchange="isf(this)" data-oval="-10" id="v-cly0"> to <input type="text" value="10" size="1" onchange="isf(this)" data-oval="10" id="v-cly1"><br>
+<span style="color: #0000c8;">z</span> from <input type="text" value="-10" size="1" onchange="isf(this)" data-oval="-10" id="v-clz0"> to <input type="text" value="10" size="1" onchange="isf(this)" data-oval="10" id="v-clz1"><br>
+<br>
+<div data-tab="Implicit">
+x, y, z quality: <input type="text" value="40" size="1" onchange="isn(this)" data-oval="40" id="v-qix">, <input type="text" value="40" size="1" onchange="isn(this)" data-oval="40" id="v-qiy">, <input type="text" value="40" size="1" onchange="isn(this)" data-oval="40" id="v-qiz"> values per graph<br><br>
+<label><input type="checkbox" onclick="document.getElementById('cc-select').disabled = !document.getElementById('cc-select').disabled;">Coordinate conversion</label><br>
+Convert to: <select id="cc-select" disabled><option value="1">Cylindrical</option><option value="2">Spherical</option></select> coordinates<br>
+</div>
+</td></tr></table>
+<div id="colorpicker" style="display: none; background-color: black; border: 1px solid grey; padding: 3px; width: 84px; position: absolute;">
+<div style="border: 1px solid grey; float: left; width:60px; height:60px;"><canvas id="colorsel" width="60" height="60"></canvas></div><div style="border: 1px solid grey; float: left;height: 60px;width: 20px;"><canvas id="huesel" width="20" height="60"></canvas></div><div style="clear: both;"></div>
+<div id="selcolor" style="border: 1px solid grey; width: 20px; height: 20px; margin-top: 3px; float: left;"></div><div style="float: left; margin-top: 3px; margin-left: 0px;width: 56px; height: 17px;"><input type="text" style="width: 56px; height: 17px;" id="colorinput" value="ffffff" onchange="isc(this);" "data-oval="ffffff"></div>
+<div style="clear: both;"><button style="margin-top: 3px; width: 36px;" onclick="closePicker(0);">Back</button> <button style="margin-top: 3px; width: 36px;" onclick="closePicker(1);">OK</button></div>
+</div>
+<script>
+//different examples for parametric things & test examples for them from wiki
+var main = document.getElementById("render-main");
+var camera, scene, pointLight; var renderer = new THREE.WebGLRenderer(), controls;
+
+var scene = new THREE.Scene();
+
+camera = new THREE.PerspectiveCamera(45, main.offsetWidth / main.offsetHeight, 0.1, 1000);
+camera.position.set(3,-46, 3);
+camera.up.set(0, 0, 1);
+
+var gc, gc1, gc2, gc3;
+
+var aLight = new THREE.AmbientLight(0x111111);
+scene.add(aLight);
+
+pointLight = new THREE.PointLight(0xffffff);
+pointLight.position.x = 3;
+pointLight.position.y = -46;
+pointLight.position.z = 3;
+scene.add(pointLight);
+
+var mesh;
+
+var thecolor = 0xffffff, locklight = 1, type="Implicit", tdone=0, banbox, sms=THREE.SmoothShading;
+var a = 1, b = 1, c = 4, d = 16;
+var qiz = 40, qix = 40, qiy = 40, qic=0;
+var tmin=0, tmax=3, zmin=0, zmax=4, bmin=0, bmax=3, qz = 70, qb = 70;
+var clx = [-10, 10], cly = [-10, 10], clz = [-10, 10];
+var xx, yy, zz, z, be, t;
+var clp = 1; //clipping enabled for parametric surfaces
+var kn, k = THREE.Curve.create(function() {}, function(t){t = t * (tmax-tmin) + tmin; xx = xfk(t);  yy = yfk(t);  zz = zfk(t); if (isNaN(xx) || isNaN(yy) || isNaN(zz)) {xx=0;yy=0;zz=0;} return new THREE.Vector3(xx, yy, zz).multiplyScalar(1);}), ks = 40, k2s = 24, kr = 0.1;
+
+function changeType(elem)
+{
+ type = elem.getElementsByTagName("option")[elem.selectedIndex].value;
+ var t, dvs = document.getElementById("taber").getElementsByTagName("div"); var tl = dvs.length;
+ for(t=0;tl-t;t++)
+ {
+  if (dvs[t].getAttribute("data-tab")==type)
+  dvs[t].style.display = 'block';
+  else dvs[t].style.display = 'none';
+ }
+}
+function minusp(p)
+{
+ document.getElementById("parameter-"+p).value = parseInt(document.getElementById("parameter-"+p).value)-1;
+ document.getElementById("parameter-"+p).setAttribute("oval", document.getElementById("parameter-"+p).value);
+}
+function plusp(p)
+{
+ document.getElementById("parameter-"+p).value = parseInt(document.getElementById("parameter-"+p).value)+1;
+ document.getElementById("parameter-"+p).setAttribute("oval", document.getElementById("parameter-"+p).value);
+}
+function isn(elem)
+{
+ var t = parseInt(elem.value);
+ if (isNaN(t))
+ elem.value=elem.getAttribute("data-oval");
+ else
+ {
+  elem.value=t; elem.setAttribute("data-oval", t);
+ }
+}
+function isc(elem)
+{
+ var t = parseInt("0x"+elem.value);
+ if (isNaN(t) && t>0 && t<0xffffff)
+ elem.value=elem.getAttribute("data-oval");
+ else
+ {
+  elem.setAttribute("data-oval", elem.value);
+ }
+ loadRGB(t);
+ thecolor = parseInt(elem.value, 16);
+}
+function isf(elem)
+{
+ var t = parseFloat(elem.value);
+ if (isNaN(t))
+ elem.value=elem.getAttribute("data-oval");
+ else
+ {
+  elem.value=t; elem.setAttribute("data-oval", t);
+ }
+}
+function rescan()
+{
+ a = parseFloat(document.getElementById("parameter-a").value); b = parseFloat(document.getElementById("parameter-b").value);
+ c = parseFloat(document.getElementById("parameter-c").value); d = parseFloat(document.getElementById("parameter-d").value);
+ zmin = parseFloat(document.getElementById("v-zmin").value); zmax = parseFloat(document.getElementById("v-zmax").value);
+ bmin = parseFloat(document.getElementById("v-bmin").value); bmax = parseFloat(document.getElementById("v-bmax").value);
+ qz = parseInt(document.getElementById("v-qz").value); qb = parseInt(document.getElementById("v-qb").value);
+ tmin = parseFloat(document.getElementById("v-tmin").value); tmax = parseFloat(document.getElementById("v-tmax").value);
+ ks = parseInt(document.getElementById("v-ks").value);
+ clx[0] = parseFloat(document.getElementById("v-clx0").value); clx[1] = parseFloat(document.getElementById("v-clx1").value);
+ cly[0] = parseFloat(document.getElementById("v-cly0").value); cly[1] = parseFloat(document.getElementById("v-cly1").value);
+ clz[0] = parseFloat(document.getElementById("v-clz0").value); clz[1] = parseFloat(document.getElementById("v-clz1").value);
+ qix = parseInt(document.getElementById("v-qix").value); qiy = parseInt(document.getElementById("v-qiy").value);
+ qiz = parseInt(document.getElementById("v-qiz").value);
+ if (document.getElementById("cc-select").disabled)
+ qic = 0;
+ else qic = parseInt(document.getElementById("cc-select").getElementsByTagName("option")[document.getElementById("cc-select").selectedIndex].value);
+}
+function setSMS(n)
+{
+ if (tdone>1)
+ mesh.material.shading = (n)?(THREE.SmoothShading):(THREE.FlatShading);
+}
+function cat()
+{
+ if (document.getElementById("c-locklight").checked) locklight=1; else locklight=0;
+ if (document.getElementById("sh-model").checked) {sms=THREE.SmoothShading;fire()} else {sms=THREE.FlatShading;fire()}
+ if (document.getElementById("boundingboxshow").checked) {banbox=0;createBoundingBox()} else {banbox=1;bcubeoff();}
+}
+function fire()
+{
+ rescan();
+ eval("draw"+type+"();");
+}
+var parl = [];
+function meshfunc(tz, tb)
+{
+ z = (zmax-zmin) * tz + zmin;
+ be = (bmax-bmin) * tb + bmin;
+ xx = xf(z,be);  yy = yf(z,be);  zz = zf(z,be);
+ parl[0] = xx; parl[1] = yy;  parl[2] = zz;
+ if (isNaN(xx) || isNaN(yy) || isNaN(zz))
+ return new THREE.Vector3(0,0,0);
+ else
+ return new THREE.Vector3(xx, yy, zz);
+}
+
+function abs(x) {return Math.abs(x);}
+
+function xf(p, l) {return p;}
+function yf(p, l) {return l;}
+function zf(p, l) {return Math.sin(p*l);}
+function xfk(t) {return Math.sin(t)+t*t;}
+function yfk(t) {return Math.cos(t);}
+function zfk(t) {return 1;}
+function eq(x, y, z)
+{
+  //var value = x/y-z/x+y/z;
+//var value =abs(x/6)+abs(y/6)+abs(z/6)-1;
+//var value = Math.pow((Math.sqrt(x*x+y*y)-6),2) + z*z - 1;
+//var value = z*z + x*x + y*y - 5;
+// return -(x*x*x + x*x - 5*x + 3);
+//var value = Math.pow((x*x + (y*y*9/4) + z*z - 1), 3) - x*x*z*z*z-(y*y*z*z*z*9/80);
+//var value  =  Math.pow((x*x + (y*y*9/4) + z*z - 1), 3) - x*x*z*z*z-(y*y*z*z*z*9/80);
+//var value = Math.sin(y)-Math.cos(x)-Math.sin(z);
+ return x*x+y*y+z*z-5;
+}
+
+function doubleSide(geometry, smooth)
+{
+ var t, tl = geometry.vertices.length, tl2 = geometry.faces.length;
+ if (smooth)
+ {
+  for(t=0;t<tl;t++)
+  {
+   geometry.vertices.push(new THREE.Vector3(geometry.vertices[t].x, geometry.vertices[t].y, geometry.vertices[t].z));
+  }
+ }
+ for(t=0;t<tl2;t++)
+ {
+  if (geometry.faces[t] instanceof THREE.Face3)
+  {
+   geometry.faces.push(new THREE.Face3(geometry.faces[t].a+((smooth)?(tl):(0)), geometry.faces[t].c+((smooth)?(tl):(0)), geometry.faces[t].b+((smooth)?(tl):(0))));
+  }
+  else
+  {
+   geometry.faces.push(new THREE.Face4(geometry.faces[t].a+((smooth)?(tl):(0)), geometry.faces[t].d+((smooth)?(tl):(0)), geometry.faces[t].c+((smooth)?(tl):(0)), geometry.faces[t].b+((smooth)?(tl):(0))));
+  }
+ }
+ geometry.__tmpVertices = undefined;
+ geometry.computeCentroids();
+ geometry.computeFaceNormals();
+ geometry.computeVertexNormals();
+}
+function drawParametrics() //reset bounding box
+{
+ cleanmesh();
+ createBoundingBox();
+ eval("xf = function(z, t){return "+extractMath("eqPx", ["z", "t", "a", "b", "c", "d"])+";}");
+ eval("yf = function(z, t){return "+extractMath("eqPy", ["z", "t", "a", "b", "c", "d"])+";}");
+ eval("zf = function(z, t){return "+extractMath("eqPz", ["z", "t", "a", "b", "c", "d"])+";}");
+ var geometry = new THREE.ParametricGeometry(meshfunc, qz, qb, true); //hey, what about merging vertices?
+ geometry.mergeVertices(2);
+ doubleSide(geometry, 1);
+ geometry.computeFaceNormals();
+ mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: thecolor, shading: THREE.FlatShading}));
+ scene.add(mesh);
+ tdone = 1;
+}
+function drawParametricc()
+{
+ cleanmesh();
+ createBoundingBox();
+//alert(extractMath("eqPcx", ["t", "a", "b", "c", "d"]));
+ kn = new k;
+ eval("xfk = function(t){return "+extractMath("eqPcx", ["t", "a", "b", "c", "d"])+";}");
+ eval("yfk = function(t){return "+extractMath("eqPcy", ["t", "a", "b", "c", "d"])+";}");
+ eval("zfk = function(t){return "+extractMath("eqPcz", ["t", "a", "b", "c", "d"])+";}");
+ var geometry = new THREE.TubeGeometry(kn, ks, kr, k2s, 0, false);
+ geometry.mergeVertices(2);
+ doubleSide(geometry, 1);
+ mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: thecolor, shading: sms}));
+ scene.add(mesh);
+ tdone=2;
+}
+function drawImplicit()
+{
+ cleanmesh();
+ createBoundingBox();
+ eval("eq = function(x, y, z){return "+extractMath("eqI", ["x", "y", "z", "a", "b", "c", "d"])+";}");
+ var points = [], values = [], z2, b2, t2, vlist = new Array(12);
+ z2 = qix; b2 = qiy; t2 = qiz;
+ for (t=0;t<t2;t++)
+ for (be=0;be<b2;be++)
+ for (z=0;z<z2;z++)
+ {
+  xx = clx[0]+(clx[1]-clx[0])*(z/(z2-1)); yy = cly[0]+(cly[1]-cly[0])*(be/(b2-1)); zz = clz[0]+(clz[1]-clz[0])*(t/(t2-1));
+  if (qic == 0)
+  points.push(new THREE.Vector3(xx,yy,zz));
+  else if (qic == 1) //cylindrical
+  points.push(new THREE.Vector3(xx*Math.cos(yy),xx*Math.sin(yy),zz));
+  else
+  points.push(new THREE.Vector3(xx*Math.sin(yy)*Math.cos(zz),xx*Math.sin(yy)*Math.sin(zz),xx*Math.cos(yy)));
+  values.push(eq(xx, yy, zz));
+ }
+ var geometry = new THREE.Geometry(), v1, v2, v3;
+ gc=0; gc3=0; var xa = [], vl = new Array(12);
+
+ for (t=0;t<t2-1;t++)
+ for (be=0;be<b2-1;be++)
+ for (z=0;z<z2-1;z++)
+ {
+  xa[0] = z+z2*be+z2*b2*t; xa[1] = xa[0]+1; xa[2] = xa[0]+z2;  xa[3] = xa[2]+1; xa[4] = xa[0] + z2*b2; xa[5] = xa[1]+z2*b2; xa[6] = xa[2]+z2*b2; xa[7] = xa[3]+z2*b2;
+		
+  gc = 0;
+  if (values[xa[0]]<0) gc |= 1;  if (values[xa[1]]<0) gc |= 2;  if (values[xa[2]]<0) gc |= 8;  if (values[xa[3]]<0) gc |= 4;
+  if (values[xa[4]]<0) gc |= 16;  if (values[xa[5]]<0) gc |= 32;  if (values[xa[6]]<0) gc |= 128;  if (values[xa[7]]<0) gc |= 64;
+		
+  gc2 = THREE.edgeTable[gc];
+
+  if (gc2===0) continue;
+
+  if (gc2&1) vl[0] = points[xa[0]].clone().lerpSelf(points[xa[1]], values[xa[0]]/(values[xa[0]]-values[xa[1]]));
+  if (gc2&2) vl[1] = points[xa[1]].clone().lerpSelf(points[xa[3]], values[xa[1]]/(values[xa[1]]-values[xa[3]]));
+  if (gc2&4) vl[2] = points[xa[2]].clone().lerpSelf(points[xa[3]], values[xa[2]]/(values[xa[2]]-values[xa[3]]));
+  if (gc2&8) vl[3] = points[xa[0]].clone().lerpSelf(points[xa[2]], values[xa[0]]/(values[xa[0]]-values[xa[2]]));
+  if (gc2&16) vl[4] = points[xa[4]].clone().lerpSelf(points[xa[5]], values[xa[4]]/(values[xa[4]]-values[xa[5]]));
+  if (gc2&32) vl[5] = points[xa[5]].clone().lerpSelf(points[xa[7]], values[xa[5]]/(values[xa[5]]-values[xa[7]]));
+  if (gc2&64) vl[6] = points[xa[6]].clone().lerpSelf(points[xa[7]], values[xa[6]]/(values[xa[6]]-values[xa[7]]));
+  if (gc2&128) vl[7] = points[xa[4]].clone().lerpSelf(points[xa[6]], values[xa[4]]/(values[xa[4]]-values[xa[6]]));
+  if (gc2&256) vl[8] = points[xa[0]].clone().lerpSelf(points[xa[4]], values[xa[0]]/(values[xa[0]]-values[xa[4]]));
+  if (gc2&512) vl[9] = points[xa[1]].clone().lerpSelf(points[xa[5]], values[xa[1]]/(values[xa[1]]-values[xa[5]]));
+  if (gc2&1024) vl[10] = points[xa[3]].clone().lerpSelf(points[xa[7]], values[xa[3]]/(values[xa[3]]-values[xa[7]]));
+  if (gc2&2048) vl[11] = points[xa[2]].clone().lerpSelf(points[xa[6]], values[xa[2]]/(values[xa[2]]-values[xa[6]]));
+
+  gc2=0; gc <<= 4;
+  while (THREE.triTable[gc+gc2]!=-1) 
+  {
+   v1 = THREE.triTable[gc+gc2]; v2 = THREE.triTable[gc+gc2+1]; v3 = THREE.triTable[gc+gc2+2];
+   geometry.vertices.push(vl[v1].clone()); geometry.vertices.push(vl[v2].clone()); geometry.vertices.push(vl[v3].clone());
+   geometry.faces.push(new THREE.Face3(gc3, gc3+1, gc3+2));
+   gc2 += 3; gc3 += 3;
+  }
+ }
+ geometry.mergeVertices(8);
+ geometry.computeCentroids(); 
+ geometry.computeFaceNormals(); 
+ geometry.computeVertexNormals(); 
+ doubleSide(geometry, 1);
+ mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: thecolor, shading: sms}));
+ scene.add(mesh);
+ tdone=3;
+}
+
+var loaded = 0;
+
+controls = new THREE.TrackballControls(camera, main);
+
+var bcube = {material: new THREE.MeshLambertMaterial({color: 0xffffff, shading: THREE.SmoothShading}), loaded: 0, elems: 0};
+createBoundingBox();
+
+function bcubeoff()
+{
+ if (!bcube.loaded) return;
+ var tc;
+ for(tc=0;bcube.elems-tc;tc++)
+ sweep(bcube[tc]);
+}
+
+function createBoundingBox()
+{
+ if (banbox) return;
+ bcubeoff();
+ var r = 0.16;
+ //x
+ bcube[0] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clx[1]-clx[0]-1, 11, 1, 1), bcube.material);
+ bcube[0].position.set((clx[0]+clx[1]-1)/2, cly[0], clz[0]);  scene.add(bcube[0]); bcube[0].rotation.set(Math.PI/2, 0, Math.PI/2);
+ bcube[1] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clx[1]-clx[0], 11, 1, 1), bcube.material);
+ bcube[1].position.set((clx[0]+clx[1])/2, cly[0], clz[1]); scene.add(bcube[1]); bcube[1].rotation.set(Math.PI/2, 0, Math.PI/2);
+ bcube[2] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clx[1]-clx[0], 11, 1, 1), bcube.material);
+ bcube[2].position.set((clx[0]+clx[1])/2, cly[1], clz[0]); scene.add(bcube[2]); bcube[2].rotation.set(Math.PI/2, 0, Math.PI/2);
+ bcube[3] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clx[1]-clx[0], 11, 1, 1), bcube.material);
+ bcube[3].position.set((clx[0]+clx[1])/2, cly[1], clz[1]); scene.add(bcube[3]); bcube[3].rotation.set(Math.PI/2, 0, Math.PI/2);
+ //y
+ bcube[4] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, cly[1]-cly[0]-1, 11, 1, 1), bcube.material);
+ bcube[4].position.set(clx[0], (cly[0]+cly[1]-1)/2, clz[0]);  scene.add(bcube[4]);
+ bcube[5] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, cly[1]-cly[0], 11, 1, 1), bcube.material);
+ bcube[5].position.set(clx[0], (cly[0]+cly[1])/2, clz[1]); scene.add(bcube[5]);
+ bcube[6] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, cly[1]-cly[0], 11, 1, 1), bcube.material);
+ bcube[6].position.set(clx[1], (cly[0]+cly[1])/2, clz[0]); scene.add(bcube[6]);
+ bcube[7] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, cly[1]-cly[0], 11, 1, 1), bcube.material);
+ bcube[7].position.set(clx[1], (cly[0]+cly[1])/2, clz[1]); scene.add(bcube[7]);
+ //z
+ bcube[8] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clz[1]-clz[0]-1, 11, 1, 1), bcube.material);
+ bcube[8].position.set(clx[0], cly[0], (clz[0]+clz[1]-1)/2);  scene.add(bcube[8]); bcube[8].rotation.set(Math.PI/2, 0, 0);
+ bcube[9] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clz[1]-clz[0], 11, 1, 1), bcube.material);
+ bcube[9].position.set(clx[0], cly[1], (clz[0]+clz[1])/2); scene.add(bcube[9]); bcube[9].rotation.set(Math.PI/2, 0, 0);
+ bcube[10] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clz[1]-clz[0], 11, 1, 1), bcube.material);
+ bcube[10].position.set(clx[1], cly[0], (clz[0]+clz[1])/2); scene.add(bcube[10]); bcube[10].rotation.set(Math.PI/2, 0, 0);
+ bcube[11] = new THREE.Mesh(new THREE.CylinderGeometry(r, r, clz[1]-clz[0], 11, 1, 1), bcube.material);
+ bcube[11].position.set(clx[1], cly[1], (clz[0]+clz[1])/2); scene.add(bcube[11]); bcube[11].rotation.set(Math.PI/2, 0, 0);
+ bcube[12] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[12].position.set(clx[0], cly[0], clz[0]); scene.add(bcube[12]);
+ bcube[13] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[13].position.set(clx[0], cly[0], clz[1]); scene.add(bcube[13]);
+ bcube[14] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[14].position.set(clx[0], cly[1], clz[0]); scene.add(bcube[14]);
+ bcube[15] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[15].position.set(clx[0], cly[1], clz[1]); scene.add(bcube[15]);
+ bcube[16] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[16].position.set(clx[1], cly[0], clz[0]); scene.add(bcube[16]);
+ bcube[17] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[17].position.set(clx[1], cly[0], clz[1]); scene.add(bcube[17]);
+ bcube[18] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[18].position.set(clx[1], cly[1], clz[0]); scene.add(bcube[18]);
+ bcube[19] = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 7), bcube.material);
+ bcube[19].position.set(clx[1], cly[1], clz[1]); scene.add(bcube[19]);
+ //axis cones
+ bcube[20] = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0, 2, 26, 1, 0), new THREE.MeshLambertMaterial({color: 0x00c800, shading: THREE.SmoothShading}));
+ bcube[20].position.set(clx[0], cly[1]-1, clz[0]); scene.add(bcube[20]); bcube[20].rotation.set(Math.PI, 0, 0);
+ bcube[21] = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0, 2, 26, 1, 0), new THREE.MeshLambertMaterial({color: 0xc80000, shading: THREE.SmoothShading}));
+ bcube[21].position.set(clx[1]-1, cly[0], clz[0]); scene.add(bcube[21]); bcube[21].rotation.set(Math.PI/2, 0, Math.PI/2);
+ bcube[22] = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0, 2, 26, 1, 0), new THREE.MeshLambertMaterial({color: 0x0000c8, shading: THREE.SmoothShading}));
+ bcube[22].position.set(clx[0], cly[0], clz[1]-1); scene.add(bcube[22]); bcube[22].rotation.set(-Math.PI/2, 0, 0);
+ bcube.loaded=1; bcube.elems = 23;
+}
+
+function hideBoundingBox() {bcube.visible = false;}
+function showBoundingBox() {bcube.visible = true;}
+function hideAxis() {ax.visible = false;}
+function showAxis() {ax.visible = true;}
+var wasReset;
+function resetView()
+{
+ camera.position.set(6, 4, 37);
+ camera.up.x = 0; camera.up.y = 1; camera.up.z = 0;
+ pointLight.position = camera.position.clone();
+ wasReset=1;
+}
+//drawImplicit(); 
+loaded=1;
+renderer.setSize(main.offsetWidth, main.offsetHeight);
+renderer.render(scene, camera);
+
+//mesh deallocation function
+//fix trackball controls
+
+function ctframe() 
+{
+ if (!loaded) return;
+ requestAnimationFrame(ctframe);
+ renderer.render(scene, camera);
+ controls.update();
+ if (locklight)
+ pointLight.position = camera.position.clone();
+}
+
+function sweep(wat)
+{
+ scene.remove(wat);
+ wat.deallocate();
+ wat.geometry.deallocate();
+ wat.material.deallocate();
+ renderer.deallocateObject(wat);
+ wat = null;
+}
+//call cleanmesh 
+function cleanmesh()
+{
+ if (!mesh) return;
+ sweep(mesh);
+}
+
+//then call ctframe
+ctframe();
+main.appendChild(renderer.domElement);
+
+//mathquill on key press = replace sqrt with \sqrt etc
+function extractMath(id, vars)
+{
+ return prepare(delatex($('#'+id).mathquill('latex')), vars);
+}
+
+function tce(query)
+{
+ var vl, openbr = 0, pstart = 0;
+ for(vl=0;vl<query.length;vl++)
+ {
+  if (query.substr(vl, 1)=="(")
+  {
+   if (!openbr)
+   pstart = vl;
+   ++openbr;
+  }
+  else if (query.substr(vl, 1)==")")
+  {
+   --openbr;
+   if (!openbr)
+   {
+    query = query.substr(0, pstart) + "{" + query.substring(pstart+1, vl) + "}" + query.substr(vl+1);
+   }
+  }
+ }
+ return query;
+}
+var tohint = 'ln|log|min|nCr|nPr|gcd|lcm|ceil|exp|abs|max|mod|lcm|gcd|gcf|hcf|lim|exp|floor|sign|round|sqrt|nthroot|sum|prod|pi|theta|sin|cos|tan|sec|cosec|csc|cotan|cot|ctg|arcsin|arccos|arctan|arcsec|arccosec|arccsc|arccotan|arccot|arcctg|arcsinh|arccosh|arctanh|arcsech|arccosech|arccsch|arccotanh|arccoth|arcctgh|sinh|cosh|tanh|sech|cosech|csch|cotanh|coth|ctgh';
+function prepare(query, variables) //my own buggy "mini parser". input must be delatexed latex, something like 2^sinxx will fail
+{
+ query = query.replace(/ /g, "");
+ query = query.replace(new RegExp('('+(variables.join("|"))+')', "g"), "\($1\)");
+ var func = ("sqrt|alert|"+tohint).split("|"), tnz;
+ for(gc=0;func.length-gc;gc++)
+ {
+  tnz = func[gc].replace(new RegExp('('+(variables.join("|"))+')', "g"), "\($1\)");
+  query = query.replace(new RegExp('('+tnz.replace(/\(/g, "\\(").replace(/\)/g, "\\)")+')', "g"), func[gc]);
+ }
+ query = query.replace(/log_([0-9])/g, "log_\($1\)");
+ query = query.replace(/([0-9]+(\.[0-9]+)?)/g, "\($1\)");
+ var mtemp, cp; 
+ while(query!=(query=tce(query)))
+ {
+  while (mtemp = query.match(/(\{[^\{\}]+\})\^(\{[^\{\}]+\})/))
+  query = query.replace(mtemp[0], "pow{"+mtemp[1]+", "+mtemp[2]+"}");
+ }
+ query = query.replace(/\{/g, "(").replace(/\}/g, ")");
+ while(query!=(query=tce(query)))
+ {
+  while (mtemp = query.match(/([a-z]+)\^(\{[^\{\}]+\})(\{[^\{\}]+\})/))
+  query = query.replace(mtemp[0], "pow{"+mtemp[1]+mtemp[3]+", {"+mtemp[2]+"}}");
+ }
+ query = query.replace(/\{/g, "(").replace(/\}/g, ")");
+ while(query!=(query=tce(query)))
+ {
+  while (mtemp = query.match(/log_(\{[^\{\}]+\})(\{[^\{\}]+\})/))
+  query = query.replace(mtemp[0], "logb{"+mtemp[1]+", {"+mtemp[2]+"}}");
+ }
+ query = query.replace(/\}\{/g, "}*{").replace(/\}([A-Za-z])/g, "}*$1");
+ query = query.replace(/\{/g, "(").replace(/\}/g, ")");
+ while(query!=(query=tce(query)))
+ {
+  while (mtemp = query.match(/sqrt\[([^\[\]]+)\](\{[^\{\}]+\})/))
+  query = query.replace(mtemp[0], "pow{"+mtemp[2]+", {1}/{"+mtemp[1]+"}}");
+ }
+ query = query.replace(/\{/g, "(").replace(/\}/g, ")");
+ while(query!=(query=tce(query)))
+ {
+  while (mtemp = query.match(/(\{[^\{\}]+\})\!/))
+  query = query.replace(mtemp[0], "gamma{"+mtemp[1]+"}");
+ }
+ query = query.replace(/\{/g, "(").replace(/\}/g, ")");
+ return query;
+}
+//fire();
+
+function RGBtoHSV(r, g, b)
+{
+ r /= 255; g /= 255; b /= 255;
+ var max = Math.max(r,g,b), min = Math.min(r, g, b);
+ var h, s, v = max, d = max-min;
+ s = max == 0 ? 0 : d / max;
+ if(!d)
+ h = 0;
+ else
+ {
+  switch(max)
+  {
+   case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+   case g: h = (b - r) / d + 2; break;
+   case b: h = (r - g) / d + 4; break;
+  }
+  h /= 6;
+ }
+ return [h, s, v]
+}
+function HSVtoRGB(h, s, v)
+{
+ var r, g, b, i = Math.floor(h * 6);
+ var f = h * 6 - i, p = v * (1 - s)
+ var q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+ switch(i % 6)
+ {
+  case 0: r = v, g = t, b = p; break;
+  case 1: r = q, g = v, b = p; break;
+  case 2: r = p, g = v, b = t; break;
+  case 3: r = p, g = q, b = v; break;
+  case 4: r = t, g = p, b = v; break;
+  case 5: r = v, g = p, b = q; break;
+ }
+ r *= 255; g *= 255; b *= 255;
+ return [Math.round(r), Math.round(g), Math.round(b)];
+}
+var desc, desh, t1, t222, t3 = 0, t4;
+function fillHselector(elem)
+{
+ desh = elem.getContext('2d').getImageData(0, 0, elem.width, elem.height); t3 = 0;
+ for(t222=(elem.height-1);t222>=0;t222--)
+ for(t1=(elem.width-1);t1>=0;t1--)
+ {
+  t4 = HSVtoRGB((t222/(elem.height-1))*60, 1, t1/(elem.width-1)); r = t4[0]; g = t4[1]; b = t4[2];
+  desh.data[t3++] = r; desh.data[t3++] = g; desh.data[t3++] = b; desh.data[t3++] = 255;
+ }
+ elem.getContext("2d").putImageData(desh, 0, 0);
+}
+fillHselector(huesel);
+function fillSquareselector(hue, elem)
+{
+ desc = elem.getContext('2d').getImageData(0, 0, elem.width, elem.height); t3 = 0;
+ for(t222=0;t222<elem.height;t222++)
+ for(t1=0;t1<elem.width;t1++)
+ {
+  t4 = HSVtoRGB(hue, t1/(elem.width-1), (elem.height-1-t222)/(elem.height-1)); r = t4[0]; g = t4[1]; b = t4[2];
+  desc.data[t3++] = r; desc.data[t3++] = g; desc.data[t3++] = b; desc.data[t3++] = 255;
+ }
+ elem.getContext("2d").putImageData(desc, 0, 0);
+ ghue = hue;
+}
+fillHselector(document.getElementById("huesel"));
+fillSquareselector(0.1, document.getElementById("colorsel"));
+document.getElementById("huesel").onmousedown = trgmd; document.getElementById("colorsel").onmousedown = trgmd;
+var mreg = {"huesel":0, "colorsel":0}, ghue, gcolor, ctxh = document.getElementById("huesel").getContext("2d"), ctxc = document.getElementById("colorsel").getContext("2d");
+ctxh.lineWidth=1; ctxc.lineWidth=1, colorsel = document.getElementById("colorsel"), huesel = document.getElementById("huesel");
+function trgmd(e)
+{
+ mreg[e.target.id] = 1;
+ if (e.target.id=="huesel") setFromHue(e);
+ else if (e.target.id=="colorsel") setFromColor(e);
+ e.preventDefault();
+document.getElementById("huesel").onmousemove = trgmm; document.getElementById("colorsel").onmousemove = trgmm;
+document.onmouseup = trgmu;
+}
+function trgmm(e)
+{
+ if (!mreg[e.target.id]) return false;
+ if (e.target.id=="huesel") setFromHue(e);
+ else if (e.target.id=="colorsel") setFromColor(e);
+ e.preventDefault();
+}
+function trgmu(e)
+{
+ mreg[e.target.id] = 0;
+ document.getElementById("huesel").onmousemove = null; document.getElementById("colorsel").onmousemove = null;
+ document.onmouseup = null;
+}
+//fix position bug
+//change color of circle (conditional)
+//set begining hue, do the rest
+//chrome has buggy scroll
+//dat dude did pageX-b.left
+function drawDatCircle(ctxh, x, y, r)
+{
+ if (!r) r = 4;
+ ctxh.beginPath(); ctxh.moveTo(x+4, y); ctxh.strokeStyle = "rgb(255,255,255)";
+ ctxh.arc(x, y, 4, 0, Math.PI*2, true); ctxh.stroke();
+}
+function setFromHue(e)
+{
+ var me = document.getElementById("huesel"), he = document.getElementById("colorsel"), col;
+ var x = e.pageX-$(me).offset().left, y = e.pageY-$(me).offset().top;
+ if (y<0) y = 0; if (x<0) x = 0;
+ if (y>(me.height-1)) y = me.height-1; if (x>(me.width-1)) x = me.width-1;
+ ctxh.putImageData(desh, 0, 0); drawDatCircle(ctxh, x, y);
+ fillSquareselector((me.height-1-y)/(me.height-1), he);
+ drawDatCircle(ctxc, he.width, ((x)/(me.width-1))*(he.height-1));
+ gheight = y;
+ col = HSVtoRGB((me.height-1-y)/(me.height-1), 1, (me.width-1-x)/(me.width-1));
+ colorBox(col[0], col[1], col[2]);
+}
+function setFromColor(e)
+{
+ var me = document.getElementById("colorsel"), he = document.getElementById("huesel");
+ var x = e.pageX-$(me).offset().left, y = e.pageY-$(me).offset().top;
+ if (y<0) y = 0; if (x<0) x = 0;
+ if (y>(me.height-1)) y = me.height-1; if (x>(me.width-1)) x = me.width-1;
+ ctxc.putImageData(desc, 0, 0);
+ drawDatCircle(ctxc, x, y);
+ ctxh.putImageData(desh, 0, 0);
+ drawDatCircle(ctxh, ((y)/(me.height-1))*(he.width-1), gheight);
+ col = HSVtoRGB(ghue, (x)/(me.width-1), (me.height-1-y)/(me.height-1));
+ colorBox(col[0], col[1], col[2]);
+}
+function to2H(n)
+{
+ return (n.toString(16).length==2)?(n.toString(16)):("0"+n.toString(16));
+}
+function colorBox(r, g, b)
+{
+ t4 = to2H(r)+to2H(g)+to2H(b);
+ document.getElementById("selcolor").style.backgroundColor="#"+t4;
+ document.getElementById("colorinput").value=t4;
+}
+function loadRGB(color)
+{
+ var c = RGBtoHSV((color&0xff0000)>>16, (color&0x00ff00)>>8, color&0x0000ff);
+ ghue = c[0];
+ fillHselector(huesel);
+ drawDatCircle(ctxh, (1-c[2])*(huesel.width-1), (c[0])*(huesel.height-1));
+ gheight = (c[0])*(huesel.height-1);
+ fillSquareselector(ghue, colorsel);
+ drawDatCircle(ctxc, (c[1])*(colorsel.width-1), (1-c[2])*(colorsel.height-1));
+ colorBox((color&0xff0000)>>16, (color&0x00ff00)>>8, color&0x0000ff);
+}
+isc(document.getElementById("colorinput"));
+function openPicker(e)
+{
+ loadRGB(thecolor);
+ document.getElementById("colorpicker").style.left = e.pageX+"px";
+ document.getElementById("colorpicker").style.top = (e.pageY-60)+"px";
+ document.getElementById("colorpicker").style.display = 'block';
+}
+function closePicker(save)
+{
+ document.getElementById("colorpicker").style.display = 'none';
+ if (save)
+ {
+  thecolor = parseInt(document.getElementById("colorinput").value, 16);
+  document.getElementById("finalcolor").style.backgroundColor = "#"+document.getElementById("colorinput").value;
+  cat();
+ }
+}
+</script>
+

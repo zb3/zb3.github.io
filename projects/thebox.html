@@ -1,0 +1,140 @@
+Drag the box! xD<br>It's not real, but an attempt to create something fun.<br>I've tried a lot of enhancements to make it more "real", but they all they did was to take fun away <br><br><b>Tweaks:</b> <button onclick="updhater();">Update</button><br>Gravity (+vy per frame): <input type="text" size="2" value="0.21" id="igp"><br>X velocity slowdown(per frame): <input type="text" size="2" value="0.99" id="ixp"> (<label><input type="checkbox" id="onlyt">Only when touching surface</label>)<br>
+Surface reflection: <input type="text" size="2" value="0.8" id="ipref">
+<br><br><span id="loadspan">Loading...</span>
+<style>
+body {background-color: black;color:white;font-family:arial;}
+#bne {display: none;border: 20px solid white; width: 600px; height: 200px;}
+#bl {display none;background-color: white; height: 20px; width: 20px; position: absolute;}
+</style>
+<center>
+<div id="bne" onmousemove="return false;" ondragstart="return false;" onselectstart="return false;"></div></cetner>
+ <div id="bl"></div>
+<script>
+//add alternative VX slowdown mode, only when touching surface / only when touching without wzero
+function e(el)
+{
+ return document.getElementById(el);
+}
+var bl = e("bl"), bne = e("bne"), x, y, nx=0, nx1, ny=0.02, ny1, grav; bl.active=0; bl.hitt=0, bl.moved = 0;
+var frames = 10, pref = 0.8, gp = 0.21, xp = 0.99, onlyt = 0;
+bl.onmousedown = svec;
+
+function svec(evt)
+{
+document.onmousemove = uvec;
+document.onmouseup = mvec;
+ x = evt.clientX; y = evt.clientY; bl.active=1;
+ evt.preventDefault();
+}
+function uvec(evt)
+{
+ bl.moved = 1;
+ nx1 = evt.clientX; ny1 = evt.clientY;
+ evt.preventDefault();
+}
+function mvec(evt)
+{
+ document.onmousemove = null;
+ document.onmouseup = null;
+ if (bl.moved)
+ {
+  bl.moved=0;
+  evt.preventDefault();
+  nx = nx1 - x; ny = ny1 - y;
+ }
+}
+var wzero = 0;
+function vmove()
+{
+ grav = 1;
+ var csbo = window.getComputedStyle(e("bne")), csbl = window.getComputedStyle(e("bl"));
+ var bo = bne.getBoundingClientRect(), bbl = bl.getBoundingClientRect();
+ var bo2 = [bo.left+parseInt(csbo.borderLeftWidth),bo.top+parseInt(csbo.borderTopWidth), bo.right-parseInt(csbo.borderRightWidth), bo.bottom-parseInt(csbo.borderBottomWidth)];
+
+ var fx = fx2 = fy = fy2 = 0;
+ var bl2 = [bbl.left, bbl.top, bbl.right, bbl.bottom];
+
+ if ((bl2[0]==bo2[0]) && ((bl2[0]+nx-bo2[0])<0))
+ {
+  nx *= -pref;
+  bl.style.left = (bl2[0]+nx+window.pageXOffset)+"px";
+ }
+ else if ((bl2[0]+nx-bo2[0])<0)
+ {
+  bl.style.left = (bo2[0]+window.pageXOffset)+"px";
+ }
+ else if ((bo2[2]==bl2[2]) && ((bo2[2]-bl2[2]-nx)<0))
+ {
+  nx *= -pref;
+  bl.style.left = (bl2[0]+nx+window.pageXOffset)+"px";
+ }
+ else if ((bo2[2]-bl2[2]-nx)<0)
+ {
+  bl.style.left = (bo2[2]-bl.offsetWidth+window.pageXOffset)+"px";
+ }
+ else
+ {
+  if ((!onlyt) || (wzero))
+  nx *= xp;
+  bl.style.left = (bl2[0]+nx+window.pageXOffset)+"px"; 
+ }
+ 
+ if ((Math.abs(ny)<=gp) && ((bo2[3]-bl2[3]-ny)<0)) {wzero = 1; bl.style.top = (bo2[3]-bl.offsetHeight+window.pageYOffset)+"px";return;}
+ 
+ wzero = 0;
+ if ((bl2[1]==bo2[1]) && ((bl2[1]+ny-bo2[1])<0))
+ {
+  ny *= -pref;
+  bl.style.top = (bl2[1]+ny+window.pageYOffset)+"px";
+ }
+ else if ((bl2[1]+ny-bo2[1])<0)
+ {
+  if (ny!=0)
+  {
+   fx = ny - (bl2[1]+ny-bo2[1]);
+   ny += gp*(fx/ny);
+  }
+  bl.style.top = (bo2[1]+window.pageYOffset)+"px";
+ }
+ else if ((bo2[3]==bl2[3]) && ((bo2[3]-bl2[3]-ny)<0))
+ {
+  ny *= -pref;
+  bl.style.top = (bl2[1]+ny+window.pageYOffset)+"px";
+ }
+ else if ((bo2[3]-bl2[3]-ny)<0)
+ {
+  if (ny!=0)
+  {
+   fx = ny + bo2[3]-bl2[3]-ny;
+   ny += gp*(fx/ny);
+  }
+  bl.style.top = (bo2[3]-bl.offsetHeight+window.pageYOffset)+"px";
+ }
+ else { if (!(ny<=gp && ((bo2[3]-bl2[3]-ny)<0))) {ny += gp;} else {ny=0;} bl.style.top = ( bl2[1]+ny+window.pageYOffset)+"px";}
+ bbl = bl.getBoundingClientRect(); bl2 = [bbl.left, bbl.top, bbl.right, bbl.bottom];
+}
+function updhater()
+{
+ var tmp = parseFloat(e("igp").value);
+ if (isNaN(tmp))
+ {alert("Invalid gravitation!");return}
+ gp = tmp;
+ tmp = parseFloat(e("ixp").value);
+ if (isNaN(tmp))
+ {alert("Invalid vx slowdown!");return}
+ xp = tmp;
+ tmp = parseFloat(e("ipref").value);
+ if (isNaN(tmp) || ipref>1)
+ {alert("Invalid reflection!");return}
+ pref = tmp;
+ if (e("onlyt").checked) onlyt=1; else onlyt = 0;
+}
+e("loadspan").style.display="none";
+bne.style.display='block'; 
+var csbo = window.getComputedStyle(e("bne")), csbl = window.getComputedStyle(e("bl"));
+var bo = bne.getBoundingClientRect(), bbl = bl.getBoundingClientRect();
+bl.style.left = (bo.left+parseInt(csbo.borderLeftWidth)) + ((bne.offsetWidth-2*parseInt(csbo.borderLeftWidth)-bl.offsetWidth)/2) + "px";
+bl.style.top = (bo.top+parseInt(csbo.borderTopWidth))+"px"; 
+bl.style.display='block';
+setInterval("vmove()", 10);
+</script>

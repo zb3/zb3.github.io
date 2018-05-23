@@ -1,0 +1,469 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+body
+{
+ background-color: black; 
+ color: white; font-family: Arial;
+}
+input[type="text"]
+{
+ width: 40px;
+ background-color: #003030;
+ color: white; padding-left: 2px;
+}
+#tabc-ap input[type="text"]
+{
+ width: 60px;
+}
+#cdiv
+{
+ width: 920px;
+ margin: auto;
+}
+#maingrid
+{ 
+ border-spacing:0px; border-collapse: collapse;
+ width: 601px;
+ height: 401px;
+}
+#maingrid td
+{
+ padding:0;
+}
+.pos
+{
+ width:597px;
+ font-size: 13px;
+ padding-top:2px; padding-bottom:2px;
+ padding-left:2px;
+ border-top: none !important;
+}
+.pos:nth-child(1)
+{
+ font-weight: bold;
+}
+.tabx
+{
+ cursor: pointer;
+ font-size: 13px;
+ padding-top: 6px; padding-bottom: 6px; padding-left: 8px;
+ border-top: 1px solid #404040; border-bottom: 1px solid #404040;
+ margin-bottom: -1px;
+}
+.tabc
+{
+ font-size: 13px;
+ padding-top: 8px; padding-bottom: 8px; padding-left: 11px;
+ margin-bottom: -1px;
+}
+#tabc-go table
+{
+ margin-top: 2px;
+ font-size: 13px; border-spacing:0;border-collapse: collapse;
+}
+#tabc-go table input
+{
+ width: 40px;
+ margin-top: 2px;
+ font-size: 13px; border-spacing:0;border-collapse: collapse;
+}
+#tabc-go table button
+{
+ font-size: 10px;
+ padding-left: 3; padding-right: 3; 
+}
+#tabc-go table thead td
+{ 
+ padding-top: 1px; padding-bottom: 1px;
+ padding-left: 6px;  padding-right: 6px;
+ font-weight: bold; background-color: #101010;
+}
+#tabc-go table td
+{
+ text-align: center;
+ padding: 3px;
+ border: 1px solid #404040; 
+}
+#tabc-cg span
+{
+ font-weight: bold;
+}
+#tabc-cg table
+{
+ width: 100%;
+ font-size: 13px; border-spacing:0;border-collapse: collapse;
+}
+#tabc-cg table tr td:nth-child(2)
+{
+ text-align: right
+}
+.tabxarrow
+{
+ font-size: 10px; display: inline-block;
+ vertical-align: middle; margin-right: 2px;
+}
+.cyan
+{
+ color: cyan;
+}
+#tabc-go table input[name="pset0"], #tabc-go table input[name="cset0"]
+{
+ width: 60px;
+}
+#tabc-go table tr td:nth-child(3)
+{
+ width: 9px;
+}
+</style>
+<style id="colors">
+#maingrid td, .pos
+{
+ border: 1px solid #aaaaaa;
+}
+#maingrid td.normal
+{
+ background-color: #000000;
+}
+#maingrid td.normal:hover
+{
+ background-color: #505050;
+}
+#maingrid td.done
+{
+ background-color: #204040;
+}
+</style>
+<div id="cdiv">
+<div style="text-align: center;font-size: 60px;">zb3's grid</div>
+<br>
+<div style="float: left;">
+<table id="maingrid" onselectstart="return false;" ondragstart="return false;"></table>
+<div class="pos" id="posdiv">Position: <span id="where">None</span></div>
+</div>
+<div style="float: right;width: 285px;">
+<div class="tabx" id="tabx-ap" onclick="changeTab(this, 'ap');" data-open="0"><span class="tabxarrow" id="tabx-ap-arrow">►</span>Appearance options</div>
+<div class="tabc" id="tabc-ap" style="display: none;">Border color: <input type=text id="tdborder" value="#aaaaaa" data-oval="#aaaaaa" onchange="isc(this);changeColors();"><br>Normal cell background: <input type=text id="tdnormal" value="#000000" data-oval="#000000" onchange="isc(this);changeColors();"><br>Highlighted cell background: <input type=text id="tdhover" value="#505050" data-oval="#505050" onchange="isc(this);changeColors();"><br>Clicked cell background: <input type=text id="tddone" value="#204040" data-oval="#204040" onchange="isc(this);changeColors();"><br><br>Cell size: <input type="text" id="board-cell" value="19" data-oval="19" onchange="isn(this);cellSize(this);"></div>
+<div class="tabx" id="tabx-go" onclick="changeTab(this, 'go');" data-open="0"><span class="tabxarrow" id="tabx-go-arrow">►</span>Game options</div>
+<div class="tabc" id="tabc-go" style="display: none;">These settings do not affect the current game.<br><br><b>Board settings:</b><br>Board size: <input type="text" value="30" data-oval="30" onchange="isn(this);" id="board-nx"> x <input type="text" id="board-ny" value="20" data-oval="20" onchange="isn(this);"><br><br><b>Point settings:</b><br><label><input type="checkbox" id="maxpoints" onchange="if (this.checked) document.getElementById('set-mpoints').disabled = false; else document.getElementById('set-mpoints').disabled = true;">Max points to win: </label><input type="text" data-oval="10" value="10" onchange="isf(this);" id="set-mpoints"><br><label><input type="checkbox" id="maxptimes" onchange="if (this.checked) document.getElementById('set-mptimes').disabled = false; else document.getElementById('set-mptimes').disabled = true;">Max win times: </label><input type="text" value="2" data-oval="2" onchange="isn(this);" id="set-mptimes"><br><br>Point table: <table><thead><tr><td>Spot count</td><td>Amount</td><td></td></tr></thead><tbody id="ptable"><tr><td><input type="text" name="pset0" value="0,1" data-oval="0,1" onchange="issc(this);"></td><td><input type="text" name="pset1" value="10" data-oval="10" onchange="isf(this);"></td><td><button onclick="delrow(this);">x</button></td></tr><tr><td><input type="text" name="pset0" value="2" data-oval="2" onchange="issc(this);"></td><td><input type="text" name="pset1" value="5" data-oval="5" onchange="isf(this);"></td><td><button onclick="delrow(this);">x</button></td></tr><tr><td><input type="text" name="pset0" value="4" data-oval="4" onchange="issc(this);"></td><td><input type="text" name="pset1" value="1" data-oval="1" onchange="isf(this);"></td><td><button onclick="delrow(this);">x</button></td></tr><tr><td><input type="text" name="pset0" value="10" data-oval="10" onchange="issc(this);"></td><td><input type="text" name="pset1" value="0.1" data-oval="0.1" onchange="isf(this);"></td><td><button onclick="delrow(this);">x</button></td></tr></tbody></table><button onclick="addProw();">Add</button><br><br><br><b>Chance settings:</b><br>Initial chances: <input type="text" value="30" data-oval="30" onchange="isn(this);" id="set-chances"><br><label><input type="checkbox" id="maxchances" onchange="if (this.checked) document.getElementById('set-mchances').disabled = false; else document.getElementById('set-mchances').disabled = true;">Max chances to win: </label><input type="text" data-oval="10" value="10" onchange="isn(this);" id="set-mchances"><br><label><input type="checkbox" id="maxctimes" onchange="if (this.checked) document.getElementById('set-mctimes').disabled = false; else document.getElementById('set-mctimes').disabled = true;">Max win times: </label><input type="text" value="2" data-oval="2" onchange="isn(this);" id="set-mctimes"><br><br>Chance table: <table><thead><tr><td>Spot count</td><td>Amount</td><td></td></tr></thead><tbody id="ctable"><tr><td><input type="text" name="cset0" value="5" data-oval="5" onchange="issc(this);"></td><td><input type="text" name="cset1" value="5" data-oval="5" onchange="isn(this);"></td><td><button  onclick="delrow(this, 1);">x</button></td></tr></tbody></table><button onclick="addCrow();">Add</button><br><br></div>
+<div class="tabx" id="tabx-cg" onclick="changeTab(this, 'cg');" data-open="1"><span class="tabxarrow" id="tabx-cg-arrow">▼</span>Current game</div>
+<div class="tabc" id="tabc-cg">Points: <span id="balance">0</span><br><br><div id="gdiv"><span>30</span> of 30 chances left.</div><br><br><button onclick="newGame();">New Game</button><br></div>
+</div>
+<div style="clear: both;"></div><br><br><br><br>
+</div>
+<script>
+function changeTab(el, wat)
+{
+ if (parseInt(el.dataset.open))
+ {
+  document.getElementById('tabc-'+wat).style.display = 'none';
+  document.getElementById('tabx-'+wat+'-arrow').innerHTML = '►';
+  el.dataset.open = 0;
+ }
+ else
+ {
+  document.getElementById('tabc-'+wat).style.display = '';
+  document.getElementById('tabx-'+wat+'-arrow').innerHTML = '▼';
+  el.dataset.open = 1;
+ }
+}
+</script>
+<script>
+var x = 30, y = 20, cw = 920, cs=19, grid = document.getElementById('maingrid'), pos = document.getElementById('where');
+var mpoints = 10, mptimes = 4, ptable = [], chances = 30, mchances = 45, mctimes = 2, ctable = [];
+var curPoints = 0, curChances = 0, curChances2 = 0, curMctimes = 0, curMptimes = 0, over = 0;
+var clicked = [], prize = [];
+//remember to end game when points reached lol
+//and do oval;
+function isn(e)
+{
+ var t = parseInt(e.value);
+ if (!(isNaN(t) || t<=0))
+ e.dataset.oval = t;
+ e.value = e.dataset.oval;
+}
+function isf(e)
+{
+ var t = parseFloat(e.value);
+ if (!(isNaN(t) || t<=0))
+ e.dataset.oval = t;
+ e.value = e.dataset.oval;
+}
+function isc(e)
+{
+ var val = e.value.toLowerCase();
+ var pat = val.match(/^#[0-f]{6}$/); 
+ if (pat)
+ e.dataset.oval = val;
+ e.value = e.dataset.oval;
+}
+function issc(e)
+{
+ var pat = e.value.match(/^(\d*)(\s*,\s*(\d*))?$/);
+ if (!pat)
+ {e.value = e.dataset.oval;return false;}
+ var t = parseInt(pat[1]), t2;
+ if (pat[3] && parseInt(pat[3])!=t) 
+ {
+  t2=parseInt(pat[3]);
+  if (!(isNaN(t) || t<0) && !(isNaN(t2) || t2<0) && !(t==t2 && t==0))
+  {
+   if (t2<t)
+   {
+    t ^= t2; t2 ^= t; t ^= t2;
+   }
+   e.dataset.oval = t+','+t2;
+   e.value = e.dataset.oval;
+  }
+ }
+ else 
+ {
+  if (!(isNaN(t) || t<=0))
+  e.dataset.oval = t;
+  e.value = e.dataset.oval;
+ }
+ e.value = e.dataset.oval;
+}
+function niceFloat(f, n)
+{
+ f = f.toFixed(n?n:6);
+ f = f.replace(/(\.)?[0]*$/, '');
+ return f;
+}
+function rand(min, max) 
+{
+ return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function changeColors()
+{
+ document.getElementById('colors').innerHTML = '#maingrid td, .pos{ border: 1px solid '+document.getElementById('tdborder').value+';}#maingrid td.normal{ background-color: '+document.getElementById('tdnormal').value+';}#maingrid td.normal:hover{ background-color: '+document.getElementById('tdhover').value+';}#maingrid td.done{ background-color: '+document.getElementById('tddone').value+';}';
+}
+function csize(nx, ny)
+{
+ var t = nx-x;
+ x = nx; y = ny; 
+ genGrid();
+ document.getElementById('maingrid').style.width = ((cs+1)*x+1)+'px';
+ document.getElementById('maingrid').style.height = ((cs+1)*y+1)+'px';
+ document.getElementById('posdiv').style.width = ((cs+1)*x-3)+'px';
+ cw += ((cs+1)*t);
+ document.getElementById('cdiv').style.width = cw+'px';
+}
+function delrow(btn, one)
+{
+ var tr = btn.parentNode.parentNode;
+ var list = tr.parentNode;
+ if (list.childNodes.length==1 && !one)
+ alert('You may not remove this row, it\'s the only one');
+ else list.removeChild(tr);
+}
+function addProw()
+{
+ var row = '<td><input type="text" name="pset0" value="1" data-oval="1" onchange="issc(this);"></td><td><input type="text" name="pset1" value="1" data-oval="1" onchange="isf(this);"></td><td><button onclick="delrow(this);">x</button></td>', nel = document.createElement('tr');
+ nel.innerHTML = row;
+ document.getElementById('ptable').appendChild(nel);
+}
+function addCrow()
+{
+ var row = '<td><input type="text" name="cset0" value="10" data-oval="10" onchange="issc(this);"></td><td><input type="text" name="cset1" value="5" data-oval="5" onchange="isn(this);"></td><td><button  onclick="delrow(this, 1);">x</button></td>', nel = document.createElement('tr');
+ nel.innerHTML = row;
+ document.getElementById('ctable').appendChild(nel);
+}
+function cellSize(t)
+{
+ var ocs = cs;
+ cs = parseInt(t.value);
+ document.getElementById('maingrid').style.width = ((cs+1)*x+1)+'px';
+ document.getElementById('maingrid').style.height = ((cs+1)*y+1)+'px';
+ document.getElementById('posdiv').style.width = ((cs+1)*x-3)+'px';
+ cw += (cs-ocs)*x;
+ document.getElementById('cdiv').style.width = cw+'px';
+}
+function syncSettings()
+{
+ function sat(wat)
+ {
+  if (wat.indexOf(',')==-1)
+  return [parseInt(wat), parseInt(wat)];
+  else
+  {
+   var t = wat.split(',');
+   return [parseInt(t[0]), parseInt(t[1])];
+  }
+ }
+ var nx = parseInt(document.getElementById('board-nx').value), ny = parseInt(document.getElementById('board-ny').value);
+ //first, check if these settings make any sense
+ //scan for largest point prize then compare it to max prize
+ var t, t2, t4, pset, cset;
+ if (document.getElementById('maxpoints').checked)
+ {
+  t2=0;
+  pset = document.getElementsByName('pset1');
+  for(t=0;t<pset.length;t++)
+  if (parseFloat(pset[t].value)>t2)
+  t2=parseFloat(pset[t].value);
+  if (t2>parseFloat(document.getElementById('set-mpoints').value))
+  {alert('Max points to win is lower than the largest winning spot.');return false;}
+ }
+ if (document.getElementById('maxchances').checked)
+ {
+  t2=0;
+  pset = document.getElementsByName('cset1');
+  for(t=0;t<pset.length;t++)
+  if (parseFloat(pset[t].value)>t2)
+  t2=parseFloat(pset[t].value);
+  if (t2>parseFloat(document.getElementById('set-mchances').value))
+  {alert('Max chances to win is lower than the largest winning spot.');return false;}
+ }
+ var optable=JSON.parse(JSON.stringify(ptable)), octable=JSON.parse(JSON.stringify(ctable));
+ var ptent = document.getElementById('ptable').childNodes, pset2;
+ pset = document.getElementsByName('pset0'); pset2 = document.getElementsByName('pset1');
+ ptable.length = 0;
+ var wantspots = 0;
+ for(t=0;t<ptent.length;t++)
+ {
+  t2 = sat(pset[t].value);
+  wantspots += t2[1];
+  ptable[t] = [t2[0], t2[1], parseFloat(pset2[t].value)];
+ }
+ ptent = document.getElementById('ctable').childNodes
+ pset = document.getElementsByName('cset0'); pset2 = document.getElementsByName('cset1');
+ ctable.length = 0;
+ for(t=0;t<ptent.length;t++)
+ {
+  t2 = sat(pset[t].value);
+  wantspots += t2[1];
+  ctable[t] = [t2[0], t2[1], parseFloat(pset2[t].value)];
+ }
+ if ((nx*ny)<wantspots)
+ {
+  ptable = optable; ctable = octable;
+  alert('There are more winning spots than the spots on the board!');
+  return false;
+ }
+ csize(nx, ny);
+ if (document.getElementById('maxpoints').checked)
+ mpoints=parseFloat(document.getElementById('set-mpoints').value);
+ else mpoints=0;
+ if (document.getElementById('maxptimes').checked)
+ mptimes=parseFloat(document.getElementById('set-mptimes').value);
+ else mptimes=0;
+
+
+ chances = parseInt(document.getElementById('set-chances').value);
+ if (document.getElementById('maxchances').checked)
+ mchances=parseFloat(document.getElementById('set-mchances').value);
+ else mchances=0;
+ if (document.getElementById('maxctimes').checked)
+ mctimes=parseFloat(document.getElementById('set-mctimes').value);
+ else mctimes=0;
+
+ return true;
+}
+function newGame()
+{
+ if (!syncSettings()) return false;
+ var cell = document.querySelectorAll('.done'), t, t2, t4, t6;
+ for(t=0;t<cell.length;t++)
+ cell[t].className='normal'; 
+ curPoints = 0; curChances = chances; curChances2 = 0;
+ curMctimes = 0; curMptimes = 0;
+ clicked.length = prize.length = 0;
+ for(t=0;t<ptable.length;t++)
+ {
+  do
+  {
+   t6 = rand(ptable[t][0], ptable[t][1]);
+  } while(t6==0 && ptable.length==1)
+  for(t2=0;t2<t6;t2++)
+  {
+   while(prize[t4=rand(0, x*y)]!==undefined);
+   prize[t4]=t+1;
+  } 
+ }
+ for(t=0;t<ctable.length;t++)
+ {
+  t6 = rand(ctable[t][0], ctable[t][1]);
+  for(t2=0;t2<t6;t2++)
+  {
+   while(prize[t4=rand(0, x*y)]!==undefined);
+   prize[t4]=-t-1;
+  }
+ }
+ document.getElementById('balance').innerHTML='0';
+ document.getElementById('gdiv').innerHTML='<span>'+chances+'</span> of '+chances+' chances left.';
+ over = 0;
+}
+function genGrid()
+{
+ var t, t2, ct;
+ ct = '';
+ for(t=0;t<y;t++)
+ {
+  ct += '<tr>';
+  for(t2=0;t2<x;t2++)
+  ct += '<td class="normal" onmouseout="selNone();" onmouseover="selMe('+t2+' , '+t+');" onclick="chooseMe(this, '+t2+' , '+t+');" onclick="ctab(this);"></td>'
+  ct += '</tr>';
+ }
+ grid.innerHTML = ct;
+}
+function printDistro()
+{
+ var t, atd = document.querySelectorAll('#maingrid td');
+ for(t=0;t<x*y;t++)
+ {
+  if (prize[t])
+  {
+   atd[t].innerHTML = prize[t];
+  } else atd[t].innerHTML = '0';
+ }
+}
+function selNone()
+{
+ where.innerHTML = 'None';
+}
+function selMe(x, y)
+{
+ where.innerHTML = '<b>'+(x+1)+'</b> x <b>'+(y+1)+'</b>';
+}
+function chooseMe(me, cx, cy)
+{
+ if (over || me.className=='done') return false;
+ curChances--; var msg = 0, av=0;
+ if (prize[cy*x+cx]!==undefined)
+ {
+  if ((prize[cy*x+cx]<0) && (!mchances || (curChances2+ctable[-prize[cy*x+cx]-1][2])<=mchances) && (!mctimes || curMctimes<mctimes))
+  {curChances += ctable[-prize[cy*x+cx]-1][2]; curChances2 += ctable[-prize[cy*x+cx]-1][2]; curMctimes++; msg = 1;}
+  else if ((prize[cy*x+cx]>0) && (!mpoints || (curPoints+ptable[prize[cy*x+cx]-1][2])<=mpoints) && (!mptimes ||curMptimes<mptimes))
+  {curPoints += ptable[prize[cy*x+cx]-1][2]; curMptimes++; msg = 2;}
+ }
+ if (mptimes && curMptimes>=mptimes) {msg |= 4;av=1;}
+ else if (mpoints)
+ {
+  msg |= 4;
+  for(t=0;t<ptable.length;t++)
+  if ((curPoints+ptable[t][2])<=mpoints)
+  {msg ^= 4;break;}
+ }
+ clicked[cy*x+cx] = 1;
+ for(t=0;t<x*y;t++)
+ {
+  if (!clicked[t] && ((prize[t]>0) && (!mpoints || (curPoints+ptable[prize[t]-1][2])<=mpoints) && (!mptimes ||curMptimes<mptimes)))
+  break;
+ }
+ if (t==(x*y)) msg |= 4;
+ //check if physicaly theres something to win
+ //also if its the only one then never 0
+ if (msg&4 || !curChances)
+ over = 1;
+ document.getElementById('balance').innerHTML=niceFloat(curPoints); //below: say no more times to win points or no more points
+ if (over && msg&4)
+ document.getElementById('gdiv').innerHTML='Game over. '+((av)?'You cannot win again.':'No more points to win.')+' '+((chances+curChances2)-curChances)+' of '+(chances+curChances2)+' chances have been used.';
+ else if (over)
+ document.getElementById('gdiv').innerHTML='Game over. All of '+((chances+curChances2)-curChances)+' chances have been used.';
+ else
+ document.getElementById('gdiv').innerHTML='<span>'+curChances+'</span> of '+(chances+curChances2)+' chances left.';
+ me.className = 'done';
+}
+genGrid();
+newGame();
+</script>

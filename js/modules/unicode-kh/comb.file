@@ -1,0 +1,306 @@
+0300;grave accent
+0301;acute accent
+0302;circumflex accent
+0303;tilde
+0304;macron
+0305;overline
+0306;breve
+0307;dot above
+0308;diaeresis
+0309;hook above
+030A;ring above
+030B;double acute accent
+030C;caron
+030D;vertical line above
+030E;double vertical line above
+030F;double grave accent
+0310;candrabindu
+0311;inverted breve
+0312;turned comma above
+0313;comma above
+0314;reversed comma above
+0315;comma above right
+0316;grave accent below
+0317;acute accent below
+0318;left tack below
+0319;right tack below
+031A;left angle above
+031B;horn
+031C;left half ring below
+031D;up tack below
+031E;down tack below
+031F;plus sign below
+0320;minus sign below
+0321;palatalized hook below
+0322;retroflex hook below
+0323;dot below
+0324;diaeresis below
+0325;ring below
+0326;comma below
+0327;cedilla
+0328;ogonek
+0329;vertical line below
+032A;bridge below
+032B;inverted double arch below
+032C;caron below
+032D;circumflex accent below
+032E;breve below
+032F;inverted breve below
+0330;tilde below
+0331;macron below
+0332;low line
+0333;double low line
+0334;tilde overlay
+0335;short stroke overlay
+0336;long stroke overlay
+0337;short solidus overlay
+0338;long solidus overlay
+0339;right half ring below
+033A;inverted bridge below
+033B;square below
+033C;seagull below
+033D;x above
+033E;vertical tilde
+033F;double overline
+0340;grave tone mark
+0341;acute tone mark
+0342;greek perispomeni
+0343;greek koronis
+0344;greek dialytika tonos
+0345;greek ypogegrammeni
+0346;bridge above
+0347;equals sign below
+0348;double vertical line below
+0349;left angle below
+034A;not tilde above
+034B;homothetic above
+034C;almost equal to above
+034D;left right arrow below
+034E;upwards arrow below
+034F;grapheme joiner
+0350;right arrowhead above
+0351;left half ring above
+0352;fermata
+0353;x below
+0354;left arrowhead below
+0355;right arrowhead below
+0356;right arrowhead and up arrowhead below
+0357;right half ring above
+0358;dot above right
+0359;asterisk below
+035A;double ring below
+035B;zigzag above
+035C;double breve below
+035D;double breve
+035E;double macron
+035F;double macron below
+0360;double tilde
+0361;double inverted breve
+0362;double rightwards arrow below
+0363;latin small letter a
+0364;latin small letter e
+0365;latin small letter i
+0366;latin small letter o
+0367;latin small letter u
+0368;latin small letter c
+0369;latin small letter d
+036A;latin small letter h
+036B;latin small letter m
+036C;latin small letter r
+036D;latin small letter t
+036E;latin small letter v
+036F;latin small letter x
+0483;cyrillic titlo
+0484;cyrillic palatalization
+0485;cyrillic dasia pneumata
+0486;cyrillic psili pneumata
+0487;cyrillic pokrytie
+0488;cyrillic hundred thousands sign
+0489;cyrillic millions sign
+1AB0;doubled circumflex accent
+1AB1;diaeresis-ring
+1AB2;infinity
+1AB3;downwards arrow
+1AB4;triple dot
+1AB5;x-x below
+1AB6;wiggly line below
+1AB7;open mark below
+1AB8;double open mark below
+1AB9;light centralization stroke below
+1ABA;strong centralization stroke below
+1ABB;parentheses above
+1ABC;double parentheses above
+1ABD;parentheses below
+1ABE;parentheses overlay
+1DC0;dotted grave accent
+1DC1;dotted acute accent
+1DC2;snake below
+1DC3;suspension mark
+1DC4;macron-acute
+1DC5;grave-macron
+1DC6;macron-grave
+1DC7;acute-macron
+1DC8;grave-acute-grave
+1DC9;acute-grave-acute
+1DCA;latin small letter r below
+1DCB;breve-macron
+1DCC;macron-breve
+1DCD;double circumflex above
+1DCE;ogonek above
+1DCF;zigzag below
+1DD0;is below
+1DD1;ur above
+1DD2;us above
+1DD3;latin small letter flattened open a above
+1DD4;latin small letter ae
+1DD5;latin small letter ao
+1DD6;latin small letter av
+1DD7;latin small letter c cedilla
+1DD8;latin small letter insular d
+1DD9;latin small letter eth
+1DDA;latin small letter g
+1DDB;latin letter small capital g
+1DDC;latin small letter k
+1DDD;latin small letter l
+1DDE;latin letter small capital l
+1DDF;latin letter small capital m
+1DE0;latin small letter n
+1DE1;latin letter small capital n
+1DE2;latin letter small capital r
+1DE3;latin small letter r rotunda
+1DE4;latin small letter s
+1DE5;latin small letter long s
+1DE6;latin small letter z
+1DE7;latin small letter alpha
+1DE8;latin small letter b
+1DE9;latin small letter beta
+1DEA;latin small letter schwa
+1DEB;latin small letter f
+1DEC;latin small letter l with double middle tilde
+1DED;latin small letter o with light centralization stroke
+1DEE;latin small letter p
+1DEF;latin small letter esh
+1DF0;latin small letter u with light centralization stroke
+1DF1;latin small letter w
+1DF2;latin small letter a with diaeresis
+1DF3;latin small letter o with diaeresis
+1DF4;latin small letter u with diaeresis
+1DF5;up tack above
+1DFC;double inverted breve below
+1DFD;almost equal to below
+1DFE;left arrowhead above
+1DFF;right arrowhead and down arrowhead below
+20D0;left harpoon above
+20D1;right harpoon above
+20D2;long vertical line overlay
+20D3;short vertical line overlay
+20D4;anticlockwise arrow above
+20D5;clockwise arrow above
+20D6;left arrow above
+20D7;right arrow above
+20D8;ring overlay
+20D9;clockwise ring overlay
+20DA;anticlockwise ring overlay
+20DB;three dots above
+20DC;four dots above
+20DD;enclosing circle
+20DE;enclosing square
+20DF;enclosing diamond
+20E0;enclosing circle backslash
+20E1;left right arrow above
+20E2;enclosing screen
+20E3;enclosing keycap
+20E4;enclosing upward pointing triangle
+20E5;reverse solidus overlay
+20E6;double vertical stroke overlay
+20E7;annuity symbol
+20E8;triple underdot
+20E9;wide bridge above
+20EA;leftwards arrow overlay
+20EB;long double solidus overlay
+20EC;rightwards harpoon with barb downwards
+20ED;leftwards harpoon with barb downwards
+20EE;left arrow below
+20EF;right arrow below
+20F0;asterisk above
+2DE0;cyrillic letter be
+2DE1;cyrillic letter ve
+2DE2;cyrillic letter ghe
+2DE3;cyrillic letter de
+2DE4;cyrillic letter zhe
+2DE5;cyrillic letter ze
+2DE6;cyrillic letter ka
+2DE7;cyrillic letter el
+2DE8;cyrillic letter em
+2DE9;cyrillic letter en
+2DEA;cyrillic letter o
+2DEB;cyrillic letter pe
+2DEC;cyrillic letter er
+2DED;cyrillic letter es
+2DEE;cyrillic letter te
+2DEF;cyrillic letter ha
+2DF0;cyrillic letter tse
+2DF1;cyrillic letter che
+2DF2;cyrillic letter sha
+2DF3;cyrillic letter shcha
+2DF4;cyrillic letter fita
+2DF5;cyrillic letter es-te
+2DF6;cyrillic letter a
+2DF7;cyrillic letter ie
+2DF8;cyrillic letter djerv
+2DF9;cyrillic letter monograph uk
+2DFA;cyrillic letter yat
+2DFB;cyrillic letter yu
+2DFC;cyrillic letter iotified a
+2DFD;cyrillic letter little yus
+2DFE;cyrillic letter big yus
+2DFF;cyrillic letter iotified big yus
+3099;katakana-hiragana voiced sound mark
+309A;katakana-hiragana semi-voiced sound mark
+A66F;cyrillic vzmet
+A670;cyrillic ten millions sign
+A671;cyrillic hundred millions sign
+A672;cyrillic thousand millions sign
+A674;cyrillic letter ukrainian ie
+A675;cyrillic letter i
+A676;cyrillic letter yi
+A677;cyrillic letter u
+A678;cyrillic letter hard sign
+A679;cyrillic letter yeru
+A67A;cyrillic letter soft sign
+A67B;cyrillic letter omega
+A67C;cyrillic kavyka
+A67D;cyrillic payerok
+A69F;cyrillic letter iotified e
+A8E0;devanagari digit zero
+A8E1;devanagari digit one
+A8E2;devanagari digit two
+A8E3;devanagari digit three
+A8E4;devanagari digit four
+A8E5;devanagari digit five
+A8E6;devanagari digit six
+A8E7;devanagari digit seven
+A8E8;devanagari digit eight
+A8E9;devanagari digit nine
+A8EA;devanagari letter a
+A8EB;devanagari letter u
+A8EC;devanagari letter ka
+A8ED;devanagari letter na
+A8EE;devanagari letter pa
+A8EF;devanagari letter ra
+A8F0;devanagari letter vi
+A8F1;devanagari sign avagraha
+FE20;ligature left half
+FE21;ligature right half
+FE22;double tilde left half
+FE23;double tilde right half
+FE24;macron left half
+FE25;macron right half
+FE26;conjoining macron
+FE27;ligature left half below
+FE28;ligature right half below
+FE29;tilde left half below
+FE2A;tilde right half below
+FE2B;macron left half below
+FE2C;macron right half below
+FE2D;conjoining macron below

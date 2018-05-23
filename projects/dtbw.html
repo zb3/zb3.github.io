@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+</head>
+<style>
+body {
+ margin: 0;
+ padding: 0;
+ font-family: sans-serif,arial;
+ background-color: black;
+ color: #eee;
+ font-size: 17px;
+}
+header {
+ background-color: #222;
+ text-align: center;
+ font-size: 1.5em;
+ font-weight: bold;
+ padding: 7px;
+}
+ol {
+ margin-bottom: 0;
+padding-left: 1.2em;
+}
+ol li {
+ font-size: 1.2rem;
+ color: #aaa;
+}
+ol li span {
+ font-size: 1rem;
+ color: #eee;
+}
+li+li {
+ margin-top: 8px;
+}
+h1 {
+ margin: 0;
+ color: #aaa;
+ font-size: 1.1em;
+ margin-bottom: 1em;
+}
+div.inner {
+ padding: 12px;
+ padding-bottom: 15px;
+ max-width: 840px;
+ margin: auto;
+}
+div.odd {
+ background-color: #1e1e1e;
+}
+div.button {
+ text-align: center;
+ padding-top: 22px;
+}
+button {
+ padding: 10px 40px;
+ background: linear-gradient(to bottom, #333, #111);
+ border: 1px solid #222;
+ border-radius: 3px;
+ font-weight: bold;
+ font-size: 1.5em;
+ color: #aff;
+}
+button.small {
+ font-size: 1em;
+}
+#game, #loading
+{
+ text-align: center;
+ margin-top: 50px;
+}
+#gameover {
+ font-size: 1.2em;
+}
+.sayer {
+ display: inline-block;
+ padding: 5px 7px;
+ box-sizing: border-box;
+ min-width: 50px;
+ border: 1px solid #444;
+ background: linear-gradient(to top, #222, #111);
+ font-weight: bold;
+ color: #ccc;
+ margin: 0 2px;
+}
+</style>
+<!-- need a wrapper div inside if we want to do bg's -->
+<header>Drag The Browser Window</header>
+
+<div id="initial"><div class="inner">
+
+<h1>Disclaimer</h1>
+This is in fact a failed experiment, failed mainly because it doesn't work in most cases. I made a version that doesn't use browser windows, but it sucks.
+<ol>
+<li><span> Obviously won't work where there are no windows :> (mobile, dwm etc)
+<li><span> Will only work on FF and chromium based browsers (not on linux though in my case, it was unplayable...), because other browsers (like midori) make it impossible to do such crazy things with browser popup windows... (in case of IE, because they were used mainly for malicious purposes in the past). 
+<li><span> Browser popups can't be smaller than 100x100, but often even 100px is too small
+<li><span> Some window managers may make it harder for you to control the window position (via snapping etc), see next point...
+<li><span> Movement may not be smooth anyway, it's better when you drag the window content area, not the titlebar, as the titlebar drag may not work at all in some cases.
+<li><span> This is more annoying than you'd imagine...
+<li><span> Look at the code at your own risk, this was speedcode and omgwhyamicodingthis style project :>
+</ol>
+</div>
+<div class="odd">
+<div class="inner">
+<h1> How to play (deluxe version of the tutorial):</h1>
+<ol>
+<li><span> Start the game.
+<li><span> Drag The Browser Window in the direction pointed in by the arrow until you "see" the next arrow (or run out of time :)
+<li><span> If the arrow is white, it means you haven't "seen" enough - drag around until the arrow turns <span style="color: #7ff;">#7ff</span>
+<li><span> Go to step 3.
+<li><span> Technically you can't arrive here, so I have a theoretical question: is this step a part of this tutorial? Hmm...
+</ol>
+</div>
+</div>
+<div class="inner button">
+<button onclick="spawn();">Start game</button>
+</div>
+</div>
+
+<div id="game" style="display: none">
+Points:<br>
+<div class="sayer" id="points">0</div>
+<br><br>
+
+<div id="gameon">
+Time left:<br>
+<div class="sayer" id="timeleft">0</div>
+</div>
+<br>
+
+<div id="gameover" style="display: none">
+Game over!<br><br>
+<button class="small" onclick="spawn();">New game</button>
+</div>
+
+</div>
+<div id="loading" style="display: none">Loading window...<br><br>
+Make sure the popup won't be blocked :)
+</div>
+<br><br>
+<script>
+/*
+code is crap, only SW II was force, but I didn't even refactor it as this experiment failed
+*/
+var sx, sy, winx, winy;
+var cvx, cvy;
+var w;
+var arrowSize = 80,
+  windowSize = 100;
+
+var current;
+var wasVisible = true;
+var initial = true;
+
+//0 - center seen, 1 - old stuff unseen
+var current = null,
+  next = null,
+  state = 0;
+var points, timeLeft;
+
+var colorUnseen = 'white';
+var colorSeen = '#8ff';
+
+var asc = 0.33 * arrowSize / 2; //arrow-seen coeff... 0 means center, 1 means the whole box, it will be harder to check
+
+
+var points = 0;
+var timeInterval, timeStart, timeLimit, timeLimitDefault = 8000,
+  timeLimitMinimal = 3000,
+  timeLimitDelta = 750;
+
+
+function r(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function randCoord() {
+  return [r(arrowSize / 2, sx - arrowSize / 2), r(arrowSize / 2, sy - arrowSize / 2)];
+}
+
+function dist(c1, c2) {
+  return Math.sqrt((c1[0] - c2[0]) * (c1[0] - c2[0]) + (c1[1] - c2[1]) * (c1[1] - c2[1]));
+}
+
+function generateNext() {
+  var t;
+
+  do {
+    t = randCoord();
+  } while (dist(current, t) < (arrowSize + windowSize * 1.4143));
+
+  next = t;
+}
+
+function isVisible(ax, ay, wx, wy) {
+  /*
+  arrow is origin-based
+  w is top-left based
+  */
+  return (ax > wx - arrowSize / 2 && ax < wx + windowSize + arrowSize / 2 && ay > wy - arrowSize / 2 && ay < wy + windowSize + arrowSize / 2)
+
+}
+
+
+
+function isCenterVisible(ax, ay, wx, wy) {
+  return ax - asc > wx && ax + asc < wx + windowSize && ay - asc > wy && ay + asc < wy + windowSize;
+}
+
+
+
+
+function update(cvx, cvy) {
+  var cv = isVisible(current[0], current[1], cvx, cvy);
+
+  if (initial) {
+    setSeen();
+    installTimeControl();
+    w.arrowColor(colorSeen);
+    w.setupArrow(Math.atan2(next[1] - current[1], next[0] - current[0]), arrowSize);
+    displayGame();
+    initial = false;
+  }
+
+  if (state == 0 && isVisible(next[0], next[1], cvx, cvy)) {
+    current = next;
+    generateNext();
+    state = 1;
+    w.arrowColor(colorUnseen);
+    w.setupArrow(Math.atan2(next[1] - current[1], next[0] - current[0]), arrowSize);
+    cv = true; //make sure setupArrow didn't make it visible in the old place
+  } else if (state == 1 && cv && isCenterVisible(current[0], current[1], cvx, cvy)) {
+    setSeen();
+    points += Math.round((timeLimit - (Date.now() - timeStart)) / 100);
+    updatePoints();
+  }
+
+  if (cv || wasVisible)
+    w.placeArrow(current[0] - cvx, current[1] - cvy);
+
+  wasVisible = cv;
+}
+
+function setSeen() {
+  state = 0;
+  w.arrowColor(colorSeen);
+  timeStart = Date.now();
+  timeLimit = Math.max(timeLimitMinimal, timeLimit - timeLimitDelta);
+}
+
+
+function installTimeControl() {
+  clearInterval(timeInterval);
+  timeInterval = setInterval(timeControl, 100);
+  timeStart = Date.now();
+  timeLimit = timeLimitDefault;
+}
+
+function timeControl() {
+  var now = Date.now();
+
+  if (now - timeStart > timeLimit)
+    return over();
+
+  updateTimeLeft(now);
+}
+
+function updatePoints() {
+  document.getElementById('points').textContent = points;
+}
+
+function updateTimeLeft(now) {
+  document.getElementById('timeleft').textContent = ((timeLimit - (now - timeStart)) / 1000).toFixed(1);
+}
+
+function displayLoading() {
+  document.getElementById('initial').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('game').style.display = 'none';
+}
+
+function displayGame() {
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('gameon').style.display = 'block';
+  document.getElementById('gameover').style.display = 'none';
+  updatePoints();
+}
+
+function displayOver() {
+  document.getElementById('gameon').style.display = 'none';
+  document.getElementById('gameover').style.display = 'block';
+}
+
+function over() {
+  w.close();
+  clearInterval(timeInterval);
+  displayOver();
+}
+
+function spawn() {
+  wasVisible = true;
+  initial = true;
+  current = null;
+  next = null;
+  state = 0;
+  points = 0;
+  displayLoading();
+  //for time left, set loading or sth
+
+  var wf = 'menubar=no,location=no,resizable=no,scrollbars=no,status=no,left=0,top=0,width=' + windowSize + ', height=' + windowSize + ',toolbar=0,resizable=0';
+  w = window.open('dtbw-window.html', 'x', wf);
+  w.loadCallback = onWindowLoaded;
+  w.m = window;
+
+  window.addEventListener('unload', function() {
+    w.close()
+  });
+}
+
+
+
+function onWindowLoaded(dx, dy) {
+  sx = screen.width - dx;
+  sy = screen.height - dy;
+
+  windowSize = Math.max(100, Math.ceil(sx / 15));
+
+  //now generate
+  current = randCoord();
+  generateNext();
+  w.init(window, current[0] - windowSize / 2, current[1] - windowSize / 2);
+  w.focus();
+}
+</script>
+</html>

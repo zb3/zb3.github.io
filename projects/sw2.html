@@ -1,0 +1,1343 @@
+<!doctype html>
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: arial;
+}
+canvas
+{
+ border: 1px solid grey;
+}
+#sw2-clayer
+{
+ position: relative;
+ outline: none;
+}
+#sw2-main, #sw2-olayer
+{
+ position: absolute;
+ left: 0; top: 0;
+}
+#sw2-olayer
+{
+ cursor: none;
+}
+#sw2-overlay
+{
+ position: absolute;
+ padding: 1px 0px 0px 1px;
+ width: 600px;
+ height: 600px;
+ background-color: rgba(0, 0, 0, 0.4);
+ left: 0; top: 0;
+}
+#sw2-rbutton
+{
+ display: none;
+}
+.sw2-rbutton
+{
+ position: absolute;
+ top: 0; left: 0; bottom: 0; right: 0;
+ box-sizing: border-box;
+ width: 120px; height: 36px;
+ background-color: rgba(255, 255, 240, 0.7);
+ border: 1px solid black;
+ font-size: 24px;
+ margin: auto;
+ text-align: center;
+ color: #222;
+ padding-top: 4px;
+ cursor: default;
+}
+.sw2-rbutton:hover
+{
+ color: #444;
+}
+.sw2-rbutton:active
+{
+ padding-top: 5px;
+}
+#zombiesettings
+{
+ box-sizing: border-box;
+ width: 600px;
+ height: 160px;
+}
+#centerdiv
+{
+ width: 600px;
+ margin: auto;
+}
+#title
+{
+ text-align: center;
+ font-size: 34px;
+ font-weight: bold;
+ margin-bottom: 14px;
+ 
+}
+</style>
+<div id="title">SomethingWhatever II</div>
+<div id="centerdiv">
+This is a shooting "game" (if it qualifies to be one). Your objective is to step on enemy's base territory (that green stuff providing you haven't changed colors). But since this territory is occupied by the enemy's defense players, you have to kill them first.<br><br>Like the idea? Don't click New Game then, seriously, because you think it's way better than it is, I swear. If you choose to click it anyway, then:<br>
+Use <b>mouse</b> to aim&shoot, <b>arrow keys</b> to move, and <b>p</b> key to pause.<br><br>Don't forget this is a <b>zombie release</b> - don't expect much... after all, something more sophisticated was planned, but this was done, then this project was scrapped  :)<br>I guess it's because 90% of time spent on this game was spent on creating AI players<br>PS. The code is horribly horrible, I tried to comment some parts but...<br><br>
+<label><input type="checkbox" onchange="sw2.noplayer = this.checked;">Spectator mode</label><label><input type="checkbox" onchange="sw2.side = this.checked?1:0;">Switch sides</label><label><input type="checkbox" onchange="sw2.doColorSwap();">Swap colors</label> <button onclick="sw2.newGame();">New Game</button>
+<div id="sw2-clayer" tabindex="0">
+<canvas width="600" height="600" id="sw2-blayer"></canvas>
+<canvas width="600" height="600" id="sw2-main"></canvas>
+<canvas width="600" height="600" id="sw2-olayer"></canvas>
+<div id="sw2-overlay">
+<div id="sw2-rbutton" class="sw2-rbutton" onselectstart="return false;" onclick="sw2.pauseOff();">Resume</div>
+<div id="sw2-ngbutton" class="sw2-rbutton" onselectstart="return false;" onclick="sw2.newGame();">New game</div>
+</div>
+</div>
+<br>
+<b>Additional settings:</b><br>
+<textarea id="zombiesettings" spellcheck=false></textarea><br><button onclick="sw2.saveNewSettings();">Save and reload</button> <button onclick="sw2.restoreSettings();">Reset and reload</button>
+</div>
+<br><br>
+<script>
+sw2 = {};
+sw2.utils = {};
+//utils
+sw2.linewithline = function(x1, y1, x2, y2, x3, y3, x4, y4)
+{
+ var v1x = x2-x1, v1y = y2-y1, v2x = x4-x3, v2y = y4-y3;
+ var w = -v1x*v2y+v1y*v2x, wa = -(x3-x1)*v2y+(y3-y1)*v2x, wb = v1x*(y3-y1)-v1y*(x3-x1);
+ var a = wa/w, b = wb/w;
+ 
+ if (a>=0 && a<=1 && b>=0 && b<=1)
+ {
+  return [x1+v1x*a, y1+v1y*a];
+ }
+ else return false;
+};
+sw2.linewithcircle = function(x1, y1, x2, y2, cx, cy, r, angle)
+{
+ //we want t to be the smallest one.
+ var dx = x2-x1, dy = y2-y1, fx = x1-cx, fy = y1-cy;
+ var a = dx*dx+dy*dy, b = 2*(fx*dx+fy*dy), c = fx*fx+fy*fy-r*r, d = b*b-4*a*c, t1, t2, t, ret;
+ if (d<0) return false;
+ else
+ {
+  d = Math.sqrt(d);
+  t1 = (-b-d)/(2*a);
+  t2 = (-b+d)/(2*a);
+  if (t1>=0 && t1<=1)
+  {
+   if (t2>=0 && t2<=1)
+   t = Math.min(t1, t2);
+   else
+   t = t1;
+  }
+  else if ((t2>=0 && t2<=1))
+  {
+   t = t2;
+  }
+  else return false;
+  ret = [x1+t*dx, y1+t*dy];
+  if (angle)
+  {
+   var tv1 = Math.sqrt((cx-ret[0])*(cx-ret[0])+(cy-ret[1])*(cy-ret[1])), tv2 = Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+  }
+  ret.push(Math.abs(((x2-x1)*(cx-ret[0])+(y2-y1)*(cy-ret[1]))/(tv1*tv2)));
+  return ret;
+ }
+ 
+ //return coords of the nearest impact from the line origin
+};
+sw2.circlewithcircle = function(x1, y1, r1, x2, y2, r2)
+{
+ return (x2-x1)*(x2-x1) + (y1-y2)*(y1-y2)<=(r1+r2)*(r1+r2);
+};
+sw2.pointlinedist = function(x1, y1, x2, y2, x0, y0)
+{ //1-v, 2-w 
+ var dx = x2-x1, dy = y2-y1;
+ var l2 = dx*dx+dy*dy;
+ if (l2 == 0) return Math.sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
+ var t = ((x0 - x1)*dx + (y0-y1)*dy) / l2;
+ if (t < 0) return Math.sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
+ if (t > 1) return Math.sqrt((x2-x0)*(x2-x0)+(y2-y0)*(y2-y0));
+
+ var nx = x1 + t*(x2-x1), ny = y1 + t*(y2-y1);
+ return Math.sqrt((x0-nx)*(x0-nx)+(y0-ny)*(y0-ny));
+};
+sw2.pointpointdist = function(x1, y1, x2, y2)
+{
+ return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+};
+//returns the minimal margin / distance between this shape, and the other set of shapes
+//to ensure there's a space between the obstacles
+sw2.safedist = function(shape, set, debug) 
+{
+ var ret = Infinity, t, t2, t4, t6, t8, t10;
+
+ //check margins for the shape
+ for(t=0;t<shape.length;t++)
+ {
+  ret = Math.min(ret, shape[t][0], shape[t][1], sw2.x-shape[t][0], sw2.y-shape[t][1]);
+ }
+ //do not check margin for other shapes because they wouldn't be there
+
+ for(t=0;t<shape.length;t++)
+ {
+  //for each line of the shape
+  for(t2=0;t2<set.length;t2++)
+  {
+   for(t4=0;t4<set[t2].length;t4++)
+   {
+    if (sw2.linewithline(shape[t][0], shape[t][1], shape[t==shape.length-1?0:t+1][0], shape[t==shape.length-1?0:t+1][1], set[t2][t4][0], set[t2][t4][1], set[t2][t4==set[t2].length-1?0:t4+1][0], set[t2][t4==set[t2].length-1?0:t4+1][1]))
+    return false; //false if a line intersects, that is one corner is inside another obstacle
+    ret = Math.min(ret, sw2.pointpointdist(shape[t][0], shape[t][1], set[t2][t4][0], set[t2][t4][1]));
+    ret = Math.min(ret, sw2.pointlinedist(shape[t][0], shape[t][1], shape[t==shape.length-1?0:t+1][0], shape[t==shape.length-1?0:t+1][1], set[t2][t4][0], set[t2][t4][1]));
+    ret = Math.min(ret, sw2.pointlinedist(set[t2][t4][0], set[t2][t4][1], set[t2][t4==set[t2].length-1?0:t4+1][0], set[t2][t4==set[t2].length-1?0:t4+1][1], shape[t][0], shape[t][1]));////////////////////////
+   }
+  }
+ }
+ return ret;
+}
+</script>
+<script>
+sw2.bctx = document.getElementById('sw2-blayer').getContext('2d');
+sw2.ctx = document.getElementById('sw2-main').getContext('2d');
+sw2.lctx = document.getElementById('sw2-olayer').getContext('2d');
+
+sw2.defaultSettings="//\n//Main settings\n//\nsw2.x = 600; sw2.y = 600; //size\nsw2.playerNo = 6; //number of players\nsw2.defensePlayers = 2;\nsw2.clockSpeed = 23; //game speed, the lower the faster\nsw2.bdamage = 30; //damage done by one bullet\nsw2.mol = 14; //max obstacles\nsw2.obst_sm = 40; //minimal obstacle size\nsw2.obst_sd = 41; //obstacle size max delta\nsw2.obst_space = 1.5; //space between obstacles, it gets multiplied by player radius\nsw2.movemode = 0; //initial player control mode\nsw2.movespeed = 1.5; //speed of player movement\nsw2.bfspeed = 5; //gun delay (maybe decrease it?)\nsw2.bspeed = 80; //bullet speed\nsw2.colDepth = 4; //collision precision\nsw2.bshift = 0; //shift bullet by this each time to avoid appearing bullets in the same place (0 - off)\n\n\n//\n//AI settings\n//\nsw2.len0 = 20; sw2.lend = 10; //walk vector length, length delta\nsw2.pastObstacle = 1.7; //walk vector length after collision with an obstacle\nsw2.elen = 6; //walk vector length after other collision\nsw2.ang0 = 25; sw2.ang1 = 95; //max walk angle range relative to target (ang0 - close to target, ang1 - far from target)\nsw2.arel = 45; //max walk angle relative to last vector\nsw2.depth = 6; //barrel adjustment prediction\nsw2.aps = 0.1; //barrel movement speed\n\n//\n//Visual settings\n//\nsw2.pr = 13; //player radius\nsw2.br = 5; //player border\nsw2.bw = 28; //half of base width\nsw2.bh = 40; //base height\nsw2.crhs = 9; //crosshair radius\nsw2.crhs2 = 4; //crosshair element size\nsw2.pspace = 1.1; //space between players (initial position)\nsw2.btrail = 14; //bullet trail\nsw2.adrop = 0.1; //player disappear speed\nsw2.barrelLength = 8;\n\n//\n//color settings\n//\n\nsw2.backgroundColor = '#fffff0';\nsw2.baseColor = '#bbeebb'; sw2.baseBorder = '#668866';\nsw2.obstacleColor = '#dddddd'; sw2.obstacleBorder = '#888888';\nsw2.bulletColor = '#000000';\nsw2.playerColors = [{bg: '#ffaaaa', health: '#ffcaca', fg: '#ff7777'},{bg: '#aaaaff', health: '#cacaff', fg: '#7777ff'}];\nsw2.barrelColor = '#000000';\nsw2.cursorColor = '#cccccc';\nsw2.reachableCursorColor = '#888888';\nsw2.playerFocusColor = '#cfcfcf';";
+
+
+sw2.noplayer = false; 
+sw2.side = 0;
+
+if (!(sw2.settings=localStorage.getItem('zb3.sw2.settings')))
+{ 
+ sw2.settings=sw2.defaultSettings;
+ localStorage.setItem('zb3.sw2.settings', sw2.settings)
+}
+
+document.getElementById('zombiesettings').value = sw2.settings;
+eval(sw2.settings);
+
+sw2.doColorSwap = function()
+{
+ var t = sw2.playerColors[0];
+ sw2.playerColors[0] = sw2.playerColors[1];
+ sw2.playerColors[1] = t;
+};
+//not a setting
+sw2.ocp = 2*Math.round(sw2.pr*sw2.playerNo*sw2.pspace);
+sw2.bcurframes = 0;
+sw2.cmx = sw2.x/2; sw2.cmy = sw2.y/2;
+sw2.cmd = false;
+sw2.cr = sw2.pr-sw2.br/2;
+sw2.oc = Math.round(sw2.pr*2*sw2.obst_space);
+sw2.bctx.canvas.width=sw2.x; sw2.bctx.canvas.height=sw2.y;
+sw2.ctx.canvas.width=sw2.x; sw2.ctx.canvas.height=sw2.y;
+sw2.lctx.canvas.width=sw2.x; sw2.lctx.canvas.height=sw2.y;
+if (sw2.x>600)
+document.getElementById('centerdiv').style.width = sw2.x+'px';
+document.getElementById('sw2-overlay').style.width = sw2.x+'px';
+document.getElementById('sw2-overlay').style.height = sw2.y+'px';
+sw2.maxdist = Math.sqrt((sw2.x/2)*(sw2.x/2)+sw2.y*sw2.y);
+sw2._backgroundColor = [parseInt(sw2.backgroundColor.substr(1, 2), 16), parseInt(sw2.backgroundColor.substr(3, 2), 16), parseInt(sw2.backgroundColor.substr(5, 2), 16)];
+sw2._bulletColor = [parseInt(sw2.bulletColor.substr(1, 2), 16), parseInt(sw2.bulletColor.substr(3, 2), 16), parseInt(sw2.bulletColor.substr(5, 2), 16)];
+sw2._btbColor = [sw2._bulletColor[0]-sw2._backgroundColor[0], sw2._bulletColor[1]-sw2._backgroundColor[1], sw2._bulletColor[2]-sw2._backgroundColor[2]];
+
+sw2.obstacles = [];
+sw2.players = [[], []];
+sw2.bullets = [/* {x, y, vx, vy} */];
+sw2.ctx.translate(0.5, 0.5);
+sw2.lctx.translate(0.5, 0.5);
+sw2.createObstacles = function()
+{
+ sw2.obstacles.length=0;
+ var candidate, width, height, nx, ny, res, t;
+ 
+ //create two initial obstacles which will be the bases
+ sw2.obstacles.push([[sw2.x/2-sw2.bw, -1], [sw2.x/2+sw2.bw, -1], [sw2.x/2+sw2.bw, sw2.bh], [sw2.x/2-sw2.bw, sw2.bh]], [[sw2.x/2-sw2.bw, sw2.y], [sw2.x/2+sw2.bw, sw2.y], [sw2.x/2+sw2.bw, sw2.y-1-sw2.bh], [sw2.x/2-sw2.bw, sw2.y-1-sw2.bh]]);
+ sw2.obstacles.push([[sw2.x/2-sw2.ocp/2, sw2.y/2-4], [sw2.x/2+sw2.ocp/2, sw2.y/2-4], [sw2.x/2+sw2.ocp/2, sw2.y/2+4], [sw2.x/2-sw2.ocp/2, sw2.y/2+4]]);
+var pa = 0;
+ while(sw2.obstacles.length<sw2.mol && pa<1000)
+ {
+  pa++;
+  candidate = [];
+
+  width = sw2.obst_sm+Math.floor(Math.random()*sw2.obst_sd);
+  height = sw2.obst_sm+Math.floor(Math.random()*sw2.obst_sd);
+
+  nx = sw2.oc+Math.floor(Math.random()*(sw2.x-width-sw2.oc+1));
+  ny = sw2.oc+Math.floor(Math.random()*(sw2.y-width-sw2.oc+1));
+
+  candidate.push([nx, ny], [nx+width, ny], [nx+width, ny+height], [nx, ny+height]);
+
+  res=sw2.safedist(candidate, sw2.obstacles);
+
+  if (res && res>=sw2.oc)
+  {
+   sw2.obstacles.push(candidate);
+   pa=0;
+  }
+ }
+ 
+ sw2.lctx.clearRect(0, 0, sw2.x, sw2.y);
+ sw2.lctx.strokeStyle = sw2.obstacleBorder;
+ sw2.lctx.fillStyle = sw2.obstacleColor;
+ for(t=2;t<sw2.obstacles.length;t++)
+ {
+  sw2.lctx.fillRect(sw2.obstacles[t][0][0], sw2.obstacles[t][0][1], sw2.obstacles[t][2][0]-sw2.obstacles[t][0][0], sw2.obstacles[t][2][1]-sw2.obstacles[t][0][1]);
+  sw2.lctx.strokeRect(sw2.obstacles[t][0][0], sw2.obstacles[t][0][1], sw2.obstacles[t][2][0]-sw2.obstacles[t][0][0], sw2.obstacles[t][2][1]-sw2.obstacles[t][0][1]);
+ }
+ sw2.bctx.clearRect(0, 0, sw2.x, sw2.y);
+ sw2.bctx.fillStyle = sw2.backgroundColor;
+ sw2.bctx.fillRect(0, 0, sw2.x, sw2.y);
+};
+sw2.createPlayers = function()
+{
+ sw2.players = [[], []];
+ var t, od = [];
+ for(t=0;t<sw2.playerNo;t++)
+ {
+  sw2.players[1].push({x: sw2.x/2-sw2.ocp/2+sw2.pr*sw2.pspace+2*sw2.pr*t*sw2.pspace, y: sw2.side?sw2.y-1-sw2.pr:sw2.pr, hp: 100, angle:(sw2.side?-1:1)*Math.PI/2, alpha: 1, fdown: false, fcurframes: 0, fcuroffset: 0, team: 1, iv: [], ox: -1});
+  sw2.players[0].push({x: sw2.x/2-sw2.ocp/2+sw2.pr*sw2.pspace+2*sw2.pr*t*sw2.pspace, y: sw2.side?sw2.pr:sw2.y-1-sw2.pr, hp: 100, angle:(sw2.side?1:-1)*Math.PI/2, alpha: 1, fdown: false, fcurframes: 0, fcuroffset: 0, team: 0, iv: [], ox: -1});
+ }
+ if (sw2.noplayer)
+ {
+  sw2.players[0][0].hp=0;sw2.players[0][0].alpha=0;
+  sw2.players[0].push({x: sw2.players[0][0].x, y: sw2.players[0][0].y, hp: 100, angle:sw2.players[0][0].angle, alpha: 1, fdown: false, fcuroffset: 0, fcurframes: 0, team: 0, iv: [], ox: -1});
+ }
+ for(t=0;t<sw2.defensePlayers;t++)
+ {
+  sw2.players[0][((sw2.playerNo-sw2.defensePlayers)/2|0)+t].defense = true;
+  sw2.players[1][((sw2.playerNo-sw2.defensePlayers)/2|0)+t].defense = true;
+  od.push(((sw2.playerNo-sw2.defensePlayers)/2|0)+t);
+ }
+ for(t=0;t<sw2.defensePlayers;t++)
+ {
+  sw2.players[0][((sw2.playerNo-sw2.defensePlayers)/2|0)+t].otherDefense = od.slice(0);
+  sw2.players[0][((sw2.playerNo-sw2.defensePlayers)/2|0)+t].otherDefense.splice(t, 1);
+  sw2.players[1][((sw2.playerNo-sw2.defensePlayers)/2|0)+t].otherDefense = od.slice(0);
+  sw2.players[1][((sw2.playerNo-sw2.defensePlayers)/2|0)+t].otherDefense.splice(t, 1);
+ }
+};
+sw2.paint = function()
+{
+ /*
+ no need for additional variables
+ */
+ sw2.ctx.clearRect(0, 0, sw2.x, sw2.y);
+ 
+ var t, t2, at;
+ //paint players
+
+ if (sw2.players[0][0].hp)
+ {
+  sw2.ctx.strokeStyle = sw2.playerFocusColor;
+  sw2.ctx.strokeRect(sw2.players[0][0].x-sw2.pr-sw2.pr-2, sw2.players[0][0].y-sw2.pr-sw2.pr-2, 2*sw2.pr+2*sw2.pr+4,  2*sw2.pr+2*sw2.pr+4);
+ }
+
+ sw2.ctx.strokeStyle = sw2.baseBorder;
+ sw2.ctx.fillStyle = sw2.baseColor;
+ for(t=0;t<2;t++)
+ {
+  sw2.ctx.fillRect(sw2.obstacles[t][0][0], sw2.obstacles[t][0][1], sw2.obstacles[t][2][0]-sw2.obstacles[t][0][0], sw2.obstacles[t][2][1]-sw2.obstacles[t][0][1]);
+  sw2.ctx.strokeRect(sw2.obstacles[t][0][0], sw2.obstacles[t][0][1], sw2.obstacles[t][2][0]-sw2.obstacles[t][0][0], sw2.obstacles[t][2][1]-sw2.obstacles[t][0][1]);
+ }
+ sw2.ctx.fillStyle = sw2.bulletColor; var bthere = false;
+ for(t=0;t<sw2.bullets.length;t++)
+ {
+  if (sw2.bullets[t].vx||sw2.bullets[t].vy)
+  {
+   sw2.ctx.fillRect(sw2.bullets[t].x-1, sw2.bullets[t].y-1, 2, 2);
+   bthere=true;
+  }
+  else
+  {
+   sw2.ctx.beginPath();
+   sw2.ctx.arc(sw2.bullets[t].x, sw2.bullets[t].y, 3, 0, 2*Math.PI);
+   sw2.ctx.fill();
+  }
+ }
+ if (bthere && sw2.btrail)
+ {
+  for(t2=1;t2<=sw2.btrail;t2++)
+  {
+   sw2.ctx.fillStyle = 'rgb('+Math.max(0, Math.min(255, (sw2._backgroundColor[0]+(sw2._btbColor[0])*(sw2.btrail-t2+1)/(sw2.btrail+1))|0))+','+Math.max(0, Math.min(255, (sw2._backgroundColor[1]+(sw2._btbColor[1])*(sw2.btrail-t2+1)/(sw2.btrail+1))|0))+','+Math.max(0, Math.min(255, (sw2._backgroundColor[2]+(sw2._btbColor[2])*(sw2.btrail-t2+1)/(sw2.btrail+1))|0))+')';
+   for(t=0;t<sw2.bullets.length;t++)
+   {
+    if (sw2.bullets[t].vx||sw2.bullets[t].vy)
+     {
+     sw2.ctx.fillRect(sw2.bullets[t].x-1-(t2*(sw2.bullets[t].vx/sw2.bspeed)), sw2.bullets[t].y-1-(t2*(sw2.bullets[t].vy/sw2.bspeed)), 2, 2);
+    }
+   }
+  }
+ }
+
+ for(alo=0;alo<2;alo++) //first paint transparent, then opaque
+ {
+  for(t=0;t<sw2.players.length;t++)
+  {
+   sw2.ctx.fillStyle = sw2.playerColors[t].bg;
+   if (alo)
+   sw2.ctx.beginPath();
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if (!sw2.players[t][t2].alpha) continue;
+    if ((sw2.players[t][t2].alpha==1)^alo) continue;
+    if (!alo)
+    {
+     sw2.ctx.globalAlpha = sw2.players[t][t2].alpha;
+     sw2.ctx.beginPath();
+    }
+    sw2.ctx.arc(sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.pr, 0, 2*Math.PI, false);
+    if (!alo)
+    sw2.ctx.fill();
+    else
+    sw2.ctx.closePath();
+   }
+   if (alo)
+   sw2.ctx.fill();
+  }
+  if (!alo)
+  sw2.ctx.globalAlpha = 1;
+ }
+
+ for(alo=0;alo<2;alo++) //first paint transparent, then opaque
+ {
+  for(t=0;t<sw2.players.length;t++)
+  {
+   sw2.ctx.fillStyle = sw2.playerColors[t].health;
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if (!sw2.players[t][t2].alpha) continue;
+    if ((sw2.players[t][t2].alpha==1)^alo) continue;
+    if (!alo)
+    {
+     sw2.ctx.globalAlpha = sw2.players[t][t2].alpha;
+    }
+    sw2.ctx.beginPath();
+    at=Math.acos((100-sw2.players[t][t2].hp)/50-1);
+    sw2.ctx.arc(sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.pr-sw2.br, Math.PI/2-at, Math.PI/2+at, false); 
+    sw2.ctx.fill();
+   }
+  }
+  if (!alo)
+  sw2.ctx.globalAlpha = 1;
+ }
+
+ sw2.ctx.lineWidth=sw2.br;
+ for(alo=0;alo<2;alo++) //first paint transparent, then opaque
+ {
+  for(t=0;t<sw2.players.length;t++)
+  {
+   sw2.ctx.strokeStyle = sw2.playerColors[t].fg;
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if (!sw2.players[t][t2].alpha) continue;
+    if ((sw2.players[t][t2].alpha==1)^alo) continue;
+    if (!alo)
+    {
+     sw2.ctx.globalAlpha = sw2.players[t][t2].alpha;
+    }
+    sw2.ctx.beginPath();
+    sw2.ctx.arc(sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.cr, 0, 2*Math.PI, false);
+    sw2.ctx.stroke();
+   }
+  }
+  if (!alo)
+  sw2.ctx.globalAlpha = 1;
+ }
+ sw2.ctx.lineWidth=1.1;
+
+ sw2.ctx.strokeStyle = sw2.barrelColor;
+ for(alo=0;alo<2;alo++) //first paint transparent, then opaque
+ {
+  for(t=0;t<sw2.players.length;t++)
+  {
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if (!sw2.players[t][t2].alpha) continue;
+    if ((sw2.players[t][t2].alpha==1)^alo) continue;
+    if (!alo)
+    {
+     sw2.ctx.globalAlpha = sw2.players[t][t2].alpha;
+    }
+    sw2.ctx.beginPath();
+    sw2.ctx.arc(sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.pr, 0, 2*Math.PI, false);
+    sw2.ctx.stroke();
+   }
+  }
+  if (!alo)
+  sw2.ctx.globalAlpha = 1;
+ }
+
+ for(alo=0;alo<2;alo++) //first paint transparent, then opaque
+ {
+  for(t=0;t<sw2.players.length;t++)
+  {
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if (!sw2.players[t][t2].alpha) continue;
+    if ((sw2.players[t][t2].alpha==1)^alo) continue;
+    if (!alo)
+    sw2.ctx.globalAlpha = sw2.players[t][t2].alpha;
+    sw2.ctx.save();
+    sw2.ctx.translate(sw2.players[t][t2].x, sw2.players[t][t2].y);
+    sw2.ctx.rotate(sw2.players[t][t2].angle);
+    sw2.ctx.strokeRect(sw2.pr, 0, sw2.barrelLength, 1);
+    sw2.ctx.restore();
+   }
+   if (!alo)
+   sw2.ctx.globalAlpha = 1;
+  }
+ }
+
+ if (sw2.players[0][0].hp)
+ {
+  var fail = false, ctarget = -1;
+  g:for(t=2;t<sw2.obstacles.length && !fail;t++)
+  {
+   for(t2=0;t2<sw2.obstacles[t].length;t2++)
+   {
+    if (sw2.linewithline(sw2.obstacles[t][t2][0], sw2.obstacles[t][t2][1], sw2.obstacles[t][t2==sw2.obstacles[t].length-1?0:t2+1][0], sw2.obstacles[t][t2==sw2.obstacles[t].length-1?0:t2+1][1], sw2.players[0][0].x, sw2.players[0][0].y, sw2.cmx, sw2.cmy))
+   {fail = true; break g;}
+   }
+  }
+
+  for(t=0;t<sw2.players.length && !fail;t++)
+  {
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if ((sw2.players[t][t2].x-sw2.cmx)*(sw2.players[t][t2].x-sw2.cmx)+(sw2.players[t][t2].y-sw2.cmy)*(sw2.players[t][t2].y-sw2.cmy)<sw2.pr*sw2.pr)
+    {
+     ctarget = sw2.players[t][t2]; break;
+    }
+   }
+  }
+  g:for(t=0;t<sw2.players.length && !fail;t++)
+  {
+   for(t2=0;t2<sw2.players[t].length;t2++)
+   {
+    if ((!t && !t2) || sw2.players[t][t2]==ctarget) continue;
+    if (!sw2.players[t][t2].hp) continue;
+    if (sw2.linewithcircle(sw2.players[0][0].x, sw2.players[0][0].y, sw2.cmx, sw2.cmy, sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.pr))
+    {fail = true; break g;}
+   }
+  }
+  
+  sw2.ctx.strokeStyle = fail?sw2.cursorColor:sw2.reachableCursorColor;
+  sw2.ctx.beginPath();
+  sw2.ctx.arc(sw2.cmx, sw2.cmy, sw2.crhs, 0, 2*Math.PI);
+  sw2.ctx.stroke();
+  sw2.ctx.strokeRect(sw2.cmx+sw2.crhs, sw2.cmy, sw2.crhs2, 1);
+  sw2.ctx.strokeRect(sw2.cmx-sw2.crhs-sw2.crhs2, sw2.cmy, sw2.crhs2, 1);
+  sw2.ctx.strokeRect(sw2.cmx, sw2.cmy+sw2.crhs, 1, sw2.crhs2);
+  sw2.ctx.strokeRect(sw2.cmx, sw2.cmy-sw2.crhs-sw2.crhs2, 1, sw2.crhs2);
+ }
+}
+
+sw2.kp = {};
+sw2.kdown = function(event)
+{ 
+ sw2.kp[event.keyCode]=1;
+ if (event.keyCode==80)
+ {
+  sw2.pause = !sw2.pause;
+  if(sw2.pause)
+  sw2.pauseOn();
+  else
+  sw2.pauseOff();
+ }
+ else if (event.keyCode==88)
+ sw2.movemode=1-sw2.movemode;
+ ;
+ event.preventDefault();
+};
+sw2.keyup = function(event)
+{
+ sw2.kp[event.keyCode]=0;
+ event.preventDefault();
+};
+sw2.mdown = function(event)
+{
+ if (!sw2.gameon) return;
+ var rect = sw2.ctx.canvas.getBoundingClientRect();
+ sw2.cmx = event.clientX-rect.left; sw2.cmy = event.clientY-rect.top;
+ sw2.cmd = true; sw2.players[0][0].fdown = true; sw2.players[0][0].fcurframes=0; sw2.players[0][0].fcuroffset=0;
+}
+sw2.mmove = function(event)
+{
+ if (!sw2.gameon) return;
+ var rect = sw2.ctx.canvas.getBoundingClientRect();
+ sw2.cmx = event.clientX-rect.left; sw2.cmy = event.clientY-rect.top;
+}
+sw2.mup = function(event)
+{
+ if (!sw2.gameon) return;
+ var rect = sw2.ctx.canvas.getBoundingClientRect();
+ sw2.cmx = event.clientX-rect.left; sw2.cmy = event.clientY-rect.top;
+ sw2.cmd = false; sw2.players[0][0].fdown = false;
+}
+
+document.getElementById('sw2-clayer').onkeydown = sw2.kdown;
+document.getElementById('sw2-clayer').onkeyup = sw2.keyup;
+document.onmousedown = sw2.mdown;
+document.onmousemove = sw2.mmove;
+document.onmouseup = sw2.mup;
+
+sw2.collidepart = function(mvx, mvy, pt, pt2)// max move a ball(player) can do. 
+{
+ var depth=0, coeff=1, cp = 1, lg = 0, fail;
+ sw2.collidepart.cbound = false;
+ 
+ if (mvx)
+ {
+  if (sw2.players[pt][pt2].x+mvx<sw2.pr)
+  coeff *= (sw2.pr-sw2.players[pt][pt2].x)/mvx;
+
+  else if (sw2.players[pt][pt2].x+mvx>sw2.x-sw2.pr)
+  coeff *= (sw2.x-sw2.pr-sw2.players[pt][pt2].x)/mvx;
+ }
+
+ if (mvy)
+ {
+  if (sw2.players[pt][pt2].y+mvy<sw2.pr)
+  coeff *= (sw2.pr-sw2.players[pt][pt2].y)/mvy;
+
+  if (sw2.players[pt][pt2].y+mvy>sw2.y-sw2.pr)
+  coeff *= (sw2.y-sw2.pr-sw2.players[pt][pt2].y)/mvy;
+ }
+ 
+ if (coeff!=1)
+ {
+  sw2.collidepart.cbound=true;
+ }
+ cp = coeff;
+ sw2.collidepart.player = false;
+ sw2.collidepart.cline = null;
+
+ while(depth<sw2.colDepth) //can move by 1? can move by 0.5? if so then can move by 0.75? etc
+ {
+  fail = false;
+  g:for(t=2;t<sw2.obstacles.length;t++) //if a player moved by coeff*mv will collide with some obstacle
+  {
+   for(t2=0;t2<sw2.obstacles[t].length;t2++)
+   {
+    if (sw2.linewithcircle(sw2.obstacles[t][t2][0], sw2.obstacles[t][t2][1], sw2.obstacles[t][t2==sw2.obstacles[t].length-1?0:t2+1][0], sw2.obstacles[t][t2==sw2.obstacles[t].length-1?0:t2+1][1], sw2.players[pt][pt2].x+coeff*mvx, sw2.players[pt][pt2].y+coeff*mvy, sw2.pr))
+    {fail = true; sw2.collidepart.cline = sw2.obstacles[t]; break g;}
+   }
+  }
+  g:for(t=0;t<sw2.players.length && !fail;t++) //if a player moved by coeff*mv will collide with some other player
+  {
+   for(t2=0;t2<sw2.players[t].length && !fail;t2++)
+   {
+    if (t==pt && t2==pt2) continue;
+    if (!sw2.players[t][t2].hp) continue;
+    if (sw2.circlewithcircle(sw2.players[pt][pt2].x+coeff*mvx, sw2.players[pt][pt2].y+coeff*mvy, sw2.pr, sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.pr))
+    {fail = true; sw2.collidepart.player = true; break g;}
+   }
+  }
+  if (fail)
+  {
+   cp /= 2;
+   coeff-=cp;
+  }
+  else
+  {
+   lg = coeff;
+   if (depth==0)
+   break;
+   cp /= -2;
+   coeff-=cp;
+  }
+  depth++;
+ } 
+ return lg;
+}
+function sortThreat(a, b)
+{
+ return a[1]-b[1];
+}
+/*
+ player? it has x, y and a set of IV's - intention vectors
+ that IV is the direction a player will move
+ normally constrained - except times when he's locked... 
+ then it's not, but it's usually shorter
+
+ but why is this an array? 
+ player may only have one iv per time?
+ isn't it true?
+
+ ah this is because we want to predict...
+ and do AI..
+*/
+sw2.savePlayers = function()
+{
+ var t, t2, t4;
+ for(t=0;t<sw2.players.length;t++)
+ {
+  for(t2=0;t2<sw2.players[t].length;t2++)
+  {
+   sw2.players[t][t2].ox = sw2.players[t][t2].x;
+   sw2.players[t][t2].oy = sw2.players[t][t2].y;
+   sw2.players[t][t2].civ = 0;
+   if (sw2.players[t][t2].iv.length)
+   {
+    sw2.players[t][t2].iv0c = sw2.players[t][t2].iv[0].current;
+   }
+   else
+   sw2.players[t][t2].iv0c = -1;
+  } 
+ }
+};
+sw2.restorePlayers = function()
+{
+ var t, t2, t4;
+ for(t=0;t<sw2.players.length;t++)
+ {
+  for(t2=0;t2<sw2.players[t].length;t2++)
+  {
+   sw2.players[t][t2].x = sw2.players[t][t2].ox;
+   sw2.players[t][t2].y = sw2.players[t][t2].oy;
+   for(t4=0;t4<sw2.players[t][t2].iv.length;t4++)
+   {
+    sw2.players[t][t2].iv[t4].current = 0;
+   }
+   if (sw2.players[t][t2].iv0c!=-1) 
+   {
+    sw2.players[t][t2].iv[0].current = sw2.players[t][t2].iv0c;
+   }
+   sw2.players[t][t2].ox = -1;
+  } 
+ }
+};
+sw2.newIV = function(team, cx, cy, pa)
+{
+ var vx = sw2.x/2-cx, vy = ((team^sw2.side)?sw2.y-1:0)-cy, ar, arel, ca, l=sw2.len0+Math.floor(Math.random()*sw2.lend);
+ var dist = Math.sqrt(vx*vx+vy*vy), at = Math.atan2(vy, vx), ar = window.lethimgo?2*Math.PI:(dist*(sw2.ang1-sw2.ang0)/sw2.maxdist + sw2.ang0)*Math.PI/180; 
+ var lhg = window.lethimgo;
+ if (sw2.arel && pa!==null && !window.lethimgo)
+ {
+  arel = sw2.arel*Math.PI/180;
+  ca = pa-arel+Math.random()*2*arel;
+  ca = Math.max(at-ar, Math.min(ca, at+ar));
+ }
+ else
+ {
+  ca = at-ar+Math.random()*2*ar;
+ }
+ 
+ if (window.lethimgo && sw2.elen) l = sw2.elen;
+
+ window.lethimgo=0;
+ return {x: Math.cos(ca)*sw2.movespeed, y: Math.sin(ca)*sw2.movespeed, total: l, current: 0, lock: false, ca: ca, lhg: true};
+};
+/*
+ this function moves in two modes:
+ -VM planning ahead move (?)
+ -normal mode
+
+ VM plans in advance (by what?)
+ jeez the code looks worse than assembly...
+ "ba", "pla" variables = genius!
+
+ we cannot just append .positionQueue
+ because player movement can erase all that plans
+ but maybe it could be done better way, idk
+*/
+sw2.movePlayers = function()
+{
+ var t, t2, t4, t6, vm = false, civ = 0, lgx, lgy, ba = false, pla = false, cline = null;
+ if (sw2.players[0][0].ox!=-1) vm = true; 
+ for(t=0;t<sw2.players.length;t++)
+ {
+  for(t2=0;t2<sw2.players[t].length;t2++)
+  {
+   sw2.players[t][t2].tries = 0;
+  }
+ }
+ for(t=0;t<sw2.players.length;t++)
+ {
+  for(t2=0;t2<sw2.players[t].length;t2++)
+  {
+   if ((!t && !t2) || sw2.players[t][t2].defense) continue;
+   if (!sw2.players[t][t2].hp) continue;
+   civ = vm?sw2.players[t][t2].civ:0;
+   if (sw2.players[t][t2].iv.length>civ) //if there are iv's to play
+   {
+    if (sw2.players[t][t2].iv[civ].current==sw2.players[t][t2].iv[civ].total) //if this was the last one...
+    {
+     if (vm) sw2.players[t][t2].civ++; else sw2.players[t][t2].iv.splice(0, 1);
+     t2--; continue;
+    }
+    sw2.players[t][t2].liv = sw2.players[t][t2].iv[civ];
+    ba = false; pla = false; //what the hell?
+
+    //x move
+    lgx = sw2.collidepart(sw2.players[t][t2].iv[civ].x, 0, t, t2); 
+    ba = sw2.collidepart.cbound; //collides with bound?
+    pla = sw2.collidepart.player; //with player?
+    cline = sw2.collidepart.cline; //which obstacle?
+    sw2.players[t][t2].x += lgx*sw2.players[t][t2].iv[civ].x;
+
+    //y move, fill in the player and obstacle collision
+    lgy = sw2.collidepart(0, sw2.players[t][t2].iv[civ].y, t, t2);
+    ba = ba || sw2.collidepart.cbound; pla = pla || sw2.collidepart.player; cline = cline || sw2.collidepart.cline;
+    sw2.players[t][t2].y += lgy*sw2.players[t][t2].iv[civ].y;
+
+
+    if (Math.abs(lgx*sw2.players[t][t2].iv[civ].x)<0.1 && Math.abs(lgy*sw2.players[t][t2].iv[civ].y)<0.1) //if we can't really move
+    {
+     if (pla) //can't move because of a player.. this means - seed new IV
+     window.lethimgo=1;
+     if (vm) sw2.players[t][t2].civ++; else sw2.players[t][t2].iv.splice(0, 1);
+     t2--; continue;
+    } 
+    else if (((lgx!=1 || lgy!=1) && !ba) && (((lgx==1 && sw2.players[t][t2].iv[civ].x) || (lgy==1 && sw2.players[t][t2].iv[civ].y)) && (sw2.players[t][t2].iv.length==civ+1)) && cline) //move slowed down because of obstacle - try to move parallel to it
+    {
+     sw2.players[t][t2].iv[civ].total = sw2.players[t][t2].iv[civ].current+1;
+
+     if (lgx==1)
+     {
+      sw2.players[t][t2].iv.push({x: (sw2.players[t][t2].iv[civ].x>0)?sw2.movespeed:-sw2.movespeed, y: 0, total: Math.ceil(Math.abs((((sw2.players[t][t2].iv[civ].x>0)?Math.max:Math.min)(cline[0][0], cline[1][0]))-sw2.players[t][t2].x)/sw2.movespeed)+Math.round(sw2.pastObstacle*sw2.pr/sw2.movespeed), current: 0, lock: false});
+      sw2.players[t][t2].iv[sw2.players[t][t2].iv.length-1].ca = Math.atan2(sw2.players[t][t2].iv[sw2.players[t][t2].iv.length-1].y, sw2.players[t][t2].iv[sw2.players[t][t2].iv.length-1].x);
+     }
+     else
+     {
+      //this additional check below ensures we don't move backward
+      if ((t^sw2.side)==0 && sw2.players[t][t2].iv[civ].y>0 || (t^sw2.side)==1 && sw2.players[t][t2].iv[civ].y<0)
+      {
+       sw2.players[t][t2].iv[civ].current++;
+       continue;
+      }
+      sw2.players[t][t2].iv.push({x: 0, y: (sw2.players[t][t2].iv[civ].y>0)?sw2.movespeed:-sw2.movespeed, total: Math.ceil(Math.abs((((sw2.players[t][t2].iv[civ].y>0)?Math.max:Math.min)(cline[1][1], cline[2][1]))-sw2.players[t][t2].y)/sw2.movespeed)+Math.round(sw2.pastObstacle*sw2.pr/sw2.movespeed), current: 0, lock: false});
+      sw2.players[t][t2].iv[sw2.players[t][t2].iv.length-1].ca = Math.atan2(sw2.players[t][t2].iv[sw2.players[t][t2].iv.length-1].y, sw2.players[t][t2].iv[sw2.players[t][t2].iv.length-1].x);
+     }
+     if (vm) sw2.players[t][t2].civ++; else sw2.players[t][t2].iv.splice(0, 1);
+     t2--; continue;
+    }
+    else
+    {
+     sw2.players[t][t2].iv[civ].current++;
+    }
+   }
+   else
+   {
+    if (sw2.players[t][t2].tries>3) //after 3 failed move tries, lift restrictions
+    window.lethimgo=1;
+    if (sw2.players[t][t2].tries<7) //after 7 tries? don't move him at all
+    {
+     sw2.players[t][t2].tries++;
+     sw2.players[t][t2].iv.push(sw2.newIV(t, sw2.players[t][t2].x, sw2.players[t][t2].y, !window.lethimgo&&sw2.players[t][t2].liv?sw2.players[t][t2].liv.ca:null));
+     t2--; continue;
+    }
+   }
+  }
+ }
+};
+sw2.updateRoles = function()
+{
+ var oa = 0, t, rd0, rd1, dp0 = 0, dp1 = 0, ol;
+
+ for(t=0;t<sw2.players[0].length;t++)
+ {
+  if (!sw2.players[0][t].hp) continue;
+  if (!sw2.players[0][t].defense) return;
+  oa++; ol=sw2.players[0][t];
+  rd0=sw2.players[0][t]; dp0++;
+ }
+
+ for(t=0;t<sw2.players[1].length;t++)
+ {
+  if (!sw2.players[1][t].hp) continue;
+  if (!sw2.players[1][t].defense) return;
+  oa++; ol=sw2.players[1][t];
+  rd1=sw2.players[1][t]; dp1++;
+ }
+
+ if (oa==1)
+ {
+  ol.defense = false;
+ }
+ else if (oa>1)
+ {
+  if (dp0>1 && dp1>1)
+  {
+   rd0.defense=false; rd1.defense=false;
+  }
+  else if (dp0>1)
+  rd0.defense=false;
+  else if (dp1>1)
+  rd1.defense=false;
+  else
+  {
+   (Math.round(Math.random())?rd1:rd0).defense=false;
+  }
+ }
+};
+sw2.checkResult = function()
+{
+ var o0 = 0, o1 = 0, t;
+
+ for(t=0;t<sw2.players[0].length;t++)
+ {
+  if (!sw2.players[0][t].hp) continue;
+  o0++; break;
+ }
+
+ for(t=0;t<sw2.players[1].length;t++)
+ {
+  if (!sw2.players[1][t].hp) continue;
+  o1++; break;
+ }
+
+ if (o0+o1==1)
+ sw2.teamWon(o0?0:1);
+ else if (o0+o1==0)
+ sw2.teamWon(-1);
+ else return false;
+ return true;
+};
+sw2.tickAI = function()
+{
+ var t, t2, t4, t6, x, threats = [[], []], tb, an, dc, odf;
+ 
+ for(t=0,oa=0;t<sw2.players[0].length;t++)
+ threats[0][t] = [-1, Infinity];
+
+ for(t=0;t<sw2.players[1].length;t++)
+ threats[1][t] = [-1, Infinity];
+
+ var an, rft; //aps - angle per step
+ sw2.movePlayers();
+ sw2.savePlayers();
+
+ /*
+  detect where to turn. run in depth
+  so that we predict like:
+  turning to X will take 4 moves.
+  but he will become out of reach after 4 moves, so well, screw him
+ */
+ for(x=0;x<sw2.depth;x++)
+ {
+  if (x)
+  sw2.movePlayers(); //emulate movement in advance
+
+  for(t=0;t<sw2.players[0].length;t++)
+  {
+   for(t2=0;t2<sw2.players[1].length;t2++)
+   {
+    if (!sw2.players[0][t].hp || !sw2.players[1][t2].hp) continue;
+    if (sw2.canreach(sw2.players[0][t], sw2.players[1][t2]))
+    {
+     an = Math.abs(sw2.players[0][t].angle - Math.atan2(sw2.players[1][t2].y-sw2.players[0][t].y, sw2.players[1][t2].x-sw2.players[0][t].x));
+     if (an>Math.PI) an = 2*Math.PI-an; //added
+
+     rft = Math.max(x, Math.ceil(an/sw2.aps)); //cost, x is our step time, M.c is turning time
+     if (rft<threats[0][t][1])
+     {
+      odf = false; //is this target good for my defense friend? if so then I'll pick a different one
+      if (sw2.players[0][t].defense)
+      {
+       for(dc=0;dc<sw2.defensePlayers-1;dc++)
+       if (threats[0][sw2.players[0][t].otherDefense[dc]][0]==t2)
+       {
+        odf=true;
+        break;
+       }
+      }
+      if (!odf)
+      {
+       threats[0][t][0] = t2;
+       threats[0][t][1] = rft;
+       threats[0][t][2] = Math.atan2(sw2.players[1][t2].y-sw2.players[0][t].y, sw2.players[1][t2].x-sw2.players[0][t].x);
+      }
+     }
+ 
+     //and the above, but from opponent's perspective
+     an = Math.abs(sw2.players[1][t2].angle - Math.atan2(sw2.players[0][t].y-sw2.players[1][t2].y, sw2.players[0][t].x-sw2.players[1][t2].x));
+     if (an>Math.PI) an = 2*Math.PI-an; //added
+
+     rft = Math.max(x, Math.ceil(an/sw2.aps));
+     if (rft<threats[1][t2][1])
+     {
+      odf = false;
+      if (sw2.players[1][t2].defense)
+      {
+       for(dc=0;dc<sw2.defensePlayers-1;dc++)
+       if (threats[1][sw2.players[1][t2].otherDefense[dc]][0]==t)
+       {
+        odf=true;
+        break;
+       }
+      }
+      if (!odf)
+      {
+       threats[1][t2][0] = t;
+       threats[1][t2][1] = rft;
+       threats[1][t2][2] = Math.atan2(sw2.players[0][t].y-sw2.players[1][t2].y, sw2.players[0][t].x-sw2.players[1][t2].x);
+      }
+     }
+    } 
+   }
+  }
+ }
+ sw2.restorePlayers();
+ 
+
+ for(t=0;t<sw2.players.length;t++)
+ {
+  for(t2=0;t2<sw2.players[t].length;t2++)
+  {
+   if (!t && !t2) continue;
+   if (!sw2.players[t][t2].hp) continue;
+   
+   if (threats[t][t2][0]!=-1) //pick best turn choice
+   {
+    tb = threats[t][t2][2]-sw2.players[t][t2].angle;
+    if (tb>Math.PI) tb = tb-2*Math.PI;
+    if (tb<-Math.PI) tb = 2*Math.PI+tb;
+    sw2.players[t][t2].angle = sw2.players[t][t2].angle+(Math.max(-sw2.aps, Math.min(tb, sw2.aps)));
+   }
+
+   //we need to check collision because.... we play :)
+   //also yep, this can potentially destroy old IV's if we block their way..
+   //alot of redundance here anyway
+
+   if (sw2.collideplayer(sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.players[t][t2].x+(sw2.x+sw2.y)*Math.cos(sw2.players[t][t2].angle), sw2.players[t][t2].y+(sw2.x+sw2.y)*Math.sin(sw2.players[t][t2].angle), sw2.players[t][t2], true)==2-t)
+   {
+    if (!sw2.players[t][t2].fdown)
+    sw2.players[t][t2].fcurframes = sw2.players[t][t2].fcuroffset = 0;
+    sw2.players[t][t2].fdown = true;
+   }
+   else
+   sw2.players[t][t2].fdown = false;
+  }
+ }
+};
+//does the bullet collide with player?
+sw2.collideplayer = function(x1, y1, x2, y2, origin, fromai, fromray) //add third option fromray = no other team intersection check and no angle check
+{
+ var ret = null;
+ var hit = false, ret2 = null, cplayer = null, rlen = Infinity, rlen2;
+
+ if (!fromai)
+ {
+  if (ret2=sw2.linewithline(0, 0,  sw2.x, 0, x1, y1, x2, y2))
+  {
+   rlen = sw2.pointpointdist(x1, y1, ret2[0], ret2[1]);
+   ret=ret2;
+  }
+  if (ret2=sw2.linewithline(sw2.x, 0, sw2.x, sw2.y, x1, y1, x2, y2))
+  {
+   rlen = sw2.pointpointdist(x1, y1, ret2[0], ret2[1]);
+   ret=ret2;
+  }
+  if (ret2=sw2.linewithline(sw2.x, sw2.y, 0, sw2.y, x1, y1, x2, y2))
+  {
+   rlen = sw2.pointpointdist(x1, y1, ret2[0], ret2[1]);
+   ret=ret2;
+  }
+  if (ret2=sw2.linewithline(0, sw2.y, 0, 0, x1, y1, x2, y2))
+  {
+   rlen = sw2.pointpointdist(x1, y1, ret2[0], ret2[1]);
+   ret=ret2;
+  }
+ }
+
+ for(t4=2;t4<sw2.obstacles.length;t4++)
+ {
+  for(t2=0;t2<sw2.obstacles[t4].length;t2++)
+  {
+   if (ret2=sw2.linewithline(sw2.obstacles[t4][t2][0], sw2.obstacles[t4][t2][1], sw2.obstacles[t4][t2==sw2.obstacles[t4].length-1?0:t2+1][0], sw2.obstacles[t4][t2==sw2.obstacles[t4].length-1?0:t2+1][1], x1, y1, x2, y2))
+   {
+    hit = true;
+    rlen2 = sw2.pointpointdist(x1, y1, ret2[0], ret2[1]);
+    if (rlen2<rlen)
+    {
+     rlen = rlen2;
+     ret = ret2;
+    }
+   }
+  }
+ }
+ for(t4=0;t4<sw2.players.length;t4++)
+ {
+  for(t2=0;t2<sw2.players[t4].length;t2++)
+  {
+   if (!sw2.players[t4][t2].hp) continue;
+   if (sw2.players[t4][t2]==origin || (fromray && sw2.players[t4][t2].team!=origin.team)) continue;
+   if (ret2=sw2.linewithcircle(x1, y1, x2, y2, sw2.players[t4][t2].x, sw2.players[t4][t2].y, sw2.pr, !fromai && !fromray))
+   {
+    hit=true; 
+    rlen2 = sw2.pointpointdist(x1, y1, ret2[0], ret2[1]);
+    if (rlen2<rlen)
+    {
+     cplayer = fromai?t4+1:sw2.players[t4][t2];
+     rlen = rlen2;
+     ret = ret2;
+    }
+   }
+  }
+ }
+ if (!fromai)
+ {
+  if (ret && !fromray)
+  {
+   //does this kill optimization? couldn't find any info
+   ret.hit = hit;
+   ret.cplayer = cplayer;
+  }
+  return ret;
+ }
+ else
+ return cplayer;
+};
+sw2.canreach = function(p1, p2) //can a player p1 reach player p2?
+{
+ var fail = false;
+ g:for(t=2;t<sw2.obstacles.length && !fail;t++)
+ {
+  for(t2=0;t2<sw2.obstacles[t].length;t2++)
+  {
+   if (sw2.linewithline(sw2.obstacles[t][t2][0], sw2.obstacles[t][t2][1], sw2.obstacles[t][t2==sw2.obstacles[t].length-1?0:t2+1][0], sw2.obstacles[t][t2==sw2.obstacles[t].length-1?0:t2+1][1], p1.x, p1.y, p2.x, p2.y))
+  {fail = true; break g;}
+  }
+ }
+
+ g:for(t=0;t<sw2.players.length && !fail;t++)
+ {
+  for(t2=0;t2<sw2.players[t].length;t2++)
+  {
+   if (sw2.players[t][t2]==p1 || sw2.players[t][t2]==p2) continue;
+   if (!sw2.players[t][t2].hp) continue;
+   if (sw2.linewithcircle(p1.x, p1.y, p2.x, p2.y, sw2.players[t][t2].x, sw2.players[t][t2].y, sw2.pr))
+   {fail = true; break g;}
+  }
+ }
+ return !fail;
+};
+sw2.tick = function()
+{
+ var mvx = 0, mvy = 0, mvv, mt1, mt2, lg, t, t2, t4;
+ if (sw2.kp[38]) mvy = -sw2.movespeed;
+ if (sw2.kp[40]) mvy = sw2.movespeed; 
+ if (sw2.kp[37]) mvx = -sw2.movespeed;
+ if (sw2.kp[39]) mvx = sw2.movespeed; 
+
+ mvv = Math.sqrt(mvx*mvx+mvy*mvy);
+ if (mvv)
+ {
+  mvx *= sw2.movespeed/mvv;
+  mvy *= sw2.movespeed/mvv;
+ }
+
+ if (sw2.movemode)
+ {
+  mt1 = mvx*Math.cos(sw2.players[0][0].angle+Math.PI/2)-mvy*Math.sin(sw2.players[0][0].angle+Math.PI/2);
+  mt2 = mvy*Math.cos(sw2.players[0][0].angle+Math.PI/2)+mvx*Math.sin(sw2.players[0][0].angle+Math.PI/2);
+  mvx = mt1; mvy = mt2;
+ }
+
+ //this is responsible for non player movement
+ sw2.tickAI();
+
+ if (sw2.players[0][0].x+mvx<sw2.pr)
+ mvx = sw2.pr-sw2.players[0][0].x;
+
+ if (sw2.players[0][0].x+mvx>sw2.x-sw2.pr)
+ mvx = sw2.x-sw2.pr-sw2.players[0][0].x;
+
+ if (sw2.players[0][0].y+mvy<sw2.pr)
+ mvy = sw2.pr-sw2.players[0][0].y;
+
+ if (sw2.players[0][0].y+mvy>sw2.y-sw2.pr)
+ mvy = sw2.y-sw2.pr-sw2.players[0][0].y;
+
+ var lg = sw2.collidepart(mvx, 0, 0, 0);
+ sw2.players[0][0].x += lg*mvx;
+ lg = sw2.collidepart(0, mvy, 0, 0);
+ sw2.players[0][0].y += lg*mvy;
+
+ sw2.players[0][0].angle = Math.atan2(sw2.cmy-sw2.players[0][0].y, sw2.cmx-sw2.players[0][0].x);
+ 
+ for(t4=0;t4<sw2.players.length;t4++)
+ {
+  for(t2=0;t2<sw2.players[t4].length;t2++)
+  {
+   if (!sw2.players[t4][t2].hp) continue;
+   if (sw2.players[t4][t2].x>=sw2.x/2-sw2.bw+sw2.pr && sw2.players[t4][t2].x<=sw2.x/2+sw2.bw-sw2.pr && (!(t4^sw2.side) && sw2.players[t4][t2].y<=sw2.bh-sw2.pr || (t4^sw2.side) && sw2.players[t4][t2].y>=sw2.y-1-sw2.bh+sw2.pr))
+   sw2.teamWon(t4);
+  }
+ }
+
+ var t, t2, t4;
+ /*
+ fade out players
+ */
+ t=0;
+ for(t4=0;t4<sw2.players.length;t4++)
+ {
+  for(t2=0;t2<sw2.players[t4].length;t2++)
+  {
+   if (sw2.players[t4][t2].hp) continue;
+   sw2.players[t4][t2].alpha = Math.max(0, sw2.players[t4][t2].alpha-sw2.adrop);
+   t=Math.max(t, sw2.players[t4][t2].alpha);
+  }
+ }
+ if (!t)
+ {
+  if (!sw2.players[0][0].alpha) sw2.cursorOff();
+  if (sw2.checkResult())
+  return;
+ }
+
+ //new bullet
+ for(t4=0;t4<sw2.players.length;t4++)
+ {
+  for(t2=0;t2<sw2.players[t4].length;t2++)
+  {
+   if (!sw2.players[t4][t2].hp) continue;
+   if (sw2.players[t4][t2].fdown && sw2.players[t4][t2].fcurframes==0)
+   {
+    var vx = sw2.bspeed*Math.cos(sw2.players[t4][t2].angle), tvy = sw2.bspeed*Math.sin(sw2.players[t4][t2].angle);
+    ///sw2.bullets.push({x: sw2.players[t4][t2].x+(sw2.pr+1)*Math.cos(sw2.players[t4][t2].angle), y: sw2.players[t4][t2].y+(sw2.pr+1)*Math.sin(sw2.players[t4][t2].angle), vx: sw2.bspeed*Math.cos(sw2.players[t4][t2].angle), vy: sw2.bspeed*Math.sin(sw2.players[t4][t2].angle), origin: sw2.players[t4][t2]});
+    sw2.bullets.push({x: sw2.players[t4][t2].x, y: sw2.players[t4][t2].y, first: true, vx: sw2.players[t4][t2].fcuroffset*Math.cos(sw2.players[t4][t2].angle), vy:sw2.players[t4][t2].fcuroffset*Math.sin(sw2.players[t4][t2].angle), nvx: sw2.bspeed*Math.cos(sw2.players[t4][t2].angle), nvy: sw2.bspeed*Math.sin(sw2.players[t4][t2].angle), origin: sw2.players[t4][t2]});
+   }
+   sw2.players[t4][t2].fcurframes++;
+   if (sw2.players[t4][t2].fcurframes==sw2.bfspeed)
+   sw2.players[t4][t2].fcurframes=0;
+
+   sw2.players[t4][t2].fcuroffset+=sw2.bshift;
+   if (sw2.players[t4][t2].fcuroffset==sw2.bspeed)
+   sw2.players[t4][t2].fcuroffset=0;
+  }
+ }
+ //process bullets
+ for(t=0;t<sw2.bullets.length;t++)
+ {
+  if (!sw2.bullets[t].vx && !sw2.bullets[t].vy)
+  {if (!sw2.bullets[t].first) sw2.bullets.splice(t--, 1);continue;}
+  var ret = sw2.collideplayer(sw2.bullets[t].x, sw2.bullets[t].y, sw2.bullets[t].x+sw2.bullets[t].vx, sw2.bullets[t].y+sw2.bullets[t].vy, sw2.bullets[t].origin);
+  if (ret)
+  {
+   if (ret.cplayer) //hit the enemy
+   {
+    ret.cplayer.hp -= ret[2]*sw2.bdamage;
+    ret.cplayer.hp = Math.max(0, ret.cplayer.hp);
+    if (!ret.cplayer.hp)
+    {
+     ret.cplayer.alpha = 1-sw2.adrop;
+     sw2.updateRoles();
+    }
+    console.log('hit enemy (or ally, idk)');
+   }
+   if (ret.hit)
+   {
+    sw2.bullets[t].x = ret[0]; sw2.bullets[t].y = ret[1];
+    sw2.bullets[t].vx = 0; sw2.bullets[t].vy = 0;
+   }
+   else
+   {
+    sw2.bullets.splice(t--, 1);
+    continue;
+   }
+  }
+  else
+  {
+   sw2.bullets[t].x += sw2.bullets[t].vx;
+   sw2.bullets[t].y += sw2.bullets[t].vy;
+  }
+ }
+ for(t=0;t<sw2.bullets.length;t++)
+ {
+  if (sw2.bullets[t].first)
+  {
+   sw2.bullets[t].first = false;
+   sw2.bullets[t].vx = sw2.bullets[t].nvx;
+   sw2.bullets[t].vy = sw2.bullets[t].nvy;
+  }
+ }
+ requestAnimationFrame(sw2.paint);
+ if (sw2.gameon && !sw2.pause)
+ window.gt = setTimeout(sw2.tick, sw2.clockSpeed);
+};
+gt=null;
+sw2.pauseOn = function()
+{
+ sw2.pause=true;
+ document.getElementById('sw2-overlay').style.display='block';
+};
+sw2.pauseOff = function(notick)
+{
+ sw2.pause=false;
+ if (!notick)
+ {
+  clearTimeout(gt);
+  sw2.tick();
+ }
+ document.getElementById('sw2-overlay').style.display='none';
+ document.getElementById('sw2-rbutton').style.display='block';
+ document.getElementById('sw2-ngbutton').style.display='none';
+};
+sw2.cursorOn = function()
+{
+ document.getElementById('sw2-olayer').style.cursor='none';
+};
+sw2.cursorOff = function()
+{
+ document.getElementById('sw2-olayer').style.cursor='default';
+};
+sw2.teamWon = function(team)
+{
+ sw2.cursorOff();
+ clearTimeout(gt);
+ sw2.paint();
+ sw2.gameon=false;
+
+
+ if (confirm((team==-1?'Draw!':'Team '+team+' won!')+'\nPlay again?'))
+ sw2.newGame();
+ else
+ {
+  document.getElementById('sw2-overlay').style.display='block';
+  document.getElementById('sw2-rbutton').style.display='none';
+  document.getElementById('sw2-ngbutton').style.display='block';
+ }
+};
+sw2.newGame = function()
+{
+ clearTimeout(gt);
+ sw2.gameon=true;
+ sw2.createPlayers();
+ sw2.createObstacles();
+ sw2.pauseOff(true);
+ if (sw2.noplayer)
+ sw2.cursorOff();
+ else
+ sw2.cursorOn();
+ sw2.tick();
+};
+sw2.saveNewSettings = function()
+{
+ var nc = document.getElementById('zombiesettings').value, good = false;
+ try
+ {
+  eval(nc);
+  good = true;
+ }
+ catch(e){}
+ if (good)
+ {
+  localStorage.setItem('zb3.sw2.settings', nc)
+ }
+ location.reload(true);
+};
+sw2.restoreSettings = function()
+{
+ localStorage.setItem('zb3.sw2.settings', sw2.defaultSettings)
+ location.reload(true);
+};
+//sw2.newGame();
+</script>

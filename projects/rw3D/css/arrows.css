@@ -1,0 +1,9 @@
+canvas.arrowCanvas {
+	position: absolute;
+	bottom: 0;
+	top: 0;
+	right: 0;
+	margin: auto;
+	opacity: 0.5;
+	transition: opacity 0.3s;
+}

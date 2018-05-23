@@ -1,0 +1,164 @@
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: arial;
+}
+</style>
+<center><span style="font-size: 36px;">Square pool</span></center><br>
+<div style="width: 600px; margin: auto"><table width="100%"><tr><td width="50%" valign="top">Pool size: <input type="text" value="600" data-oval="600" onchange="isn(this);" size="3" id="wmx"> x <input type="text" value="400" data-oval="400" onchange="isn(this);" size="3" id="wmy"><br>Initial square size: <input type="text" size="3" data-oval="90" value="90" onchange="isf(this);" id="wpx"><br>Minimal square size: <input type="text" size="3" data-oval="10" value="10" onchange="isf(this);" id="wminw"><br>Speed range: <input type="text" size="3" data-oval="1.8" value="1.8" onchange="isf(this);" id="wvmin"> - <input type="text" size="3" data-oval="3.6" value="3.6" onchange="isf(this);" id="wvmax"><br>Frame interval: <input type="text" value="40" data-oval="40" onchange="isn(this);" size="3" id="wto"></td><td valign="top"><b>Appearance settings:</b><br>Background color: <input type="text" value="#000" data-oval="#000" onchange="isc(this);" size="6" id="co1"><br>Squares/border color: <input type="text" value="#fff" data-oval="#fff" onchange="isc(this);" size="6" id="co2"></td></tr></table><br><center><button onclick="checkandset()">Apply settings</button></center><br></div>
+<center><canvas id="czone" style="border: 1px solid white; width: 600px; height: 400px" width="600" height="400"></canvas></center>
+<br><br><br>
+<script>
+var mx = 600, my = 400, bc=0, vdelta=1.8, vmin=1.8, minw=10, px=90, gc, gc2, to = 40, c1 = 'rgb(0, 0, 0)', c2 = 'rgb(255, 255, 255)';
+var tmode = 0, not = 0;
+var blocks = [];
+var el = document.getElementById("czone"); var xt = el.getContext('2d');
+function isn(elem)
+{
+ var t = Math.abs(parseInt(elem.value));
+ if (isNaN(t))
+ elem.value=elem.getAttribute("data-oval");
+ else
+ {
+  elem.value=t; elem.setAttribute("data-oval", t);
+ }
+}
+function isc(elem)
+{
+ if (!elem.value.match(/^#([0-f]){3}([0-f]{3})?$/))
+ {elem.value=elem.getAttribute("data-oval");}
+ else
+ elem.setAttribute("data-oval", elem.value);
+}
+function isf(elem)
+{
+ var t = Math.abs(parseFloat(elem.value));
+ if (isNaN(t))
+ elem.value=elem.getAttribute("data-oval");
+ else
+ {
+  elem.value=t; elem.setAttribute("data-oval", t);
+ }
+}
+function checkandset()
+{
+ var wmx = parseInt(document.getElementById("wmx").value), wmy = parseInt(document.getElementById("wmy").value);
+ var wpx = parseFloat(document.getElementById("wpx").value), wminw = parseFloat(document.getElementById("wminw").value);
+ var wvmin = parseFloat(document.getElementById("wvmin").value), wvmax = parseFloat(document.getElementById("wvmax").value);
+ var wvmin2 = Math.min(wvmin, wvmax), wvmax2 = Math.max(wvmin, wvmax);
+ var wto = parseInt(document.getElementById("wto").value);
+ if (wpx<Math.min(wmx, wmy) && wminw<wpx && (wvmax2-wvmin2))
+ {
+  mx = wmx; my = wmy; px = wpx; minw = wminw; vmin = wvmin2; vdelta = wvmax2-wvmin2; to = wto;
+  setColors(document.getElementById('co1').value, document.getElementById('co2').value);
+  set();
+ }
+ else
+ {
+  alert('Error!\nInvalid data provided!');
+ }
+}
+function drawThem()
+{
+ xt.fillStyle = c1;
+ xt.fillRect(0, 0, mx, my);
+ xt.fillStyle = c2;
+ for(gc=0;gc<bc;gc++)
+ {
+  xt.fillRect(blocks[gc].x, blocks[gc].y, blocks[gc].w, blocks[gc].h);
+ }
+}
+function tBlock(gc)
+{
+ blocks[gc].x += blocks[gc].vx; blocks[gc].y += blocks[gc].vy;
+ if (blocks[gc].x<0) blocks[gc].x=0; if (blocks[gc].x>(mx-blocks[gc].w)) blocks[gc].x=mx-blocks[gc].w;
+ if (blocks[gc].y<0) blocks[gc].y=0; if (blocks[gc].y>(my-blocks[gc].h)) blocks[gc].y=my-blocks[gc].h; 
+}
+function rspeed()
+{
+ return (Math.random()*vdelta + vmin)*((Math.round(Math.random()))?(1):(-1)); 
+}
+function tick(yes)
+{
+ bc = blocks.length;
+ for(gc=0;gc<bc;gc++)
+ {
+  if (blocks[gc].x==0 || blocks[gc].y==0 || blocks[gc].x==(mx-blocks[gc].w) || blocks[gc].y==(my-blocks[gc].h))
+  {
+   if (blocks[gc].w>minw)
+   {
+    blocks[gc].vx = rspeed();
+    blocks[gc].vy = rspeed();
+    if (blocks[gc].x==0) blocks[gc].vx = Math.abs(blocks[gc].vx);
+    if (blocks[gc].x==(mx-blocks[gc].w)) blocks[gc].vx = -Math.abs(blocks[gc].vx);
+    if (blocks[gc].y==0) blocks[gc].vy = Math.abs(blocks[gc].vy);
+    if (blocks[gc].y==(my-blocks[gc].h)) blocks[gc].vy = -Math.abs(blocks[gc].vy);
+    blocks[gc].lvl++;
+    blocks[gc].w /= Math.sqrt(2); blocks[gc].h /= Math.sqrt(2);
+    blocks.push({x: blocks[gc].x, y: blocks[gc].y, w: blocks[gc].w, h: blocks[gc].h, vx: rspeed(), vy: rspeed(), lvl: blocks[gc].lvl});
+    if (blocks[blocks.length-1].x==0) blocks[blocks.length-1].vx = Math.abs(blocks[blocks.length-1].vx);
+    if (blocks[blocks.length-1].x==(mx-blocks[blocks.length-1].w)) blocks[blocks.length-1].vx = -Math.abs(blocks[blocks.length-1].vx);
+    if (blocks[blocks.length-1].y==0) blocks[blocks.length-1].vy = Math.abs(blocks[blocks.length-1].vy);
+    if (blocks[blocks.length-1].y==(my-blocks[blocks.length-1].h)) blocks[blocks.length-1].vy = -Math.abs(blocks[blocks.length-1].vy);
+    blocks[blocks.length-1].whitelist = 1;
+    tBlock(blocks.length-1);
+   }
+   else
+   {
+    if (!blocks[gc].x || blocks[gc].x==(mx-blocks[gc].w))
+    blocks[gc].vx *= -1;
+    if (!blocks[gc].y || blocks[gc].y==(my-blocks[gc].h))
+    blocks[gc].vy *= -1;
+   }
+  }
+  tBlock(gc);
+ }
+ for(gc=0;gc<bc;gc++)
+ {
+  for(gc2=gc+1;gc2<bc;gc2++)
+  {
+   if ((Math.max(blocks[gc].x, blocks[gc2].x)<Math.min(blocks[gc2].x+blocks[gc2].w, blocks[gc].x+blocks[gc].w)) && (Math.max(blocks[gc].y, blocks[gc2].y)<Math.min(blocks[gc2].y+blocks[gc2].h, blocks[gc].y+blocks[gc].h)))
+   {
+    if (blocks[gc2].whitelist)
+    {
+     blocks[gc2].whitelist++;
+     continue;
+    }
+    blocks[gc].vx = (blocks[gc].w*blocks[gc].h*blocks[gc].vx+blocks[gc2].w*blocks[gc2].h*blocks[gc2].vx)/(blocks[gc].w*blocks[gc].h+blocks[gc2].w*blocks[gc2].h);
+    blocks[gc].vy = (blocks[gc].w*blocks[gc].h*blocks[gc].vy+blocks[gc2].w*blocks[gc2].h*blocks[gc2].vy)/(blocks[gc].w*blocks[gc].h+blocks[gc2].w*blocks[gc2].h);
+    blocks[gc].x = (blocks[gc].w*blocks[gc].h*blocks[gc].x+blocks[gc2].w*blocks[gc2].h*blocks[gc2].x)/(blocks[gc].w*blocks[gc].h+blocks[gc2].w*blocks[gc2].h)
+    blocks[gc].y = (blocks[gc].w*blocks[gc].h*blocks[gc].y+blocks[gc2].w*blocks[gc2].h*blocks[gc2].y)/(blocks[gc].w*blocks[gc].h+blocks[gc2].w*blocks[gc2].h)
+    blocks[gc].w = Math.sqrt(blocks[gc].w*blocks[gc].w+blocks[gc2].w*blocks[gc2].w);
+    blocks[gc].h = Math.sqrt(blocks[gc].h*blocks[gc].h+blocks[gc2].h*blocks[gc2].h);
+    blocks.splice(gc2, 1); gc2--;
+    bc--;
+   }
+  }
+ }
+ for(gc=0;gc<bc;gc++)
+ {
+  if (blocks[gc].whitelist) blocks[gc].whitelist--;
+ }
+ drawThem();
+ window.setTimeout("tick()", to);
+}
+function set()
+{
+ el.width=mx; el.height=my;
+ el.style.width = mx+'px'; el.style.height = my+'px';
+ blocks.length=0;
+ blocks.push({x: mx/2-px/2, y: my/2-px/2, w: px, h: px, vx: rspeed(), vy: rspeed(), lvl: 0});
+}
+function setColors(co1, co2)
+{
+ if (co1.length==4) co1 = co1+co1.substr(1); if (co2.length==4) co2 = co2+co2.substr(1);
+ c1 = 'rgb('+parseInt(co1.substr(1, 2),16)+','+parseInt(co1.substr(3, 2),16)+','+parseInt(co1.substr(5, 2),16)+')';
+ c2 = 'rgb('+parseInt(co2.substr(1, 2),16)+','+parseInt(co2.substr(3, 2),16)+','+parseInt(co2.substr(5, 2),16)+')';
+ document.getElementById('czone').style.borderColor=co2;
+}
+setColors('#000000', '#ffffff');
+set();
+tick();
+</script>

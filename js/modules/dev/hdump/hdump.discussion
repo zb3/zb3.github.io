@@ -1,0 +1,180 @@
+ /*
+  oh fck
+  fullsuffixlength doesn't work like that
+  it must not only be the physically longest line
+  bhutth also the suffix must be smallest
+  
+  however.com, if we have 2 lines, this doesn't work
+  
+  ---
+  
+  we've overengineered it here I guess
+  we have this line's hex, and so if we reverse it, replace nonascii with . (in regex)
+  and search the reverse line, it should tell us where it is
+  it won't work for spaces but that's already covered case
+  what bout that
+  
+  but we'd want to do it while we don't have the full hex
+  if the string itself'd be hex, that'd fail
+  
+  ok but in vast majority of cases strings are not hex
+  if we have hex and we see a char that is not hex (and not space!)
+  then we search the line for that (or dot!) (from our pos)
+  and the first occurence of that - our cur length
+  is enough
+  
+  yet it doesn't mark when ascii starts, for instance when it'd be surrounded by |
+  
+  PHUCK.. if ascii is separated
+  and first part is all hex then we'd substract less
+  
+  like 
+  33 33 33 33 00 00 00 00  3333  ....
+  
+  well.de, when we find @ pos X
+  then we should go back, skipping any unknown spaces
+  which'd mean we need to parse it
+  
+  but then scanning until we hit a nonhex char is not useful
+  it's more like we'd need a more intelligent backtrack
+  if we encounter a nonhex char, then
+  a)it's a separator - we might not find it but it's ok
+  b)it's not a separator so we'll find it in hex
+  c)it's a separator but we'll still find it in hex at invalid pos
+  
+  and the c) case can be dangerous
+  but suppose we scanned
+  and found sep at pos -10
+  then going back we'd still cut
+  so we need even more analysis
+  
+  this is relatively easier when we know we start @ 0 and cut is only made in ascii
+  then we can parse line and stop when nonhex or when no longer found
+  
+  this is going nowhere, but OLTB, if we have one nonhex
+  char. can we then reconstruct layout? just theoretically
+  if we'd like read hex char by hex char and for each new
+  try to search ascii,., optionally preceded by space, or repeat search
+  (\s*(c|[.]))(\s*(c|[.]))(\s*(c|[.]))(\s*(c|[.]))(\s*(c|[.]))...
+  and at one point, no new hex char'll be possible or it will overlap
+  but no.. overlap may happen
+  well if first chars of ascii are "20 " then extra space'd be matched
+  but it's simply impossible to tell in that case
+  
+  ----
+  ok so we won't support partial lines
+
+  ---
+  k, partial hex lines are now "partially" supported :>
+  
+  what remains is a way to support asciicopying with partial lines
+  can we use bikesheed above?
+  additional TGN:
+  
+  there may be spaces and separators
+  
+  %..!...2|
+00006280   F7 FF FF 4C  8B 0B 4C 8D  05 54 4C 01  00 48 8D 3D  ...L..L..TL..H
+
+  if we don't have any full line, what is separator and what is not is nonobvious
+  
+  "H-2.0-libssh2_
+0010  31 2e 37 2e 30 0d 0a                              1.7.0"
+
+  we can try to search via hex, but as you can see 0d0a isn't present here
+ 
+  are we overcomplicating this?
+  there's like one variable to determine start of an ascii - relative offset to prefix
+  finding that is like finding maxlastindex, then scanning for first nonspace
+  character from hex.. this may catch a separator
+  well definitely it looks like trying to search for what's in hex'd be the most reasonable
+
+  jeez maybe instead of supporting theoretical cases, focus on supporting
+  xxd, hexedit and our hp output. but probably more analysis needed
+  
+  hexedit and xxd have no right padding.. xxd is easy - 2 spacees constitute ascii start
+  hexedit.. line length should help :)
+wider:00001820   65 78 3B                                                                                                ex;
+narrower:00000380   0A 20 7B 0A  20 20 76 61  72 20 74 68  69 73 41 64  64 72 20 3D  20 72 65 61  64 48 65 78  . {.  var thisAddr = readHex
+  whoops maybe not
+  but when you see 3 spaces - you know it's a break, but you dunno wat with first space
+  but it's still easy.. count number of hex[spaceortwospaces] after prefix
+  
+  WS:
+  00000010  c4 31 b1 ee e4 5c 85 94  ef 57 72 89 9a 7f 93 33   .1...\.. .Wr....3
+00000020  15 68 79 51 13 e2 6a d8  fb 37 00 f9 42 eb         .hyQ..j. .7..B.
+
+  hexedit:
+  00000230   01 00 00 00  00 00 00 00  2F 6C 69 62  36 34 2F 6C  64 2D 6C 69  6E 75 78 2D  78 38 36 2D  ......../lib64/ld-linux-x86-
+0000024C   36 34 2E 73  6F 2E 32 00  04 00 00 00  10 00 00 00  01 00 00 00  47 4E 55 00  00 00 00 00  64.so.2.............GNU.....
+
+  xxd:
+00020c40: 8004 2200 0000 0000 7804 0200 0000 0000 7016 0000 0000 0000  ..".....x.......p.......
+00020c58: 0000 0000 0000 0000 2000 0000 0000 0000 0000 0000 0000 0000  ........ ...............
+
+
+  so WS support isn't needed for text
+  for hexdump it was like:
+  -need to count length/address, conpute max length
+  -if none, look for 
+  -and then if no nonspace, then how much
+  
+
+  */
+
+ /*
+   now we may have asciiIndex but not necessarily
+   
+   if not it's not possible read addressess or use line length
+   and this is the worst case. here we have:
+   -backtrack to last space
+   -check how much spaces are at the begining
+   
+   but we should also backtrack to last space
+   on end of the line
+   
+   to last space but if we know str starts with X spaces?
+   if we know it starts with X ascii, then naturally that also has to be a start
+   so there are some rules here...
+   
+   display is confirmed that all printable are displayed, otherwise dots
+   
+   ---
+   
+   it might not disappear even if it's longer - if it's hex and repeats in hex
+      it's not like it needs to be the ending either - kojako.. ko is the ending but not all
+      
+      if all this is 33 then space analysis is the only one
+      so I'd go back to nonhex|end goback till 2+startSpaces
+      
+           hmm this won't be easy coz if k is last but there's hex before..
+      in both cases... it'll fail
+      maybe search the longest hex, before 4 spaces
+      that'll match the end
+      but match
+      
+      now when does this fail
+      must be when real string is shorter, but when exactly
+      shorter that means part that was a part of string was classified as hex
+      
+      [realhex][realnotmatchedbutmatchedashex][returned]
+      
+      but realhex must then begin with rnmbmah, which must also be hex
+      
+      like 3663203666 which yields 6c 6f which is "l o"
+      
+      so hex must start as 3663203666 then the real part, and must end with 6c 6f
+      36 63 20 36 66 20 7a 62 33 6c 6f 
+      
+      but wait! it's not over coz rnmbmah MUST begin with unhexed realhex
+      I mean the point is that both returned and rnmb must begin with unhexed
+      but rnmb+ret must be present at the begining
+      
+      3663203666203663203666 6c 6f 6c 6f
+      this one
+      I mean 6c 6f is the correct answer but  
+      well so this happens when returned string is longer
+      ok, no point here anyway
+      
+   
+   */

@@ -1,0 +1,348 @@
+/* contains fragments from https://github.com/kazzkiq/balloon.css */
+
+body {
+	margin: 0;
+	padding: 0;
+	background: #f1fff1;
+	color: #222;
+	font-family: Arial;
+}
+#mixarea {
+	position: relative;
+	border: 1px solid grey;
+	overflow: hidden;
+	width: 300px;
+	height: 500px;
+	height: calc(100vh - 150px);
+	margin: auto;
+	margin-bottom: 20px;
+}
+#frame {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+#shape {
+	position: absolute;
+	left: -330px;
+	top: -330px;
+}
+header {
+	padding: 5px;
+	font-size: 1.5em;
+	font-weight: bold;
+	position: relative;
+	box-shadow: 0 0 4px;
+}
+header {
+	background: linear-gradient(#cfc, #afa);
+	text-align: center;
+}
+main {
+	background: #f1fff1;
+	padding: 5px;
+	text-align: center;
+	margin-top: 16px;
+}
+button {
+	outline: none;
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+	background: linear-gradient(#fff, #ccc);
+	border-radius: 5px;
+	border: 1px solid #ccc;
+	height: 40px;
+	width: 330px;
+	font-size: 1.5em;
+	color: #111;
+}
+button:active {
+	background: linear-gradient(#ccc, #fff);
+}
+input[type=range] {
+	margin: 0;
+	margin-top: 3px;
+}
+input[type=range] {
+	webkit-appearance: none;
+	width: 330px;
+}
+input[type=range]::-webkit-slider-runnable-track {
+	width: 330px;
+	height: 5px;
+	background: linear-gradient(#ccc, #eee);
+	border: 1px solid #cacaca;
+	border-radius: 3px;
+}
+input[type=range]::-moz-range-track {
+	width: 330px;
+	height: 5px;
+	background: linear-gradient(#ccc, #eee);
+	border: 1px solid #cacaca;
+	border-radius: 3px;
+}
+input[type=range]::-webkit-slider-thumb {
+	webkit-appearance: none;
+	border: 1px solid #aaa;
+	height: 20px;
+	width: 20px;
+	border-radius: 25%;
+	background: linear-gradient(#fff, #ccc);
+	margin-top: -7px;
+}
+input[type=range]::-moz-range-thumb {
+	webkit-appearance: none;
+	border: 1px solid #aaa;
+	height: 19px;
+	width: 19px;
+	border-radius: 25%;
+	background: linear-gradient(#fff, #ccc);
+	margin-top: -7px;
+}
+input[type=range]:focus {
+	outline: none;
+}
+#level-picker {
+	text-align: center;
+	font-size: 17px;
+	color: #222;
+}
+#level-picker button {
+	display: inline-block;
+	font-size: 12px;
+	width: auto;
+	height: 26px;
+}
+#level-picker button.current {
+	background: linear-gradient(#dd5, #ffe);
+}
+#level-picker button.solved:not(.current) {
+	background: linear-gradient(#f5f8ff, #aec0ff);
+	border-color: #a4aece;
+}
+#level-picker {
+	margin-bottom: 18px;
+}
+#scoreoverlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(238,238,238,0.8);
+}
+#scoreoverlay > div {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 315px;
+	height: 315px;
+	margin: auto;
+}
+#scoreoverlay p:first-child, #scoreoverlay p:nth-child(4) {
+	font-size: 20px;
+	margin-bottom: 8px;
+}
+#score {
+	font-size: 40px;
+}
+#pshare {
+	background-color: #222;
+	width: 250px;
+	margin: auto;
+	padding: 3px;
+	border: 1px solid #666;
+	font-weight: bold;
+	margin-bottom: 25px;
+}
+#pshare span {
+	margin-left: 4%;
+	margin-right: 4%;
+}
+#pshare span:after {
+	content: '%';
+}
+#scoreoverlay .vcenter {
+	height: 90px;
+}
+#scoreoverlay .vcenter > span {
+	display: inline-block;
+	height: 100%;
+	width: 0px;
+	vertical-align: middle;
+}
+#scoreoverlay .vcenter > div {
+	display: inline-block;
+	vertical-align: middle;
+}
+#scoreoverlay button {
+	font-size: 22px;
+	width: 220px;
+	height: 35px;
+	margin-bottom: 10px;
+}
+#scorescreen span {
+	display: block;
+	margin-top: 30px;
+	font-size: 1.8em;
+}
+#scorescreen div {
+	font-size: 2.2em;
+	font-weight: bold;
+	margin: 20px;
+	margin-bottom: 50px;
+}
+#scorescreen table {
+	width: 320px;
+	margin: 10px auto;
+	font-size: 1.3em;
+	border-collapse: collapse;
+}
+#scorescreen table td {
+	border-bottom: 1px solid #aaa;
+	padding: 3px 6px;
+	text-align: left;
+}
+#scorescreen table td.score {
+	font-weight: bold;
+	text-align: right;
+}
+.goodscore {
+	color: #007b00;
+}
+#scorescreen button {
+	margin-top: 50px;
+}
+.checkbox {
+	width: 19px;
+	position: relative;
+}
+.checkbox label {
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	left: 0;
+	border: 1px solid #aaa;
+	border-radius: 25%;
+	background: linear-gradient(#fff, #ccc);
+	display: block;
+}
+.checkbox label:after {
+	content: '';
+	width: 7px;
+	height: 3px;
+	position: absolute;
+	top: 5px;
+	left: 4px;
+	border: 3px solid #333;
+	border-top: none;
+	border-right: none;
+	background: transparent;
+	opacity: 0;
+	transform: rotate(-45deg);
+}
+.checkbox input[type=checkbox] {
+	visibility: hidden;
+}
+.checkbox input[type=checkbox]:checked + label:after {
+	opacity: 1;
+}
+.checkbox + span {
+	vertical-align: middle;
+}
+.settingsarea {
+	width: 330px;
+	text-align: left;
+	margin: auto;
+	margin-top: 25px;
+	margin-bottom: 40px;
+}
+.settingsarea div:first-child {
+	font-size: 1.5em;
+	margin-bottom: 15px;
+}
+.settingsarea .sep {
+	height: 5px;
+}
+[data-tooltip] {
+	overflow: visible;
+	position: relative;
+}
+[data-tooltip]:before, [data-tooltip]:after {
+	transform: translate(-50%,0);
+	pointer-events: none;
+	opacity: 0;
+	left: 50%;
+	top: 100%;
+	box-sizing: border-box;
+	z-index: 10;
+	position: absolute;
+	transition: opacity .18s;
+}
+[data-tooltip]:before {
+	background: url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2236px%22%20height%3D%2212px%22%3E%3Cpath%20fill%3D%22rgba%2817,%2017,%2017,%200.9%29%22%20transform%3D%22rotate%28180%2018%206%29%22%20d%3D%22M2.658,0.000%20C-13.615,0.000%2050.938,0.000%2034.662,0.000%20C28.662,0.000%2023.035,12.002%2018.660,12.002%20C14.285,12.002%208.594,0.000%202.658,0.000%20Z%22/%3E%3C/svg%3E') no-repeat;
+	background-size: 100% auto;
+	height: 6px;
+	width: 18px;
+	margin-top: 5px;
+	margin-bottom: 0;
+	content: "";
+}
+[data-tooltip]:after {
+	margin-top: 11px;
+	background: rgba(17,17,17,.9);
+	border-radius: 4px;
+	color: #fff;
+	content: attr(data-tooltip);
+	font-size: 12px;
+	padding: .5em 1em;
+	white-space: nowrap;
+	margin-bottom: 11px;
+	bottom: auto;
+}
+[data-tooltip].tooltipOn:before, [data-tooltip].tooltipOn:after {
+	opacity: 1;
+}
+#infooverlay {
+	pointer-events: none;
+	background-color: rgba(28,28,28,0.3);
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 1;
+	transition: all 0.25s;
+}
+#infooverlay:after {
+	content: attr(data-content);
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	padding: 10px;
+	border-radius: 10px;
+	font-size: 2em;
+	background-color: rgba(50,50,50,0.8);
+	color: rgba(220, 220, 220,1);
+}
+#loadingoverlay {
+	width: 300px;
+	height: 500px;
+	height: calc(100vh - 150px);
+	margin: auto;
+	margin-bottom: 21px;
+	font-size: 2em;
+	position: relative;
+}
+#loadingoverlay:after {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 1.5em;
+	content: 'Loading...';
+}

@@ -1,0 +1,695 @@
+<!doctype html>
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: arial;
+}
+canvas
+{
+ border: 1px solid grey;
+}
+.expand
+{
+ width: 100%;
+}
+.size2
+{
+ width: 45px;
+}
+.vh td
+{
+ vertical-align: top;
+}
+.vh td:nth-child(2)
+{
+ padding-left: 5px;
+}
+:invalid
+{
+ box-shadow: none;
+}
+#maincont
+{
+ width: 1010px;
+ margin:auto;
+}
+.hedr
+{
+ font-size: 36px;
+ text-align: center;
+}
+</style>
+<div id="maincont"><div class="hedr">CCB graphics</div><br>
+CCB stands for Circle, Curve, Brush. This means that there is a circle(more precisely curve) and a brush is spinning around it generating graphics. And that's all, that's how it works. This tool also allows you to see the transition between some settings (see the pentagram animation preset).<br>There's nothing more to say, because you don't really need to know "what these controls do", you just need to play with them and this tool will produce an image.<br><br>I've discovered CCB by accident, then made this to see more of these, but personally I think <b>this tool really sucks</b> and maybe you can produce something cool, but I only like the "Wallpaper" preset.<br><br><b>Tip:</b> If you increase samples, you should decrease alpha to keep the same brightness.<br><b>Tip #2:</b> You can control this canvas like Google Maps (scroll to zoom, drag to pan).<br><br>
+Example presets: <select id="presetsel"><option>Default<option>Wallpaper<option>Pentagram circle animation<option>Second heptagram circle animation<option>Sample hexagon<option>Sample hexagon 2<option>Multilayer example</select><button onclick="loadFactory(presetsel.selectedIndex);">Load</button>
+<table class="vh"><tr><td><canvas id="mcanvas" onwheel="pwheel(event);" onmousemove="mmove(event);" onmousedown="mdown(event);" onmouseover="mup(event);" onmouseup="mup(event);"></canvas><table class="expand"><tr><td><button id="pbutton" onclick="startAnim();">Play</button><td class="expand"><input class="expand" type="range" id="aprogress" onchange="cprogress(this.value);" min="0" step="0.001" max="1" value="0"></table><table><tr><td>Animation speed:<td><input type="range" id="aispeed" min="0.0001" max="0.3" value="0.03187" step="0.00001" onchange="astep=parseFloat(this.value)*parseFloat(this.value);"></table><br><b>Canvas settings:</b><br>Size: <input type="number" step=1 id="canx" onchange="cdim(parseInt(this.value), -1);" value="600"  class="size2">x<input type="number" step=1 id="cany" class="size2" onchange="cdim(-1, parseInt(this.value));" value="600"><br>Background: <input type="color" value="#000000" onchange="ctx.fillStyle=this.value;renderFrame();"><br>Scale: <input type="number" min="1" onchange="gscale=parseInt(this.value);renderFrame();" value="90" class="size2" id="glscale"><br>Translation: <input type="number" id="tanx" onchange="tdim(parseInt(this.value), null);" value="0"  class="size2">, <input type="number" id="tany" class="size2" onchange="tdim(null, parseInt(this.value));" value="0"> <button onclick="gtx=gty=0;tanx.value=0;tany.value=0;renderFrame();">Reset</button><td><a href="#" id="dummydownload" download="preset.json"></a><input type="file" id="dummyupload" style="display: none;"><button onclick="downloadPreset();">Export preset</button> <button onclick="uploadPreset();">Import preset</button><br><br>Layer: <select id="whichlayer" onchange="setLayer(this.selectedIndex);"><option>Layer 1</select><br><button onclick="newLayer();">New</button> <button onclick="deleteCurLayer();">Delete</button> <button onclick="moveCurLayer(-1);">Move up</button> <button onclick="moveCurLayer(1);">Move down</button><br><br>Scale: <input type="number" min="1" onchange="layers[curLayer].gscale=parseFloat(this.value);renderFrame();" value="1" class="size2" id="lscale"><br>Translation: <input type="number"  step="0.25" onchange="layers[curLayer].gtx=parseFloat(this.value);renderFrame();" value="0" class="size2" id="lgtx">,<input type="number"  step="0.25" onchange="layers[curLayer].gty=parseFloat(this.value);renderFrame();" value="0" class="size2" id="lgty"><br>Line color: <input type="color" id="llcolor" value="#ffffff" onchange="setlcolor(this.value);"><br>Line alpha: <input type="number" min="0" max="1" step="0.05" onchange="setlalpha(parseFloat(this.value));" value="0.4" class="size2" id="llalpha"><br>Line width: <input type="number" min="0" step="0.4" onchange="layers[curLayer].strokeWidth=parseFloat(this.value);renderFrame();" value="1" class="size2" id="llwidth"><br><br><b>Circle settings:</b><br>Circle size: <input type="number" min="0" step="0.4" onchange="layers[curLayer].csize=parseFloat(this.value);renderFrame();" value="2" class="size2" id="lcsize"><br>Circle rotation: <input type="number" min="-360" step="1.5" max="360" onchange="layers[curLayer].crot=parseFloat(this.value);renderFrame();" value="0" class="size2" id="lcrot"><br><label><input type="checkbox" onchange="layers[curLayer].ce=this.checked;renderFrame();" id="lce">Use equal rotation</label><br><br><b>Curve settings:</b><br>Curve type: <select id="lctype" onchange="setctype(this.selectedIndex);renderFrame();"><option>Circle<option>Star polygon<option>"Weighted" polygon<option>Epitrochoid<option>Hypotrochoid</select><br>Curve samples: <input type="number" min="0" step="10" onchange="layers[curLayer].csamples=parseInt(this.value);renderFrame();" value="400" class="size2" id="lcsamples"><div id="settings-star">Star numerator: <input type="number" min="1" step="1" onchange="setcn(parseInt(this.value));renderFrame();" value="6" class="size2" id="lcn0"><br>Star denominator: <input type="number" min="0" step="1" onchange="layers[curLayer].cstartm = parseInt(this.value);renderFrame();" value="1" class="size2" id="lcstartm"></div><div id="settings-wpoly">Number of sides: <input type="number" min="1" step="1" onchange="setcn(parseInt(this.value));renderFrame();" value="6" class="size2" id="lcn1"><br>Weight: <input type="number" step="0.5" onchange="layers[curLayer].cwpw = parseFloat(this.value);renderFrame();" value="1" class="size2" id="lcwpw"></div><div id="settings-eptr">Number of sides: <input type="number" onchange="layers[curLayer].eptr=parseFloat(this.value);renderFrame();" value="6" class="size2" id="leptr"><br>Circle distance: <input type="number" step="0.05" onchange="layers[curLayer].eptd = parseFloat(this.value);renderFrame();" value="1" class="size2" id="leptd"></div><br><br><b>Brush settings:</b><br>Brush type: <select id="lbtype" onchange="setbtype(this.selectedIndex);renderFrame();"><option>Line<option selected>Star polygon</select><div id="starbrush-settings">Brush size: <input type="number" step="0.2" onchange="layers[curLayer].bradius = parseFloat(this.value);renderFrame();" value="0.8" class="size2" id="lbradius"><br>Star numerator: <input type="number" min="1" step="1" onchange="layers[curLayer].bn=parseInt(this.value);renderFrame();" value="6" class="size2" id="lbn"><br>Star denominator: <input type="number" min="0" step="1" onchange="layers[curLayer].bm = parseInt(this.value);renderFrame();" value="1" class="size2" id="lbm"><br>Star angle speed: <input type="number" onchange="layers[curLayer].bspin = parseFloat(this.value);renderFrame();" value="1" class="size2" id="lbspin"><br><label><input type="checkbox" id="lbedge" onchange="layers[curLayer].bedge=this.checked;renderFrame();">Start from edge</label></div><br><br><b>Animation targets: <button onclick="syncStart();">Sync with start</button> <button onclick="syncCurrent();">Sync all with current</button></b><br>Circle size: <input type="number" min="0" step="0.4" onchange="layers[curLayer].csize2=parseFloat(this.value);renderFrame();" value="2" class="size2" id="lcsize2"><br>Circle rotation: <input type="number" step="1" onchange="layers[curLayer].crot2=parseFloat(this.value);renderFrame();" value="0" class="size2" id="lcrot2"><div id="tsettings-wpoly">Curve weight: <input type="number" step="0.5" onchange="layers[curLayer].cwpw2 = parseFloat(this.value);renderFrame();" value="1" class="size2" id="lcwpw2"></div><div id="tsettings-eptr">Curve sides: <input type="number"  onchange="layers[curLayer].eptr2=parseFloat(this.value);renderFrame();" value="6" class="size2" id="leptr2"><br>Curve circle distance: <input type="number" step="0.05" onchange="layers[curLayer].eptd2 = parseFloat(this.value);renderFrame();" value="1" class="size2" id="leptd2"></div><div id="tsettings-starbrush">Brush size: <input type="number" step="0.2" onchange="layers[curLayer].bradius2 = parseFloat(this.value);renderFrame();" value="0.8" class="size2" id="lbradius2"><br>Brush angle speed: <input type="number" onchange="layers[curLayer].bspin2 = parseFloat(this.value);renderFrame();" value="1" class="size2" id="lbspin2"></div></table>
+</div>
+<script>
+//autogenerated compatfix
+presetsel = document.getElementById('presetsel');
+mcanvas = document.getElementById('mcanvas');
+pbutton = document.getElementById('pbutton');
+aprogress = document.getElementById('aprogress');
+aispeed = document.getElementById('aispeed');
+canx = document.getElementById('canx');
+cany = document.getElementById('cany');
+glscale = document.getElementById('glscale');
+tanx = document.getElementById('tanx');
+tany = document.getElementById('tany');
+dummydownload = document.getElementById('dummydownload');
+dummyupload = document.getElementById('dummyupload');
+whichlayer = document.getElementById('whichlayer');
+lscale = document.getElementById('lscale');
+lgtx = document.getElementById('lgtx');
+lgty = document.getElementById('lgty');
+llcolor = document.getElementById('llcolor');
+llalpha = document.getElementById('llalpha');
+llwidth = document.getElementById('llwidth');
+lcsize = document.getElementById('lcsize');
+lcrot = document.getElementById('lcrot');
+lctype = document.getElementById('lctype');
+lcsamples = document.getElementById('lcsamples');
+lcn0 = document.getElementById('lcn0');
+lcstartm = document.getElementById('lcstartm');
+lcn1 = document.getElementById('lcn1');
+lcwpw = document.getElementById('lcwpw');
+leptr = document.getElementById('leptr');
+leptd = document.getElementById('leptd');
+lbtype = document.getElementById('lbtype');
+lbradius = document.getElementById('lbradius');
+lbn = document.getElementById('lbn');
+lbm = document.getElementById('lbm');
+lbspin = document.getElementById('lbspin');
+lbedge = document.getElementById('lbedge');
+lcsize2 = document.getElementById('lcsize2');
+lcrot2 = document.getElementById('lcrot2');
+lcwpw2 = document.getElementById('lcwpw2');
+leptr2 = document.getElementById('leptr2');
+leptd2 = document.getElementById('leptd2');
+lbradius2 = document.getElementById('lbradius2');
+lbspin2 = document.getElementById('lbspin2');
+whichlayer = document.getElementById('whichlayer');
+
+Array.prototype.extend = function(array)
+{
+ for (var t=0,tl = array.length;t<tl;++t)
+ this.push(array[t]);   
+}
+
+var cx = 600, cy = 600, ox, oy, gscale = 90, gtx = 0, gty = 0;
+var ctx = document.getElementById('mcanvas').getContext('2d');
+
+function setSize()
+{
+ ctx.canvas.width = cx;
+ ctx.canvas.height = cy;
+ ox = cx/2; 
+ oy = cy/2;
+ document.getElementById('maincont').style.width=cx+410+'px';
+}
+
+setSize();
+
+function gcd(a,b) 
+{
+ if (a < 0) a = -a;
+ if (b < 0) b = -b;
+ if (b > a) {a^=b;b^=a;a^=b;}
+ while (true)
+ {
+  a %= b;
+  if (a == 0) return b;
+  b %= a;
+  if (b == 0) return a;
+ }
+}
+function paintStar(n, m, x, y, r, angle)
+{
+ var t, g, xa;
+ if (m==0)
+ {
+  xa = 2*Math.PI/n;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  for(t=0;t<n;t++)
+  {
+   ctx.lineTo(x+r*Math.cos(angle+t*xa), y+r*Math.sin(angle+t*xa));
+   ctx.moveTo(x, y);
+  } 
+  ctx.stroke();
+  return;
+ }
+ if ((g=gcd(n, m))!=1)
+ {
+  for(t=0;t<g;t++)
+  {
+   paintStar(n/g, m/g, x, y, r, angle+t*(2*Math.PI/n))
+  }
+  return;
+ }
+ xa = m*(2*Math.PI/n);
+ ctx.beginPath();
+ ctx.moveTo(x+Math.cos(angle)*r, y-Math.sin(angle)*r);
+ for(t=1;t<n;t++)
+ {
+  ctx.lineTo(x+Math.cos(angle+t*xa)*r, y-Math.sin(angle+t*xa)*r);
+ }
+ ctx.lineTo(x+Math.cos(angle)*r, y-Math.sin(angle)*r);
+ ctx.stroke();
+}
+function exportStar(n, m, r, angle)
+{
+ var t, g, xa, pt = [];
+ if (m==0)
+ {
+  xa = 2*Math.PI/n;
+  for(t=0;t<n;t++)
+  {
+   pt.push([0, 0]);
+   pt.push([r*Math.cos(angle+t*xa), r*Math.sin(angle+t*xa)]);
+  }
+  return pt;
+ }
+ if ((g=gcd(n, m))!=1)
+ {
+  for(t=0;t<g;t++)
+  {
+   pt.extend(exportStar(n/g, m/g, r, angle+t*(2*Math.PI/n)));
+  }
+  return pt;
+ }
+ xa = m*(2*Math.PI/n);
+ pt.push([Math.cos(angle)*r, Math.sin(angle)*r]);
+ for(t=1;t<n;t++)
+ {
+  pt.push([Math.cos(angle+t*xa)*r, Math.sin(angle+t*xa)*r]);
+  pt.push([Math.cos(angle+t*xa)*r, Math.sin(angle+t*xa)*r]);
+ }
+ pt.push([Math.cos(angle)*r, Math.sin(angle)*r]);
+ pt[pt.length-2].closing = true;
+ return pt;
+}
+function spl(ls, spl)
+{
+ var t, t2, nls = [], nspl = Math.round(spl/ls.length);
+ for(t=0;t<ls.length;t+=2)
+ {
+  nls.push(ls[t]);
+  nls[nls.length-1].ot = t;
+  for(t2=1;t2<nspl;t2++)
+  {
+   nls.push([ls[t][0]+(t2/nspl)*(ls[t+1][0]-ls[t][0]), ls[t][1]+(t2/nspl)*(ls[t+1][1]-ls[t][1])]);
+   nls[nls.length-1].ot = t;
+   nls.push([ls[t][0]+(t2/nspl)*(ls[t+1][0]-ls[t][0]), ls[t][1]+(t2/nspl)*(ls[t+1][1]-ls[t][1])]);
+   nls[nls.length-1].ot = t;
+  }
+  nls.push([ls[t+1][0], ls[t+1][1]]);
+  nls[nls.length-1].ot = t;
+  if (ls[t].closing)
+  nls[nls.length-2].closing = true;
+ }
+ return nls;
+}
+
+function exportParametric(f, tstart, tend, steps)
+{
+ var t, xa, pt = [], tt = tstart, step = (tend-tstart)/steps;
+ pt.push([f[0](tt), f[1](tt)]); 
+ for(t=0;t<steps-1;t++)
+ {
+  tt+=step;
+  pt.push([f[0](tt), f[1](tt)]); 
+  pt.push([f[0](tt), f[1](tt)]); 
+ }
+ pt.push([f[0](tend), f[1](tend)]); 
+ pt[pt.length-2].closing = true;
+ return pt;
+}
+
+function fillAngle(angle)
+{
+ return (2*Math.PI+((angle)%(2*Math.PI)))%(2*Math.PI);
+}
+function drawFrame(r, af, ap, ls, bf, sn, sm, br, ce)
+{
+ var t, ca = 0, tx, ty, tx2, ty2, fx, fy, lx, ly;
+ if (!bf)
+ ctx.beginPath();
+ for(t=0;t<ls.length;t+=2)
+ {
+  if (bf && ls[t].closing) continue;
+  tx = r*ls[t][0]; ty = r*ls[t][1];
+
+  if ((tx!=lx || ty!=ly))
+  {
+   if (bf)
+   paintStar(sn, sm, tx, ty, br, ap+(ce?Math.atan2(ty, -tx):fillAngle(Math.atan2(ty, tx)))*af);
+   else ctx.moveTo(tx, ty);
+  }
+
+  tx2 = r*ls[t+1][0]; ty2 = r*ls[t+1][1];
+  
+  if ((tx2!=lx || ty2!=ly))
+  {
+   if (bf)
+   paintStar(sn, sm, tx2, ty2, br, ap+(ce?Math.atan2(ty2, -tx2):fillAngle(Math.atan2(ty2, tx2)))*af);
+   else ctx.lineTo(tx2, ty2);
+  }
+
+  lx=tx2; ly = ty2;
+ }
+ if (!bf)
+ ctx.stroke();
+}
+
+var cfunc = [function(t){return Math.cos(t)}, function(t){return Math.sin(t)}];
+function weightPolygon(n, w, move)
+{
+ var o = move?1:0;
+ return [function (t){return (1+ -w*(1-(Math.cos(Math.PI/n)*(1/Math.cos(t - (2*Math.floor(n*t/(2*Math.PI))+1)*Math.PI/n)))))*Math.cos(t+o*Math.PI/n);}, function f(t){return (1+ -w*(1-(Math.cos(Math.PI/n)*(1/Math.cos(t - (2*Math.floor(n*t/(2*Math.PI))+1)*Math.PI/n)))))*Math.sin(t+o*Math.PI/n);}];
+}
+function epitrochoid(r2, d)
+{
+ var v = 1+r2, v2 = (1+r2)/r2;
+ return [function(t){return v*Math.cos(t)-d*Math.cos(v2*t)}, function(t){return v*Math.sin(t)-d*Math.sin(v2*t)}];
+}
+function hypotrochoid(r2, d)
+{
+ var v = 1-r2, v2 = (1-r2)/r2;
+ return [function(t){return v*Math.cos(t)+d*Math.cos(v2*t)}, function(t){return v*Math.sin(t)-d*Math.sin(v2*t)}];
+}
+
+function renderFrame(skip)
+{
+ if (ctx.fillStyle=='#000000')
+ ctx.clearRect(0, 0, cx, cy);
+ else
+ ctx.fillRect(0, 0, cx, cy);
+ ctx.save();
+ ctx.translate(ox+gtx, oy-gty);
+ ctx.scale(gscale, -gscale);
+ for(var t=0;t<layers.length;t++)
+ {
+  paintLayer(layers[t], curProgress, skip);
+ }
+ ctx.restore();
+}
+
+function paintLayer(layer, progress, skip)
+{
+ //first of all, check if we need to regenerate curve and brush
+ ctx.save();
+ ctx.translate(layer.gtx, layer.gty);
+ ctx.scale(layer.gscale, layer.gscale);
+ ctx.rotate((layer.crot+(layer.crot2-layer.crot)*progress)*Math.PI/180);
+
+ ctx.strokeStyle = layer.strokeStyle;
+ ctx.lineWidth = layer.strokeWidth/(gscale*layer.gscale);
+
+ if (!layer.curCurve || (!skip && (!progress || (layer.ctype==2 && layer.cwpw!=layer.cwpw) || ((layer.ctype==3 || layer.ctype==4) && (layer.eptr!=layer.eptr2 || layer.eptd!=layer.eptd2)))))
+ {
+  if (layer.ctype == 0)
+  layer.curCurve = exportParametric(cfunc, 0, 2*Math.PI, layer.csamples);
+  else if (layer.ctype == 1)
+  layer.curCurve = spl(exportStar(layer.cn, layer.cstartm, 1, 0), layer.csamples);
+  else if (layer.ctype == 2)
+  layer.curCurve = exportParametric(weightPolygon(layer.cn, layer.cwpw+(layer.cwpw2-layer.cwpw)*progress), 0, 2*Math.PI, layer.csamples);
+  else if (layer.ctype == 3 || layer.ctype == 4)
+  layer.curCurve = exportParametric((layer.ctype==3?epitrochoid:hypotrochoid)(1/(layer.eptr+(layer.eptr2-layer.eptr)*progress), layer.eptd+(layer.eptd2-layer.eptd)*progress), 0, 2*Math.PI, layer.csamples);
+ }
+ var rc = (layer.ctype==1||layer.ctype==2)?layer.cn:(layer.ctype==3||layer.ctype==4)?(layer.eptr+(layer.eptr2-layer.eptr)*progress):1, rm = layer.bn;   
+ var rspin = ((layer.ce?rm:-rm) + (layer.bspin+(layer.bspin2-layer.bspin)*progress)*rc)/rm;
+ drawFrame(layer.csize+(layer.csize2-layer.csize)*progress, rspin, (layer.bedge?Math.PI/(layer.bn):0), layer.curCurve, layer.btype, layer.bn, layer.bm, layer.bradius+(layer.bradius2-layer.bradius)*progress, layer.ce);
+
+ ctx.restore();
+}
+
+var layers = [{strokeStyle: 'rgba(255,255,255,0.4)', lcolor: '#ffffff', lalpha: 0.4, strokeWidth: 1, gscale:1, gtx: 0, gty: 0, csize: 2, csize2: 2, ctype: 0, csamples: 354, cn: 7, cstartm:2, crot: 0, crot2: 0, cwpw: 1, cwpw2: 1, eptr: 6, eptr2: 0.5, eptd: 0.25, eptd2: 0.25, btype: 1, bn: 5, bm: 2, bradius: 0.8, bradius2: 0.8, bspin: 1, bspin2: -1, bedge: false, cl: false, ce:true}];
+
+var nlayer = {strokeStyle: 'rgba(255,255,255,0.4)', lcolor: '#ffffff', lalpha: 0.4, strokeWidth: 1, gscale:1, gtx: 0, gty: 0, csize: 2, csize2: 1, ctype: 0, csamples: 354, cn: 7, cstartm:2, crot: 0, crot2: 0, cwpw: 1, cwpw2: 1, eptr: 6, eptr2: 0.5, eptd: 0.25, eptd2: 0.25, btype: 1, bn: 5, bm: 2, bradius: 0.8, bradius2: 0.8, bspin: 4, bspin2: -1, bedge: false, cl: false, ce:true};
+
+var factory = ['{"gscale":90,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":0,"csamples":400,"cn":7,"cstartm":2,"crot":0,"crot2":0,"cwpw":1,"cwpw2":1,"eptr":6,"eptr2":0.5,"eptd":0.25,"eptd2":0.25,"btype":1,"bn":5,"bm":2,"bradius":0.8,"bradius2":0.8,"bspin":1,"bspin2":-1,"bedge":false,"cl":false,"clastart":0,"curCurve":null, "ce":true}]}', '{"gscale":443.56286208895926,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":4,"csamples":400,"cn":7,"cstartm":2,"crot":45,"crot2":45,"cwpw":1,"cwpw2":1,"eptr":4,"eptr2":4,"eptd":0.3,"eptd2":0.3,"btype":1,"bn":3,"bm":1,"bradius":2,"bradius2":2,"bspin":1,"bspin2":1,"bedge":false,"cl":false,"clastart":0,"curCurve":null, "ce":true}]}', '{"gscale":100.21883699083848,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":0,"csamples":400,"cn":7,"cstartm":2,"crot":0,"crot2":0,"cwpw":1,"cwpw2":1,"eptr":6,"eptr2":0.5,"eptd":0.25,"eptd2":0.25,"btype":1,"bn":5,"bm":2,"bradius":0.8,"bradius2":0.8,"bspin":17,"bspin2":-17,"bedge":false,"cl":false,"ce":false,"curCurve":null}]}', '{"gscale":100.21883699083848,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":0,"csamples":400,"cn":7,"cstartm":2,"crot":0,"crot2":0,"cwpw":1,"cwpw2":1,"eptr":6,"eptr2":0.5,"eptd":0.25,"eptd2":0.25,"btype":1,"bn":7,"bm":3,"bradius":0.8,"bradius2":0.8,"bspin":17,"bspin2":-17,"bedge":false,"cl":false,"ce":false,"curCurve":null}]}',  '{"gscale":81.61935604852833,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":3,"csamples":400,"cn":6,"cstartm":1,"crot":0,"crot2":0,"cwpw":1,"cwpw2":1,"eptr":-6,"eptr2":-6,"eptd":-0.2,"eptd2":-0.2,"btype":1,"bn":3,"bm":1,"bradius":1.8,"bradius2":1.8,"bspin":0,"bspin2":0,"bedge":false,"cl":false,"ce":true,"curCurve":null}]}','{"gscale":109.15837590957337,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":1,"csamples":400,"cn":6,"cstartm":2,"crot":30,"crot2":30,"cwpw":1,"cwpw2":1,"eptr":-6,"eptr2":-6,"eptd":-0.2,"eptd2":-0.2,"btype":1,"bn":6,"bm":2,"bradius":1.8,"bradius2":1.8,"bspin":11,"bspin2":11,"bedge":false,"cl":false,"ce":true,"curCurve":null}]}' ,'{"gscale":67.64401013625492,"gtx":0,"gty":0,"layers":[{"strokeStyle":"rgba(255,255,255,0.4)","lcolor":"#ffffff","lalpha":0.4,"strokeWidth":1,"gscale":1.2,"gtx":0,"gty":0,"csize":2,"csize2":2,"ctype":1,"csamples":400,"cn":4,"cstartm":1,"crot":45,"crot2":45,"cwpw":1,"cwpw2":1,"eptr":6,"eptr2":6,"eptd":0.25,"eptd2":0.25,"btype":1,"bn":4,"bm":1,"bradius":0.8,"bradius2":0.8,"bspin":-1,"bspin2":-1,"bedge":false,"cl":false,"ce":true,"curCurve":null},{"strokeStyle":"rgba(194, 255, 220, 0.4)","lcolor":"#c2ffdc","lalpha":0.4,"strokeWidth":1,"gscale":3,"gtx":0,"gty":0,"csize":2,"csize2":1,"ctype":1,"csamples":400,"cn":4,"cstartm":1,"crot":0,"crot2":0,"cwpw":1,"cwpw2":1,"eptr":6,"eptr2":6,"eptd":0.25,"eptd2":0.25,"btype":1,"bn":4,"bm":1,"bradius":0.4,"bradius2":0.4,"bspin":-1,"bspin2":-1,"bedge":false,"cl":false,"ce":true,"curCurve":null}]}'];
+
+var curProgress = 0, aspeed = 2, aclock = 20, astarted = false, astep = 0.0010156969000000003;
+var curLayer = 0;
+renderFrame();
+setLayer(0);
+
+function startAnim(reset)
+{
+ if (astarted)
+ {
+  astarted = false;
+  if (reset)
+  {
+   aprogress.value = 0;
+   curProgress = 0;
+  }
+  pbutton.textContent = 'Play';
+  return;
+ }
+ pbutton.textContent = 'Stop';
+ astarted = true;
+ atick();
+}
+function cprogress(v)
+{
+ curProgress = parseFloat(v);
+ renderFrame();
+}
+function atick()
+{
+ curProgress+=astep; curProgress = Math.min(1, curProgress);
+ aprogress.value = curProgress;
+ renderFrame();
+ 
+ if (curProgress<1 && astarted)
+ setTimeout(atick, aclock);
+ else if (curProgress==1 && astarted)
+ {startAnim(true);renderFrame();}
+}
+
+function cdim(x, y)
+{
+ if (x!=-1)
+ {
+  cx = x;
+  ox = x/2;
+ }
+ if (y!=-1)
+ {
+  cy = y;
+  oy = y/2;
+ }
+ setSize();
+ renderFrame();
+}
+
+function tdim(x, y)
+{
+ if (x!==null)
+ {
+  gtx = x;
+ }
+ if (y!==null)
+ {
+  gty = y;
+ }
+ renderFrame();
+}
+function setLayer(x)
+{
+ curLayer = x;
+ lscale.value = layers[curLayer].gscale;
+ lgtx.value = layers[curLayer].gtx;
+ lgty.value = layers[curLayer].gty;
+ llcolor.value = layers[curLayer].lcolor;
+ llalpha.value = layers[curLayer].lalpha;
+ llwidth.value = layers[curLayer].strokeWidth;
+ lcsize.value = layers[curLayer].csize;
+ lcrot.value = layers[curLayer].crot;
+ lcsamples.value = layers[curLayer].csamples;
+ lctype.selectedIndex = layers[curLayer].ctype;
+ setctype(layers[curLayer].ctype);
+ lcn0.value = layers[curLayer].cn;
+ lcn1.value = layers[curLayer].cn;
+ lcstartm.value = layers[curLayer].cstartm;
+ lcwpw.value = layers[curLayer].cwpw;
+ leptr.value = layers[curLayer].eptr;
+ leptd.value = layers[curLayer].eptd;
+ lbtype.selectedIndex = layers[curLayer].btype;
+ setbtype(layers[curLayer].btype);
+ lbradius.value = layers[curLayer].bradius;
+ lbspin.value = layers[curLayer].bspin;
+ lbn.value = layers[curLayer].bn;
+ lce.checked = layers[curLayer].ce;
+ lbm.value = layers[curLayer].bm;
+ lbedge.checked = layers[curLayer].bedge;
+ lcsize2.value = layers[curLayer].csize2;
+ lcrot2.value = layers[curLayer].crot2;
+ lcwpw2.value = layers[curLayer].cwpw2;
+ leptr2.value = layers[curLayer].eptr2;
+ leptd2.value = layers[curLayer].eptd2;
+ lbradius2.value = layers[curLayer].bradius2;
+ lbspin2.value = layers[curLayer].bspin2;
+}
+
+function newLayer()
+{
+ layers.push(JSON.parse(JSON.stringify(nlayer)));
+ var no = document.createElement('option');
+ no.textContent = 'Layer '+layers.length;
+ whichlayer.appendChild(no);
+ whichlayer.selectedIndex = layers.length-1;
+ setLayer(layers.length-1);
+ renderFrame();
+}
+
+function deleteCurLayer()
+{
+ if (layers.length==1) {alert('Cannot delete the only layer!');return;}
+ var really = confirm('Delete layer?');
+ if (really)
+ {
+  layers.splice(curLayer, 1);
+  if (curLayer==layers.length) curLayer--;
+  whichlayer.removeChild(whichlayer.children[layers.length]);
+  whichlayer.selectedIndex = curLayer;
+  setLayer(curLayer);
+  renderFrame();
+ }
+}
+
+function moveCurLayer(dir)
+{
+ if (curLayer+dir==-1 || curLayer+dir==-1) {alert('Cannot move this layer '+(dir==1?'down':'up')+'!');return;}
+ var t = layers[curLayer+dir];
+ layers[curLayer+dir] = layers[curLayer];
+ layers[curLayer] = t;
+
+ curLayer += dir;
+ whichlayer.selectedIndex = curLayer;
+ 
+ renderFrame();
+}
+
+function setlcolor(color)
+{
+ layers[curLayer].lcolor = color;
+ layers[curLayer].strokeStyle='rgba('+parseInt(color.substr(1, 2), 16)+', '+parseInt(color.substr(3, 2), 16)+', '+parseInt(color.substr(5, 2), 16)+', '+layers[curLayer].lalpha+')';
+
+ renderFrame();
+}
+
+function setlalpha(alpha)
+{
+ layers[curLayer].lalpha = alpha;
+ layers[curLayer].strokeStyle='rgba('+parseInt(layers[curLayer].lcolor.substr(1, 2), 16)+', '+parseInt(layers[curLayer].lcolor.substr(3, 2), 16)+', '+parseInt(layers[curLayer].lcolor.substr(5, 2), 16)+', '+layers[curLayer].lalpha+')';
+
+ renderFrame();
+}
+
+function setctype(ct)
+{
+ layers[curLayer].ctype = ct;
+ layers[curLayer].curCurve = null;
+ document.getElementById('settings-star').style.display = ct==1?'block':'none';
+ document.getElementById('settings-wpoly').style.display = ct==2?'block':'none';
+ document.getElementById('settings-eptr').style.display = ct==3||ct==4?'block':'none';
+ document.getElementById('tsettings-wpoly').style.display = ct==2?'block':'none';
+ document.getElementById('tsettings-eptr').style.display = ct==3||ct==4?'block':'none';
+}
+function setbtype(bt)
+{
+ layers[curLayer].btype = bt;
+ document.getElementById('starbrush-settings').style.display = bt==1?'block':'none';
+ document.getElementById('tsettings-starbrush').style.display = bt==1?'block':'none';
+}
+
+
+function setcn(cn)
+{
+ layers[curLayer].cn = cn;
+ lcn0.value = cn;
+ lcn1.value = cn;
+}
+
+function pwheel(event)
+{
+ var r = mcanvas.getBoundingClientRect(), nx = event.clientX-r.left, ny = event.clientY-r.top, oscale = gscale, vx, vy;
+ nx = nx-ox; ny = oy-ny;
+ vx = gtx - nx; vy = gty-ny;
+ if (event.wheelDeltaY)
+ gscale *= (1+event.wheelDeltaY/1225)
+ else
+ gscale *= (1-event.deltaY/56)
+ gtx = nx + vx*gscale/oscale;
+ gty = ny + vy*gscale/oscale;
+ mptx = gtx;
+ mpty = gty;
+ mtx = event.clientX; mty = event.clientY;
+ glscale.value = gscale;
+ tanx.value=gtx;tany.value=gty;
+ renderFrame(true);
+ event.preventDefault();
+}
+var mtx, mty, mptx, mpty, mdrag = false;
+function mdown(event)
+{
+ mtx = event.clientX; mty = event.clientY;
+ mptx = gtx;
+ mpty = gty;
+
+ mdrag = true;
+ event.preventDefault();
+}
+
+function mmove(event)
+{
+ if (!mdrag) return;
+ gtx = mptx + event.clientX-mtx;
+ gty = mpty + -event.clientY+mty;
+ renderFrame(true);
+ event.preventDefault();
+}
+function mup(event)
+{
+ mdrag = false;
+ tanx.value=gtx;tany.value=gty;
+ event.preventDefault();
+}
+
+function syncStart()
+{
+ layers[curLayer].csize2 = layers[curLayer].csize;
+ layers[curLayer].crot2 = layers[curLayer].crot;
+ layers[curLayer].cwpw2 = layers[curLayer].cwpw;
+ layers[curLayer].eptr2 = layers[curLayer].eptr;
+ layers[curLayer].eptd2 = layers[curLayer].eptd;
+ layers[curLayer].bradius2 = layers[curLayer].bradius;
+ layers[curLayer].bspin2 = layers[curLayer].bspin;
+ setLayer(curLayer);
+ renderFrame();
+}
+function syncCurrent()
+{
+ layers[curLayer].csize = layers[curLayer].csize2 = layers[curLayer].csize+(layers[curLayer].csize2-layers[curLayer].csize)*curProgress;
+ layers[curLayer].crot = layers[curLayer].crot2 = layers[curLayer].crot+(layers[curLayer].crot2-layers[curLayer].crot)*curProgress;;
+ layers[curLayer].cwpw = layers[curLayer].cwpw2 = layers[curLayer].cwpw+(layers[curLayer].cwpw2-layers[curLayer].cwpw)*curProgress;;
+ layers[curLayer].eptr = layers[curLayer].eptr2 = layers[curLayer].eptr+(layers[curLayer].eptr2-layers[curLayer].eptr)*curProgress;;
+ layers[curLayer].eptd = layers[curLayer].eptd2 = layers[curLayer].eptd+(layers[curLayer].eptd2-layers[curLayer].eptd)*curProgress;;
+ layers[curLayer].bradius = layers[curLayer].bradius2 = layers[curLayer].bradius+(layers[curLayer].bradius2-layers[curLayer].bradius)*curProgress;;
+ layers[curLayer].bspin = layers[curLayer].bspin2 = layers[curLayer].bspin+(layers[curLayer].bspin2-layers[curLayer].bspin)*curProgress;;;
+ setLayer(curLayer);
+ renderFrame();
+}
+function exportPreset()
+{
+ var po = {};
+ po.gscale = gscale;
+ po.gtx=gtx; po.gty = gty;
+ for(var t=0;t<layers.length;t++)
+ layers[t].curCurve = null;
+ po.layers = layers;
+ return JSON.stringify(po);
+}
+function importPreset(str)
+{
+ var po = null, tk;
+ try
+ {
+  po = JSON.parse(str);
+ }
+ catch(e){}
+ if (!(po && typeof po === "object" && po !== null && (tk=Object.keys(po)).length==4 && tk.indexOf('gscale')>=0 && tk.indexOf('gtx')>=0 && tk.indexOf('gty')>=0 && tk.indexOf('layers')>=0)) {alert('Invalid preset file!');return;}
+ gscale=po.gscale;
+ glscale.value=gscale;
+ gtx=po.gtx; tanx.value = gtx;
+ gty=po.gty; tany.value = gty;
+ layers = po.layers;
+ setLayer(curLayer=0);
+ renderFrame();
+}
+function downloadPreset()
+{
+ var name = prompt('Save as', 'preset.json');
+ if (!name) return;
+ var pstr = btoa(exportPreset());
+ dummydownload.href = 'data:application/json;base64,'+pstr;
+ dummydownload.download=name;
+ dummydownload.click();
+}
+function uploadPreset()
+{
+ dummyupload.onchange = uploadNext;
+ dummyupload.click();
+}
+function uploadNext()
+{
+ if (dummyupload.files.length)
+ {
+  var reader = new FileReader();
+  reader.onload = function(e)
+  {
+   importPreset(reader.result);
+  }
+  reader.readAsText(dummyupload.files[0]);
+ }
+}
+function loadFactory(w)
+{
+ importPreset(factory[w]);
+}
+
+/*
+ultra quick fix for form validation:
+
+challenges:
+1. onchange isn't fired on real change, therefore there's no way to know what the last good
+value was
+
+solutions:
+1. onfocus :D
+
+0. if an input can have non integer values, make sure it's step is not an integer
+1. query all elements. (type=number)
+2. install onfocus handlers to save old values
+3. prepend onchange handler that will reset the value
+4. voila
+*/
+function focusValueHandler(ev)
+{
+ ev.target.dataset.lv = ev.target.value;
+}
+function installFix()
+{
+ var el = document.querySelectorAll('input[type=number]'), tl = el.length, t, otc;
+ for(t=0;t<tl;t++)
+ { 
+  el[t].addEventListener('focus', focusValueHandler);
+  //now the magic
+  otc = el[t].onchange;
+  el[t].onchange = (function(el, otc){return function()
+  {
+   var tv, es = parseFloat(el.step);
+   if (!isNaN(es) && es%1===0)
+   {
+    tv = parseInt(el.value);
+    if (isNaN(tv)) el.value = el.dataset.lv;
+    else el.value = tv;
+   }
+   else
+   {
+    tv = parseFloat(el.value);
+    if (isNaN(tv)) el.value = el.dataset.lv;
+    else el.value = tv;
+   }
+   if (otc) otc.call(el);
+  }})(el[t], otc);
+ }
+}
+installFix();
+
+</script>

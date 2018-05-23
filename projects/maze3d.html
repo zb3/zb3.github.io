@@ -1,0 +1,1293 @@
+<style>
+body{background-color:black;color:white;font-family: Arial;font-size:10pt}
+.m-input
+{
+ width: 30px; background-color: #141414 !important; color: #bbbbbb !important; text-align: center;
+}
+.m-input, button
+{
+ margin-top: 1px !important;margin-bottom: 1px !important;margin-left: 0px !important;margin-right: 0px !important;
+}
+#m-input-width, #m-input-height
+{
+ width: 40px;
+}
+.minor
+{font-size: 12px; color: #666666;}
+.m-button
+{
+ display: inline-block;
+ padding: 3px 8px 3px 8px;
+ border: 1px solid #888888;
+ cursor:default;
+}
+.m-button:hover
+{
+ background-color: #222;
+}
+.m-button:active
+{
+ background-color: #111;
+}
+.ctab
+{
+ width: 100%;
+ font-size:10pt;margin-top: 7px;
+}
+.ctab td
+{
+ width: 50%;
+ vertical-align: top;
+}
+.ctab td:nth-child(2)
+{
+ padding-left: 12px;
+}
+input
+{
+ box-sizing:border-box;
+}
+input[type="color"]
+{
+width: 15px; height: 15px;
+}
+input[type="color"]::-webkit-color-swatch-wrapper
+{
+padding:0;
+margin-top: -1px;
+height: 11px;
+}
+.zc14-button
+{
+ color: #bbbbbb; background-color: black;
+ width: 18px; padding-left: 3px; padding-right: 3px;
+}
+.subtable
+{
+ dispaly: table-cell;
+ vertical-align: middle;
+}
+input[type=range]
+{
+ vertical-align: middle;
+}
+</style>
+<div style="text-align: center; font-size: 36px; font-weight: bold">Maze Explorer 3D</div><br>
+<div id="m-gui" style="width: 640px;margin:auto;">
+<b>Note #1:</b> This works <b>only</b> in Chromium based browsers!!<br>
+<b>Note #2:</b> Code is a mess because I honestly didn't have time to write it properly, sorry<br><br><br>
+
+Ever played a 2D maze game? Wondering how it would look in 3D? For the first time ever, you can see it!<br>
+Oh but you think you've already seen a 3D maze, right? Probably not, because that was a 3D version of 2D maze, not a true 3D maze, this game allows you to see and explore the true 3D maze!<br><br>Use WSAD/arrow keys to move and mouse to look around(you need to click on the game first). You can also mark a cell using the <b>M</b> key, and leave a note using the <b>N</b> key (more on that later)<br><br>
+
+This has no goals determined by the game itself. In fact, you "should" go from the blue cell to the green one, but the game will not tell you that you "won" or something, because this is a Maze explorer, so it's not really about solving the maze, but more about exploring the maze. But if you wish to solve it, I've made it possible to leave notes for each cell, which may be useful when you're trapped inside the maze, just press the <b>N</b> key, type note and then click wherever.<br><br>
+With tweaking these options you can get interesting results. As always: have fun whatever you're trying to do!<br><br>
+<span class="m-button" id="m-advanced-options-switch" onclick="toggleAdvanced(this);">Show advanced options</span><br>
+<div id="m-advanced-options" style="display: none;">
+<table class="ctab"><tr><td>
+<div class="subtable">
+<b>Construction options:</b><br>
+Cell size: <span class="zc15" data-zc="zc10.isf|mvcells|m-input-cellsize|chSizes(this)|12|1|1"></span><br>
+Wall space: <span class="zc15" data-zc="zc10.isf|zc10.mzero|m-input-wallsize|chSizes(this)|4|1|1"></span></span> <span class="minor">(can be zero)</span><br>
+Segments per cell: <span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-segwall|chSizes(this)|3|1|1"></span><br>
+Segments per wall: <span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-segwall2|chSizes(this)|1|1|1"></span><br>
+Cylinder radius: <span class="zc15" data-zc="zc10.isf|zc10.mxzero|m-input-cradius|chGeo(this)|0.1|1|0.01|40"></span><br>
+Cylinder radius segments: <span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-cradiusq|chGeo(this)|10|1|1"></span>
+<br><br>
+<b>Control options:</b><br>
+Mouse sensitivity: <input type="range" value="0.004" min="0.0001" max="0.025" step="0.0005" id="m-input-sensitivity" onchange="chSensitivity(parseFloat(this.value));"><br>
+Move / ms: <input type="range" value="0.5" min="0.01" max="5" step="0.01" id="m-input-mv" onchange="mv=parseFloat(this.value);"> / <span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-movetick|chTick(parseInt(this.value))|30|1|5"></span><br>Safe wall distance: <span class="zc15" data-zc="zc10.isf|zc10.mxzero|m-input-playersafe|m.player.safe=parseFloat(this.value)|5|1|0.5"></span>
+
+
+<br><br>
+<span class="m-button" onclick="toggleAdvanced(document.getElementById('m-advanced-options-switch'));">Hide advanced options</span>
+</div>
+</td><td>
+<div class="subtable">
+<b>Appearance options:</b><br>
+Wall opacity: <input type="range" min="0" max="1" step="0.01" value="0.78" id="m-input-wopacity" onchange=" if (wmaterial.opacity==0 || wmaterial.opacity==1) sortForTransparency(); wmaterial.opacity=parseFloat(this.value);"><br>
+Cylinder color: <input type="color" id="m-color-c" value="#cccccc" onchange="chColors()"><br>
+Cell color: <input type="color" id="m-color-cell" value="#000000" onchange="chColors()"><br>
+Start cell color: <input type="color" id="m-color-sc" value="#000011" onchange="chColors()"><br>
+End cell color: <input type="color" id="m-color-ec" value="#001100" onchange="chColors()"><br>
+Highlighted cell color: <input type="color" id="m-color-hc" value="#001111" onchange="chColors()"><br>
+Solution cell color: <input type="color" id="m-color-solc" value="#222222" onchange="chColors()"><br>
+<br><b>HUD options:</b><br>
+<label><input type="checkbox" checked onchange="if (m.hudOn) m.hud.mat.renderer.clear(); m.hudOn=1-m.hudOn;">HUD visible</label><br><br><b>DFS options:</b> <span class="minor">(for newly generated maze)</span><br>
+DFS start point: <span class="zc15" data-zc="zc10.isn|mvcellx|m-input-dfx|mz_x=parseInt(this.value);maze_start=c3D(mz_x, mz_y, mz_z)|0|0"></span>x<span class="zc15" data-zc="zc10.isn|mvcelly|m-input-dfy|mz_y=parseInt(this.value);maze_start=c3D(mz_x, mz_y, mz_z)|0|0"></span>x<span class="zc15" data-zc="zc10.isn|mvcellz|m-input-dfz|mz_z=parseInt(this.value);maze_start=c3D(mz_x, mz_y, mz_z)|0|0"></span>
+</div>
+</td></tr></table>
+</div>
+<br>
+<div style="float:left">
+Resolution: <span class="zc15" data-zc="zc10.isn|checkResX|m-input-width|chResolution()|640|0|40"></span>x<span class="zc15" data-zc="zc10.isn|checkResY|m-input-height|chResolution()|480|0|40"></span> <label><input type="checkbox" onchange="m.allowFullscreen = this.checked?1:0;">Enable fullscreen</label> <span class="minor">(click on the view)</span><br>New maze size: 
+<span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-x|;|3|0"></span>x<span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-y|;|3|0"></span>x<span class="zc15" data-zc="zc10.isn|zc10.mxzero|m-input-z|;|3|0"></span> <button onclick="goGenerate();">Generate maze</button><label><input type="checkbox" onchange="m.flyMode=this.checked?1:0;">Enable fly mode</label>  <button id="m-solution" onclick="toggleSolution(this);">Show solution</button><br><br>
+</div>
+<div id="stats4" style="float: right;position:relative;top:10px;"></div>
+<div style="clear:both"></div>
+<div id="render" style="position:relative;top:0px;left:0px;width:640px;height:480px;border:1px solid grey;">
+<div id="render-n"  style="opacity:0;background-color: rgba(0, 0, 0, 0.6);font-size: 35px;color:#bbbbbb;border: 3px solid #bbbbbb; position: absolute; right: 40px; bottom: 70%;width: 40px; height: 40px;font-family:Arial;text-align:center;-webkit-transition: all 0.7s ease;">N</div>
+<div id="render-matrix"  style="background-color: transparent;position: absolute; right:20px; bottom: 20px;"></div>
+<div id="render-notes" style="display:none;box-sizing:border-box;border: 2px solid #aaaa38; color: #aaaaaa;font-size: 18px; font-family: Arial;width: 80%; height: 60%; position:absolute; left: 12.5%; top: 20%; background-color: rgba(0, 0, 0, 0.8);padding-left: 20px;padding-top: 15px">Notes for cell: &nbsp;&nbsp;&nbsp;&nbsp;<span id="cellno" style="color: white">#350</span><br><br><textarea id="notearea" spellcheck=false style="width: calc(100% - 20px); height:calc(100% - 65px);background-color: black;color: white;outline:none;border: 1px solid grey;
+}">notes here</textarea></div></div>
+</div>
+<br><br>
+<script>//misc UI stuff
+zc10 = {t: 0};
+zc10.mzero = function(x){return x>=0;}
+zc10.mxzero = function(x){return x>0;}
+zc10.isn = function (el, fnc)
+{
+ zc10.t = parseInt(el.value);
+ if (isNaN(zc10.t) || ((fnc!==undefined) && !fnc(zc10.t)))
+ el.value = el.dataset.oval;
+ else el.dataset.oval = el.value = zc10.t;
+}
+zc10.isf = function(el, fnc)
+{
+ zc10.t = parseFloat(el.value);
+ if (isNaN(zc10.t) || ((fnc!==undefined) && !fnc(zc10.t)))
+ el.value = el.dataset.oval;
+ else el.dataset.oval = el.value = zc10.t;
+}
+
+
+zc14 = {};
+zc14.zc14ize = function()
+{
+var el = document.querySelectorAll('.zc14'), t, tt, tt2; var ll = el.length;
+for(t=0;t<ll;t++)
+{
+ tt = document.createElement('button'); tt.setAttribute('class', 'zc14-button');tt.innerHTML = '-'; tt.setAttribute('onclick', 'zc14.minus(\''+el[t].id.replace(/'/g, '\\\'')+'\');');
+ tt2 = document.createElement('button');  tt2.setAttribute('class', 'zc14-button');tt2.innerHTML = '+'; tt2.setAttribute('onclick', 'zc14.plus(\''+el[t].id.replace(/'/g, '\\\'')+'\');');
+ el[t].parentNode.insertBefore(tt, el[t]);
+ if (el[t].nextSibling)
+ el[t].parentNode.insertBefore(tt2, el[t].nextSibling);
+ else
+ el[t].parentNode.appendChild(tt2);
+} 
+}
+zc14.niceFloat = function(f, n)
+{
+f = f.toFixed(n?n:6);
+f = f.replace(/(\.)?[0]*$/, '');
+return f;
+}
+zc14.plus = function(id)
+{
+document.getElementById(id).value = zc14.niceFloat(parseFloat(document.getElementById(id).value)+parseFloat(document.getElementById(id).dataset.slideby));
+document.getElementById(id).onchange();
+}
+zc14.minus = function(id)
+{
+document.getElementById(id).value = zc14.niceFloat(parseFloat(document.getElementById(id).value)-parseFloat(document.getElementById(id).dataset.slideby));
+document.getElementById(id).onchange();
+}
+window.addEventListener('DOMContentLoaded', zc14.zc14ize, false);
+
+
+zc15 = {};
+zc15.zc15ize = function()
+{
+ var el = document.querySelectorAll('.zc15'), t, tt, tt2; var ll = el.length, cn = 0;
+ for(t=0;t<ll;t++)
+ {
+  cn=0;
+  tt = el[t].dataset.zc.split('|');
+  tt2 = '<'+'input type="text" id="'+tt[2]+'" data-oval="'+tt[4]+'" value="'+tt[4]+'" onchange="'+tt[0]+'(this, '+tt[1]+');'+tt[3]+'"';
+  if (parseInt(tt[5]))
+  {
+   tt2 += ' class="m-input zc14" data-slideby="'+tt[6]+'"';
+   cn++;
+  }
+  else tt2 += ' class="m-input"';
+  if (parseInt(tt[6+cn]))
+  {
+   tt2 += ' style="width: '+tt[6+cn]+'px;"';
+  }
+  tt2 += '>';
+  el[t].innerHTML = tt2;
+ }
+ zc14.zc14ize();
+}
+window.addEventListener('DOMContentLoaded', zc15.zc15ize, false);
+//zc15
+</script>
+<script src="stats.js"></script>
+<script src="three.new.js">
+my modifications:
+-vColor acts like a diffuse, not like the thing you multiply final color with
+-but it now multiplies emissive color
+</script>
+<script>
+function mvcellx(tv){return (tv>=0 && tv<x);}
+function mvcelly(tv){return (tv>=0 && tv<y);}
+function mvcellz(tv){return (tv>=0 && tv<z);}
+function mvcells(tv){return (tv>=2*m.player.safe);}
+function checkResX(x)
+{
+ return x>=640;
+}
+function checkResY(x)
+{
+ return x>=480;
+}
+function toggleAdvanced(el)
+{
+ if (el.innerHTML=='Show advanced options')
+ {
+  el.innerHTML = 'Hide advanced options';
+  document.getElementById('m-advanced-options').style.display = '';
+ }
+ else
+ {
+  el.innerHTML = 'Show advanced options';
+  document.getElementById('m-advanced-options').style.display = 'None';
+ }
+}
+var stats = new Stats();
+stats.setMode(0);
+document.getElementById('stats4').appendChild( stats.domElement );
+var x=3, y=3, z=3;
+var l = [12, 4], l2 = [6, 2], tesel = [4, 2];
+var cl = 0.1, cq = 10, hq = 10;
+var mz_x = 0, mz_y = 0, mz_z = 1, maze_start = c3D(0, 0, 1);
+var colors = [0x000000, 0x001100, 0x000011, 0x222222, 0x001111];
+m = {};
+m.width=640; m.height=480;
+m.allowFullscreen = 0;
+m.flyMode = 0;
+m.hudOn = 1;
+m.element=document.getElementById('render');
+m.scene=new THREE.Scene();
+m.camera=new THREE.PerspectiveCamera(45, m.width/m.height, 0.1, 30000); 
+m.camera.position.set(25, 26, 134);
+m.scene.add(m.camera);
+m.renderer = new THREE.WebGLRenderer({antialias:false});
+m.renderer.setSize(m.width, m.height);
+m.element.appendChild(m.renderer.domElement);
+m.renderer.domElement.tabIndex = 1;
+m.renderer.domElement.oncontextmenu = function(event){event.preventDefault();}
+
+
+m.l1 = new THREE.PointLight(0xffffff);
+m.l1.position = m.camera.position;
+m.scene.add(m.l1);
+
+m.player = {};
+m.player.safe = 5;
+
+m.cellNotes = [];
+
+m.hud = {};
+m.hud.mat = {};
+m.hud.mat.materials = {};
+m.hud.mat.materials.steel = new THREE.MeshLambertMaterial({color: 0xcccccc});
+m.hud.mat.materials.gl = new THREE.LineBasicMaterial({color: 0x111111});
+m.hud.mat.materials.ay = new THREE.MeshLambertMaterial({color: 0x00ff00});
+m.hud.mat.materials.ax = new THREE.MeshLambertMaterial({color: 0xffff00});
+m.hud.mat.materials.az = new THREE.MeshLambertMaterial({color: 0x2222ff});
+m.hud.mat.materials.ly = new THREE.LineBasicMaterial({color: 0x00ff00});
+m.hud.mat.materials.lx = new THREE.LineBasicMaterial({color: 0xffff00});
+m.hud.mat.materials.lz = new THREE.LineBasicMaterial({color: 0x2222ff});
+
+
+m.hud.mat.width=150; m.hud.mat.height=150;
+m.hud.mat.element=document.getElementById('render-matrix');
+m.hud.mat.scene=new THREE.Scene();
+m.hud.mat.camera=new THREE.PerspectiveCamera(40, m.hud.mat.width/m.hud.mat.height, 0.1, 20000); 
+m.hud.mat.camera.position.set(0, 0, 8);
+m.hud.mat.scene.add(m.hud.mat.camera);
+m.hud.mat.renderer = new THREE.WebGLRenderer({antialias:false, alpha: true});
+m.hud.mat.renderer.setSize(m.hud.mat.width, m.hud.mat.width);
+m.hud.mat.element.appendChild(m.hud.mat.renderer.domElement);
+
+m.hud.mat.cr = 0.07; m.hud.mat.hr = 0.15; m.hud.mat.hl = 0.5; m.hud.mat.cl = 3; m.hud.mat.pw = 0.14;
+m.hud.mat.nl = 7; m.hud.mat.ep10 = 0.02;
+
+m.hud.mat.light = new THREE.PointLight(0xffffff);
+m.hud.mat.light.position = m.hud.mat.camera.position;
+
+m.hud.mat.scene.add(m.hud.mat.light); 
+
+m.hud.mat.genMat = function(tx)
+{
+tx.objects = {};
+
+var dl = Math.max(x*(l[0]+l[1]) - l[1], y*(l[0]+l[1]) - l[1], z*(l[0]+l[1]) - l[1]), px, t;
+px = (tx.cl-tx.hl/2)/(tx.nl);
+tx.clx = tx.cl*(x*(l[0]+l[1]) - l[1])/dl;
+tx.cly = tx.cl*(y*(l[0]+l[1]) - l[1])/dl;
+tx.clz = tx.cl*(z*(l[0]+l[1]) - l[1])/dl;
+
+tx.nlx = Math.ceil((tx.clx-tx.hl/2)/px);
+tx.nly = Math.ceil((tx.cly-tx.hl/2)/px);
+tx.nlz = Math.ceil((tx.clz-tx.hl/2)/px);
+
+
+tx.clx = tx.nlx*px+tx.hl/2;
+tx.cly = tx.nly*px+tx.hl/2;
+tx.clz = tx.nlz*px+tx.hl/2;
+
+tx.objects.sphere = new THREE.Mesh(new THREE.SphereGeometry(tx.cr), tx.materials.steel);
+tx.objects.cy = new THREE.Mesh(new THREE.CylinderGeometry(tx.cr, tx.cr, tx.cly, 10, 1, 0), tx.materials.steel);
+tx.objects.cy.translateY(tx.cly/2);
+tx.objects.cx = new THREE.Mesh(new THREE.CylinderGeometry(tx.cr, tx.cr, tx.clx, 10, 1, 0), tx.materials.steel);
+tx.objects.cx.translateX(tx.clx/2); tx.objects.cx.rotateZ(Math.PI/2);
+tx.objects.cz = new THREE.Mesh(new THREE.CylinderGeometry(tx.cr, tx.cr, tx.clz, 10, 1, 0), tx.materials.steel);
+tx.objects.cz.translateZ(tx.clz/2);
+tx.objects.cz.rotateX(Math.PI/2);
+
+tx.objects.cy2 = new THREE.Mesh(new THREE.CylinderGeometry(0, tx.hr, tx.hl, 10, 1, false), tx.materials.ay);
+tx.objects.cy2.translateY(tx.cly);
+
+tx.objects.cx2 = new THREE.Mesh(new THREE.CylinderGeometry(tx.hr, 0, tx.hl, 10, 1, false), tx.materials.ax);
+tx.objects.cx2.translateX(tx.clx); tx.objects.cx2.rotateZ(Math.PI/2);
+
+tx.objects.cz2 = new THREE.Mesh(new THREE.CylinderGeometry(0, tx.hr, tx.hl, 10, 1, false), tx.materials.az);
+tx.objects.cz2.translateZ(tx.clz);tx.objects.cz2.rotateX(Math.PI/2);
+
+
+tx.objects.ly = new THREE.Line(new THREE.Geometry(), tx.materials.gl, THREE.LinePieces);
+tx.objects.lx = new THREE.Line(new THREE.Geometry(), tx.materials.gl, THREE.LinePieces);
+tx.objects.lz = new THREE.Line(new THREE.Geometry(), tx.materials.gl, THREE.LinePieces);
+
+for(t=0;t<tx.nly+1;t++)
+{
+ tx.objects.lx.geometry.vertices.push(new THREE.Vector3(0,t*px,0), new THREE.Vector3(0, t*px, tx.clz-tx.hl/2));
+ tx.objects.lz.geometry.vertices.push(new THREE.Vector3(0,t*px,0), new THREE.Vector3(tx.clx-tx.hl/2, t*px, 0));
+}
+for(t=0;t<tx.nlx+1;t++)
+{
+ tx.objects.ly.geometry.vertices.push(new THREE.Vector3(t*px,0,0), new THREE.Vector3(t*px,0, tx.clz-tx.hl/2,0));
+ tx.objects.lz.geometry.vertices.push(new THREE.Vector3(t*px,0,0), new THREE.Vector3(t*px, tx.cly-tx.hl/2,0));
+}
+for(t=0;t<tx.nlz+1;t++)
+{
+ tx.objects.ly.geometry.vertices.push(new THREE.Vector3(0,0,t*px), new THREE.Vector3(tx.clx-tx.hl/2, 0, t*px));
+ tx.objects.lx.geometry.vertices.push(new THREE.Vector3(0,0,t*px), new THREE.Vector3(0, tx.cly-tx.hl/2, t*px));
+}
+
+tx.objects.px = new THREE.Mesh(new THREE.Geometry(), tx.materials.ax);
+tx.objects.py = new THREE.Mesh(tx.objects.px.geometry, tx.materials.ay);
+tx.objects.pz = new THREE.Mesh(tx.objects.px.geometry, tx.materials.az);
+
+tx.objects.px.geometry.vertices.push(new THREE.Vector3(-tx.pw, -tx.pw, tx.ep10), new THREE.Vector3(tx.pw, -tx.pw, tx.ep10));
+tx.objects.px.geometry.vertices.push(new THREE.Vector3(-tx.pw, tx.pw, tx.ep10), new THREE.Vector3(tx.pw, tx.pw, tx.ep10));
+tx.objects.px.geometry.vertices.push(new THREE.Vector3(-tx.pw, -tx.pw, -tx.ep10), new THREE.Vector3(tx.pw, -tx.pw, -tx.ep10));
+tx.objects.px.geometry.vertices.push(new THREE.Vector3(-tx.pw, tx.pw, -tx.ep10), new THREE.Vector3(tx.pw, tx.pw, -tx.ep10));
+tx.objects.px.geometry.faces.push(new THREE.Face3(0, 1, 2), new THREE.Face3(1, 3, 2));
+tx.objects.px.geometry.faces.push(new THREE.Face3(6, 5, 4), new THREE.Face3(6, 7, 5));
+tx.objects.px.geometry.computeFaceNormals();
+
+tx.objects.px.rotateY(Math.PI/2);
+tx.objects.px.position.y=1.6;tx.objects.px.position.z=0.4;
+tx.objects.px.position.x=0.01;
+
+tx.objects.py.rotateX(Math.PI/2);
+tx.objects.py.position.x=1.0;tx.objects.py.position.z=0.4;
+tx.objects.py.position.y=0.01;
+
+tx.objects.pz.position.x=1.0;tx.objects.pz.position.y=1.6;
+tx.objects.pz.position.z=0.01;
+
+tx.objects.clx = new THREE.Line(new THREE.Geometry(), tx.materials.lx);
+tx.objects.clx.geometry.vertices.push(new THREE.Vector3(0, 1.6, 0.4), new THREE.Vector3(1, 1.6, 0.4));
+
+tx.objects.cly = new THREE.Line(new THREE.Geometry(), tx.materials.ly);
+tx.objects.cly.geometry.vertices.push(new THREE.Vector3(1, 0, 0.4), new THREE.Vector3(1, 1.6, 0.4));
+ 
+tx.objects.clz = new THREE.Line(new THREE.Geometry(), tx.materials.lz);
+tx.objects.clz.geometry.vertices.push(new THREE.Vector3(1, 1.6, 0), new THREE.Vector3(1, 1.6, 0.4));
+
+tx.objects.clx.no=tx.objects.cly.no=tx.objects.clz.no=1;
+
+tx.objects.cube = new THREE.Mesh(new THREE.CubeGeometry(2*tx.pw, 2*tx.pw, 2*tx.pw), tx.materials.steel);
+tx.objects.cube.position.set(1, 1.6, 0.4);
+
+
+tx.mat = new THREE.Object3D();
+for(var obj in tx.objects)
+{
+ if (tx.objects[obj] instanceof THREE.Object3D && !tx.objects[obj].no) 
+ tx.mat.add(tx.objects[obj]);
+}
+
+tx.mat.translateX(-tx.clx/2+tx.hl/4);
+tx.mat.translateY(-tx.cly/2+tx.hl/4);
+tx.mat.translateZ(-tx.clz/2+tx.hl/4);
+
+tx.mcube = new THREE.Object3D();
+tx.mcube.add(tx.mat);
+tx.mcube.rotation.order = 'ZXY';
+tx.scene.add(tx.mcube);
+
+var epsilon = 0.05;
+tx.pax = (tx.clx-tx.hl/2-2*tx.pw-epsilon)/(x*(l[0]+l[1]) -2*m.player.safe - l[1])
+tx.pbx = tx.pw+epsilon - tx.pax*(l[1] + m.player.safe);
+
+tx.pay = (tx.cly-tx.hl/2-2*tx.pw-epsilon)/(y*(l[0]+l[1]) -2*m.player.safe - l[1])
+tx.pby = tx.pw+epsilon - tx.pay*(l[1] + m.player.safe);
+
+tx.paz = (tx.clz-tx.hl/2-2*tx.pw-epsilon)/(z*(l[0]+l[1]) -2*m.player.safe - l[1])
+tx.pbz = tx.pw+epsilon - tx.paz*(l[1] + m.player.safe);
+
+
+tx.update = function()
+{
+ tx.mcube.rotation.x = -m.camera.rotation.x; 
+ tx.mcube.rotation.y = -m.camera.rotation.y; 
+ tx.mcube.rotation.z = -m.camera.rotation.z;
+
+ var vpx, vpy, vpz;
+ vpx = m.camera.position.x*tx.pax + tx.pbx;
+ vpy = m.camera.position.y*tx.pay + tx.pby;
+ vpz = m.camera.position.z*tx.paz + tx.pbz;
+
+ tx.objects.px.position.y=vpy; tx.objects.px.position.z=vpz;
+ tx.objects.py.position.x=vpx; tx.objects.py.position.z=vpz;
+ tx.objects.pz.position.x=vpx; tx.objects.pz.position.y=vpy;
+
+ tx.objects.clx.geometry.vertices[0].set(0, vpy, vpz); tx.objects.clx.geometry.vertices[1].set(vpx, vpy, vpz);
+ tx.objects.cly.geometry.vertices[0].set(vpx, 0, vpz); tx.objects.cly.geometry.vertices[1].set(vpx, vpy, vpz);
+ tx.objects.clz.geometry.vertices[0].set(vpx, vpy, 0); tx.objects.clz.geometry.vertices[1].set(vpx, vpy, vpz);
+
+ tx.objects.clx.geometry.verticesNeedUpdate=true; tx.objects.cly.geometry.verticesNeedUpdate=true;  tx.objects.clz.geometry.verticesNeedUpdate=true;
+
+ tx.objects.cube.position.set(vpx, vpy, vpz);
+}
+};
+m.hud.mat.genMat(m.hud.mat);
+
+m.hud.mat.dispose = function()
+{
+ var t;
+ for(t in m.hud.mat.objects)
+ {
+  if (m.hud.mat.objects[t] instanceof THREE.Object3D)
+  {
+   m.hud.mat.objects[t].geometry.dispose();
+   m.hud.mat.mat.remove(m.hud.mat.objects[t]);
+  }
+ }
+ m.hud.mat.mcube.remove(m.hud.mat.mat);
+ m.hud.mat.scene.remove(m.hud.mat.mcube);
+}
+
+m.hud.mat.renderer.render(m.hud.mat.scene, m.hud.mat.camera);
+
+  
+m.util = {};
+m.util.gpt = 0;
+m.util.gp = function(el, type)
+{
+ m.util.gpt = 0;
+ while(el)
+ {
+  m.util.gpt += (el[type?'offsetTop':'offsetLeft'] - el[type?'scrollTop':'scrollLeft'] + el[type?'clientTop':'clientLeft']);
+  el = el.offsetParent;
+ }
+ return m.util.gpt;
+};
+function toggleSolution(el)
+{
+ if (el.dataset.on && el.dataset.on!='0')
+ {
+  clearSolution();
+  el.dataset.on=0;
+  el.innerHTML = 'Show solution';
+ }
+ else
+ {
+  if (!m.validCell) return;
+  el.dataset.on=1;
+  el.innerHTML = 'Hide solution';
+  generateSolution(m.currentCell);
+ }
+ assignPlaneColors();
+}
+function goGenerate()
+{
+ clearSolution();
+ document.getElementById('m-solution').dataset.on=0;  document.getElementById('m-solution').innerHTML = 'Show solution';
+ x = parseInt(document.getElementById('m-input-x').value); y = parseInt(document.getElementById('m-input-y').value); z = parseInt(document.getElementById('m-input-z').value);
+ tx = 2*x+1; ty = 2*y+1; tz = 2*z+1;
+
+ mz_x = Math.min(mz_x, x-1);
+ mz_y = Math.min(mz_y, y-1);
+ mz_z = Math.min(mz_z, z-1);
+ document.getElementById('m-input-dfx').dataset.oval=document.getElementById('m-input-dfx').value=mz_x;
+ document.getElementById('m-input-dfy').dataset.oval=document.getElementById('m-input-dfy').value=mz_y;
+ document.getElementById('m-input-dfz').dataset.oval=document.getElementById('m-input-dfz').value=mz_z;
+
+ maze_start=c3D(mz_x, mz_y, mz_z);
+
+ visited = {}; board = []; stack = []; ptr = 0; m.cellNotes = {};
+ constructBoard();
+ generate3DMaze(maze_start);
+ board[c3D(0, 0, 0)]=2;
+ board[c3D(x-1, y-1, z-1)]=3;
+ 
+ destroyGeometry();
+ createMaze();
+
+ m.hud.mat.dispose();
+ m.hud.mat.genMat(m.hud.mat);
+
+ if (m.validCell)
+ m.player.goToCell(0, 0, 0);
+}
+function chSizes()
+{
+ if (m.validCell && !m.flyMode)
+ {
+  if (m.cellOnPos.tx2%2)
+  m.cellOnPos.perx = (m.camera.position.x-(l[0]*(m.cellOnPos.tx2-1)/2+l[1]*(m.cellOnPos.tx2+1)/2))/l[0];
+  else
+  m.cellOnPos.perx = (m.camera.position.x-((m.cellOnPos.tx2/2)*(l[0]+l[1])))/l[1];
+
+  if (m.cellOnPos.ty2%2)
+  m.cellOnPos.pery = (m.camera.position.y-(l[0]*(m.cellOnPos.ty2-1)/2+l[1]*(m.cellOnPos.ty2+1)/2))/l[0];
+  else
+  m.cellOnPos.pery = (m.camera.position.y-((m.cellOnPos.ty2/2)*(l[0]+l[1])))/l[1];
+
+  if (m.cellOnPos.tz2%2)
+  m.cellOnPos.perz = (m.camera.position.z-(l[0]*(m.cellOnPos.tz2-1)/2+l[1]*(m.cellOnPos.tz2+1)/2))/l[0];
+  else
+  m.cellOnPos.perz = (m.camera.position.z-((m.cellOnPos.tz2/2)*(l[0]+l[1])))/l[1];
+ }
+ l[0] = parseFloat(document.getElementById('m-input-cellsize').value);
+ l[1] = parseFloat(document.getElementById('m-input-wallsize').value);;
+ l2[0] = l[0]/2;
+ l2[1] = l[1]/2;
+ tesel[0] = parseInt(document.getElementById('m-input-segwall').value)+1;
+ tesel[1] = parseInt(document.getElementById('m-input-segwall2').value)+1;
+ chGeo();
+
+ if (m.validCell && !m.flyMode)
+ {
+  if (m.cellOnPos.tx2%2)
+  m.camera.position.x = (m.cellOnPos.perx*l[0])+(l[0]*(m.cellOnPos.tx2-1)/2+l[1]*(m.cellOnPos.tx2+1)/2);
+  else
+  m.camera.position.x = m.cellOnPos.perx*l[1]+((m.cellOnPos.tx2/2)*(l[0]+l[1]));
+
+  if (m.cellOnPos.ty2%2)
+  m.camera.position.y = (m.cellOnPos.pery*l[0])+(l[0]*(m.cellOnPos.ty2-1)/2+l[1]*(m.cellOnPos.ty2+1)/2);
+  else
+  m.camera.position.y = m.cellOnPos.pery*l[1]+((m.cellOnPos.ty2/2)*(l[0]+l[1]));
+
+  if (m.cellOnPos.tz2%2)
+  m.camera.position.z = (m.cellOnPos.perz*l[0])+(l[0]*(m.cellOnPos.tz2-1)/2+l[1]*(m.cellOnPos.tz2+1)/2);
+  else
+  m.camera.position.z = m.cellOnPos.perz*l[1]+((m.cellOnPos.tz2/2)*(l[0]+l[1]));
+
+ }
+}
+function chGeo()
+{
+ cl = parseFloat(document.getElementById('m-input-cradius').value);
+ hq = cq = parseInt(document.getElementById('m-input-cradiusq').value);
+ cgeo[0].dispose(); cgeo[1].dispose(); hgeo.dispose();
+ cgeo[0] = new THREE.CylinderGeometry(cl, cl, l[0], cq, 1, 0); cgeo[1] = new THREE.CylinderGeometry(cl, cl, l[1], cq, 1, 0);
+ hgeo = new THREE.SphereGeometry(cl, hq, hq);
+ destroyGeometry();
+ createMaze();
+}
+function chSensitivity(to)
+{
+ var t = m.mouse.sensitivity/to;
+ m.mouse.lastX *= t;
+ m.mouse.lastY *= t;
+ m.mouse.sensitivity = to;
+}
+function chTick(to)
+{
+ window.clearInterval(m.tick);
+ m.tick = window.setInterval(m.keyMove, to);
+}
+function chColors()
+{
+ eval('cmaterial.color.setHex(0x'+document.getElementById('m-color-c').value.substr(1)+')');
+ colors[0] = eval('0x'+document.getElementById('m-color-cell').value.substr(1));
+ colors[1] = eval('0x'+document.getElementById('m-color-ec').value.substr(1));
+ colors[2] = eval('0x'+document.getElementById('m-color-sc').value.substr(1));
+ colors[3] = eval('0x'+document.getElementById('m-color-solc').value.substr(1));
+ colors[4] = eval('0x'+document.getElementById('m-color-hc').value.substr(1));
+ assignPlaneColors();
+}
+function chResolution()
+{
+ m.width = parseInt(document.getElementById('m-input-width').value);
+ m.height = parseInt(document.getElementById('m-input-height').value);
+ m.renderer.setSize(m.width, m.height);
+ m.camera.aspect = m.width/m.height;
+ m.camera.updateProjectionMatrix();
+ document.getElementById('m-gui').style.width=m.width+'px';
+ document.getElementById('render').style.width=m.width+'px';
+ document.getElementById('render').style.height=m.height+'px';
+}
+
+var visited = {};
+var board = [];
+var stack = [], ptr = 0;
+var thisone;
+
+function c3D(a, b, c){ return 2*a+1 + (2*b+1)*(2*x+1) + (2*c+1)*(2*x+1)*(2*y+1); }
+
+function debugCoord(wat, x, y, z)
+{
+ console.log('x: ', wat%x);
+ console.log('y: ', (wat/x|0)%y);
+ console.log('z: ', (wat/(x*y)|0));
+}
+//this has been kinda obfuscated the funny way, you know... I'd not write code like this
+function randomCell3D(where)
+{
+ var c = [], tx = 2*x+1, ty = 2*y+1, tz = 2*z+1;
+ if (where%tx>1 && !visited[where-2]) c.push(where-2);
+ if (where%tx<tx-2 && !visited[where+2]) c.push(where+2);
+ if ((where/tx|0)%ty>1 && !visited[where-2*tx]) c.push(where-2*tx);
+ if ((where/tx|0)%ty<ty-2 && !visited[where+2*tx]) c.push(where+2*tx);
+ if ((where/(tx*ty)|0)>1 && !visited[where-2*tx*ty]) c.push(where-2*tx*ty);
+ if ((where/(tx*ty)|0)<tz-2 && !visited[where+2*tx*ty]) c.push(where+2*tx*ty);
+ if (c.length>1) randomCell3D.moreChoices=1; else randomCell3D.moreChoices=0;
+ if (c.length)
+ return c[Math.floor(Math.random()*c.length)];
+ else return 0;
+}
+function randomCellSol(where)
+{
+ var c = [], tx = 2*x+1, ty = 2*y+1, tz = 2*z+1;
+ if (where%tx>1 && (board[where-1]==1 || board[where-1]==5) && !visited[where-2]) c.push(where-2);
+ if (where%tx<tx-2 && (board[where+1]==1 || board[where-1]==5) && !visited[where+2]) c.push(where+2);
+ if ((where/tx|0)%ty>1 && (board[where-tx]==1 || board[where-1]==5) && !visited[where-2*tx]) c.push(where-2*tx);
+ if ((where/tx|0)%ty<ty-2 && (board[where+tx]==1 || board[where-1]==5) && !visited[where+2*tx]) c.push(where+2*tx);
+ if ((where/(tx*ty)|0)>1 && (board[where-tx*ty]==1 || board[where-1]==5) && !visited[where-2*tx*ty]) c.push(where-2*tx*ty);
+ if ((where/(tx*ty)|0)<tz-2 && (board[where+tx*ty]==1 || board[where-1]==5) && !visited[where+2*tx*ty]) c.push(where+2*tx*ty);
+ if (c.length)
+ return c[Math.floor(Math.random()*c.length)];
+ else return 0;
+}
+function generate3DMaze(start)
+{
+ visited[stack[stack.push(start)-1]]=1;
+ while(ptr>=0)
+ {
+  if (stack[ptr+1] = randomCell3D(stack[ptr]))
+  board[(stack[ptr]+stack[++ptr])/2]=visited[stack[ptr]]=1;
+  else --ptr;
+ }
+}
+function clearSolution()
+{
+ for(var t=0;t<board.length;t++)
+ if (board[t]==4) board[t]=1;
+}
+function generateSolution(from)
+{
+ var onwall = 0;
+ if ((from%tx)%2==0)
+ {
+  from-=1; onwall = 1;
+ }
+ else if (((from/tx|0)%ty)%2==0)
+ {
+  from-=tx; onwall = tx;
+ }
+ else if ((from/(tx*ty)|0)%2==0)
+ {
+  from-=tx*ty; onwall = tx*ty;
+ }
+
+ var t;
+ clearSolution();
+ t = c3D(x-1, y-1, z-1);
+ visited = {}; stack = [];
+ visited[stack[stack.push(from)-1]]=1;
+ ptr = 0;
+ ytr=0;
+ while(stack[ptr]!=t && (ytr++)<1000)
+ {
+  if (stack[ptr+1] = randomCellSol(stack[ptr]))
+  visited[stack[++ptr]]=1;
+  else --ptr;
+ }
+ if (onwall)
+ {
+  board[stack[0]+onwall]=4;
+  if (stack[1]==(stack[0]+2*onwall))
+  stack.splice(0, 1);
+ }
+ for(t=0;t<stack.length;t++)
+ {
+  board[stack[t]]=board[stack[t]]==1?4:board[stack[t]];
+  if (t<stack.length-1)
+  board[(stack[t]+stack[t+1])/2]=board[(stack[t]+stack[t+1])/2]==1?4:board[(stack[t]+stack[t+1])/2];
+ }
+}
+
+function constructBoard()
+{
+ var t, tl = (2*x+1)*(2*y+1)*(2*z+1);
+ for(t=0;t<tl;t++) board[t]=0;
+ for(var t=0, t2=0, t4=0;t<x;t++)
+ for(t2=0;t2<y;t2++)
+ for(t4=0;t4<z;t4++)
+ board[c3D(t, t2, t4)]=1;
+}
+function printBoard()
+{
+ for(var t=0, t2=0, t4=0;t<(2*z+1);t++)
+ for(t2=0;t2<(2*y+1);t2++)
+ {
+  strt = '';
+  for(t4=0;t4<(2*x+1);t4++)
+  strt += ''+board[t4 + t2*(2*x+1) + t*(2*x+1)*(2*y+1)];
+ }
+}
+var tx = 2*x+1, ty = 2*y+1, tz = 2*z+1;
+constructBoard();
+generate3DMaze(maze_start);
+board[c3D(0, 0, 0)]=2;
+board[c3D(x-1, y-1, z-1)]=3;
+
+
+
+//some settings
+
+var wallgeo = new THREE.Geometry(), cylgeo = new THREE.Geometry();
+
+var wmaterial = new THREE.MeshPhongMaterial({transparent: true,color: 0x000000, opacity: 0.78, emissive: 0xffffff,vertexColors: THREE.FaceColors, side: THREE.DoubleSide}), cmaterial = new THREE.MeshLambertMaterial({color: 0xcccccc}), nmaterial = new THREE.MeshLambertMaterial({color: 0x202020});
+
+var cgeo = []; cgeo[0] = new THREE.CylinderGeometry(cl, cl, l[0], cq, 1, 0); cgeo[1] = new THREE.CylinderGeometry(cl, cl, l[1], cq, 1, 0);
+var hgeo = new THREE.SphereGeometry(cl, hq, hq);
+var walls, cylinders;
+var edgeregistry = {}, planeregistry = {}, hregistry = {}, planes = [], edges = [], hspheres = [];
+var prec = 10000;
+
+function addSphere(cx, cy, cz, c)
+{
+ var th = Math.round(cx*prec)+'|'+Math.round(cy*prec)+'|'+Math.round(cz*prec);
+ if (hregistry[th])
+ {
+  if (hspheres[hregistry[th]-1].c!=c) hspheres[hregistry[th]-1].nopaint = 1;
+ }
+ else
+ {
+  hregistry[th] = hspheres.push([cx, cy, cz]);
+  hspheres[hregistry[th]-1].c = c;
+ }
+}
+
+function addEdge(cx, cy, cz, ct, cl, pid)
+{
+ var th = Math.round(cx*prec)+'|'+Math.round(cy*prec)+'|'+Math.round(cz*prec);
+ if (edgeregistry[th]) edges[edgeregistry[th]-1].planes.push(pid);
+ else
+ {
+  edgeregistry[th] = edges.push([cx, cy, cz]);
+  edges[edgeregistry[th]-1].type = ct; edges[edgeregistry[th]-1].len = cl;
+  edges[edgeregistry[th]-1].planes = [pid]; 
+ }
+}
+function addPlane(px, py, pz, wx, wy, type, side, n1, n2)
+{
+ var th = Math.round(px*prec)+'|'+Math.round(py*prec)+'|'+Math.round(pz*prec);
+ if (planeregistry[th]) planes[planeregistry[th]-1].nopaint=1;
+ else
+ {
+  planeregistry[th]=planes.push([px, py, pz]);
+  planes[planeregistry[th]-1].x = wx; planes[planeregistry[th]-1].y = wy;
+  planes[planeregistry[th]-1].type = type; planes[planeregistry[th]-1].side = side;
+  planes[planeregistry[th]-1].n1 = n1; planes[planeregistry[th]-1].n2 = n2;
+
+  addEdge(px, py+(type==2?-l2[wy]:0), pz+(type!=2?-l2[wy]:0), type?0:1, wx, planeregistry[th]-1);
+  addEdge(px, py+(type==2?l2[wy]:0), pz+(type!=2?l2[wy]:0), type?0:1, wx, planeregistry[th]-1);
+  addEdge(px+(type?-l2[wx]:0), py+(type==0?-l2[wx]:0), pz, type==2?1:2, wy, planeregistry[th]-1);
+  addEdge(px+(type?l2[wx]:0), py+(type==0?l2[wx]:0), pz, type==2?1:2, wy, planeregistry[th]-1);
+ }
+}
+function addCube(px, py, pz, wx, wy, wz, cell)
+{
+ addSphere(px-l2[wx], py-l2[wy], pz-l2[wz], 0);
+ addSphere(px-l2[wx], py-l2[wy], pz+l2[wz], 1);
+ addSphere(px-l2[wx], py+l2[wy], pz-l2[wz], 2);
+ addSphere(px-l2[wx], py+l2[wy], pz+l2[wz], 3);
+ addSphere(px+l2[wx], py-l2[wy], pz-l2[wz], 4);
+ addSphere(px+l2[wx], py-l2[wy], pz+l2[wz], 5);
+ addSphere(px+l2[wx], py+l2[wy], pz-l2[wz], 6);
+ addSphere(px+l2[wx], py+l2[wy], pz+l2[wz], 7);
+
+ addPlane(px, py, pz-l2[wz], wx, wy, 2, -1, cell);
+ addPlane(px, py, pz+l2[wz], wx, wy, 2, +1, cell);
+ addPlane(px, py-l2[wy], pz, wx, wz, 1, -1, cell);
+ addPlane(px, py+l2[wy], pz, wx, wz, 1, +1, cell);
+ addPlane(px-l2[wx], py, pz, wy, wz, 0, -1, cell);
+ addPlane(px+l2[wx], py, pz, wy, wz, 0, +1, cell);
+}
+
+function buildGeometry()
+{
+ var t;
+ for(t=0;t<planes.length;t++)
+ {
+  if (planes[t].nopaint) continue;
+  paintPlane(planes[t][0], planes[t][1], planes[t][2], planes[t].x, planes[t].y, planes[t].type, planes[t].side, t);
+ }
+ wallgeo.mergeVertices();
+ wallgeo.computeFaceNormals();
+
+ assignPlaneColors();
+
+ for(t=0;t<edges.length;t++)
+ {
+  paintCylinder(edges[t][0], edges[t][1], edges[t][2], edges[t].len, edges[t].type);
+ }
+
+ for(t=0;t<hspheres.length;t++)
+ if (!hspheres[t].nopaint) paintSphere(hspheres[t][0], hspheres[t][1], hspheres[t][2]);
+
+ cylgeo.mergeVertices();
+ cylgeo.computeFaceNormals();
+ cylgeo.computeVertexNormals();
+ 
+ 
+ sortForTransparency();
+}
+function paintPlane(px, py, pz, wx, wy, type, side, pid)
+{
+ var nx = tesel[wx], ny = tesel[wy], verts = [], faces = [], tx = l[wx]/(nx-1), ty = l[wy]/(ny-1), hx = -tx*((nx-1)/2), hy = -ty*((ny-1)/2), t, t2, tvx, tvy;
+
+ for(t=1;t<nx-1;t++)
+ {
+  tvx = tx*t+hx;
+  paintCylinder(px+(type?tvx:0), py+(type==0?tvx:0), pz, wy, type==2?1:2);
+ }
+ for(t=1;t<ny-1;t++)
+ {
+  tvy = ty*t+hy;
+  paintCylinder(px, py+(type==2?tvy:0), pz+(type!=2?tvy:0), wx, type?0:1);
+ }
+ 
+ nx=ny=2;
+ tx = l[wx]; ty = l[wy]; hx = -tx/2; hy = -ty/2;
+
+ for(t=0;t<ny;t++) for(t2=0;t2<nx;t2++)
+ verts.push([tx*t2+hx, ty*t+hy]);
+
+ //faces
+ for(t=0;t<ny-1;t++)
+ for(t2=0;t2<nx-1;t2++)
+ faces.push([nx*t+t2, nx*t+t2+1, nx*(t+1)+t2+1], [nx*t+t2, nx*(t+1)+t2+1, nx*(t+1)+t2]);
+
+ hp = wallgeo.vertices.length;
+ for(t=0;t<verts.length;t++)
+ wallgeo.vertices.push(new THREE.Vector3(px+(type?verts[t][0]:0), py+(type==0?verts[t][0]:type==2?verts[t][1]:0), pz+(type!=2?verts[t][1]:0)));
+
+ for(t=0;t<faces.length;t++)
+ {
+  wallgeo.faces.push(new THREE.Face3(faces[t][0]+hp, faces[t][1]+hp, faces[t][2]+hp));
+  wallgeo.faces[wallgeo.faces.length-1].pid = pid;
+ }
+}
+function paintCylinder(cx, cy, cz, l, type, m2)
+{
+ var t, nn = (m2?cylgeo2:cylgeo).vertices.length;
+ for(t=0;t<cgeo[l].vertices.length;t++)
+ (m2?cylgeo2:cylgeo).vertices.push(new THREE.Vector3(cx+(!type?-1:1)*cgeo[l].vertices[t][type?'x':'y'], cy+cgeo[l].vertices[t][type==1?'y':type?'z':'x'], cz+(type==2?-1:1)*cgeo[l].vertices[t][type==2?'y':'z']));
+ 
+ for(t=0;t<cgeo[l].faces.length;t++)
+ (m2?cylgeo2:cylgeo).faces.push(new THREE.Face3(nn+cgeo[l].faces[t].a, nn+cgeo[l].faces[t].b, nn+cgeo[l].faces[t].c));
+}
+function paintSphere(cx, cy, cz)
+{
+ var t, nn = cylgeo.vertices.length;
+ for(t=0;t<hgeo.vertices.length;t++)
+ cylgeo.vertices.push(new THREE.Vector3(cx+hgeo.vertices[t].x, cy+hgeo.vertices[t].y, cz+hgeo.vertices[t].z));
+ 
+ for(t=0;t<hgeo.faces.length;t++)
+ cylgeo.faces.push(new THREE.Face3(nn+hgeo.faces[t].a, nn+hgeo.faces[t].b, nn+hgeo.faces[t].c));
+}
+function faceSort(a, b)
+{
+ return planes[b.pid].dist-planes[a.pid].dist;
+}
+
+function assignPlaneColors()
+{
+ //0-wall, 1-normal, 2-begin, 3-end, 4-solution
+ for(var t=0;t<wallgeo.faces.length;t++)
+ {
+  if (board[planes[wallgeo.faces[t].pid].n1]==3 || board[planes[wallgeo.faces[t].pid].n2]==3)
+  wallgeo.faces[t].color.setHex(colors[1]);
+  else if (board[planes[wallgeo.faces[t].pid].n1]==2 || board[planes[wallgeo.faces[t].pid].n2]==2)
+  wallgeo.faces[t].color.setHex(colors[2]);
+  else if (board[planes[wallgeo.faces[t].pid].n1]==4 || board[planes[wallgeo.faces[t].pid].n2]==4)
+  wallgeo.faces[t].color.setHex(colors[3]);
+  else if (board[planes[wallgeo.faces[t].pid].n1]==5 || board[planes[wallgeo.faces[t].pid].n2]==5)
+  wallgeo.faces[t].color.setHex(colors[4]);
+  else wallgeo.faces[t].color.setHex(colors[0]);
+ }
+ wallgeo.verticesNeedUpdate=true; wallgeo.normalsNeedUpdate=true;
+ wallgeo.colorsNeedUpdate=true;
+}
+function sortForTransparency()
+{
+ var tdv = new THREE.Vector3(0, 0, 0), t;
+ for(t=0;t<planes.length;t++)
+ {
+  tdv.set(planes[t][0], planes[t][1], planes[t][2]);
+  planes[t].dist = tdv.distanceTo(m.camera.position);
+ }
+ wallgeo.faces.sort(faceSort);
+ wallgeo.verticesNeedUpdate=true; wallgeo.normalsNeedUpdate=true;
+ wallgeo.colorsNeedUpdate=true;
+}
+
+function destroyGeometry()
+{
+ wallgeo.dispose(); cylgeo.dispose();
+ m.scene.remove(walls); m.scene.remove(cylinders);
+ wallgeo = new THREE.Geometry(); cylgeo = new THREE.Geometry();
+ 
+ edgeregistry = {}; planeregistry = {}; hregistry = {}; planes = []; edges = []; hspheres = [];
+}
+
+function createMaze()
+{
+ walls = new THREE.Mesh(wallgeo, wmaterial); cylinders = new THREE.Mesh(cylgeo, cmaterial);
+ m.scene.add(walls); m.scene.add(cylinders);
+ if (l[1]) //cube mode
+ {
+  for(t=1;t<tz-1;t++)
+  for(t2=1;t2<ty-1;t2++)
+  for(t4=1;t4<tx-1;t4++)
+  {
+   if (board[tx*ty*t+tx*t2+t4])
+   addCube(((t4%2)?(l[1]*(t4+1)/2 + l[0]*(t4-1)/2 + l2[0]):((l[0]+l[1])*t4/2 + l2[1])), ((t2%2)?(l[1]*(t2+1)/2 + l[0]*(t2-1)/2 + l2[0]):((l[0]+l[1])*t2/2 + l2[1])), ((t%2)?(l[1]*(t+1)/2 + l[0]*(t-1)/2 + l2[0]):((l[0]+l[1])*t/2 + l2[1])), 1-t4%2, 1-t2%2, 1-t%2, tx*ty*t+tx*t2+t4);
+  }
+ }
+ else //plane
+ {
+  for(t=0;t<tz;t++)
+  for(t2=0;t2<ty;t2++)
+  for(t4=0;t4<tx;t4++)
+  {
+   if ((t%2+t2%2+t4%2)==2 && board[tx*ty*t+tx*t2+t4]==0)
+   {
+    addPlane(((t4%2)?(l2[0]+l[0]*(t4-1)/2):(l[0]*t4/2)), ((t2%2)?(l2[0]+l[0]*(t2-1)/2):(l[0]*t2/2)), ((t%2)?(l2[0]+l[0]*(t-1)/2):(l[0]*t/2)), 0, 0, (!(t%2))?2:(t2%2)?0:1, 0, ((!(t%2))?t-1:t)*tx*ty + ((!(t2%2))?t2-1:t2)*tx + ((!(t4%2))?t4-1:t4), ((!(t%2))?t+1:t)*tx*ty + ((!(t2%2))?t2+1:t2)*tx + ((!(t4%2))?t4+1:t4));
+   }
+  }
+  addSphere(0, 0, 0, 0);
+  addSphere(x*l[0], 0, 0, 1);
+  addSphere(0, y*l[0], 0, 2);
+  addSphere(x*l[0], y*l[0], 0, 3);
+  addSphere(0, 0, z*l[0], 4);
+  addSphere(x*l[0], 0, z*l[0], 5);
+  addSphere(0, y*l[0], z*l[0], 6);
+  addSphere(x*l[0], y*l[0], z*l[0], 7);
+ }
+ buildGeometry();
+ sortForTransparency();
+}
+createMaze();
+
+var mv = 0.5;
+m.player.mvec = new THREE.Vector3(0, 0, 0);
+m.player.safe = 5;
+m.player.ray = new THREE.Raycaster();
+m.player.rx = new THREE.Vector3(1, 0, 0); m.player.ry = new THREE.Vector3(0, 1, 0); m.player.rz = new THREE.Vector3(0, 0, 1);
+m.player.mv = new THREE.Vector3();
+m.player.currentCell = 1;
+m.player.goToCell = function(mx, my, mz)
+{
+ m.camera.position.x = mx*l[0]+l2[0]+mx*l[1]+l[1];
+ m.camera.position.y = my*l[0]+l2[0]+my*l[1]+l[1];
+ m.camera.position.z = mz*l[0]+l2[0]+mz*l[1]+l[1];
+ m.newCell =  m.currentCell = m.cellOnPos(m.camera.position.x, m.camera.position.y, m.camera.position.z);
+ if (!(mx||my||mz))
+ {
+  var k=0;
+  if (board[(c3D(0,0,0)+c3D(1, 0, 0))/2|0] || board[(c3D(0,0,0)+c3D(0, 0, 1))/2|0])
+  {
+   do
+   {
+    k = Math.floor(Math.random()*2); k *= 2;
+   } while(!board[(c3D(0,0,0)+c3D(k==0?1:0, 0, k==2?1:0))/2|0]);
+  }
+  else k=1;
+
+  if (!k) {m.camera.rotation.y = -Math.PI/2;m.camera.rotation.x = 0;}
+  else if (k==1) {m.camera.rotation.y = 0;m.camera.rotation.x = Math.PI/2;}
+  else {m.camera.rotation.y = Math.PI;m.camera.rotation.x = 0;}
+  m.mouse.lastX = -m.camera.rotation.y/m.mouse.sensitivity;
+  m.mouse.lastY = -m.camera.rotation.x/m.mouse.sensitivity;
+
+ }
+ m.validCell = 1;
+ sortForTransparency();
+}
+m.cellOnPos = function(px, py, pz, store)
+{
+ if (l[1])
+ {
+  m.cellOnPos.o = px;//lol @ static variable for function
+  px = Math.floor(px/(l[0]+l[1])); m.cellOnPos.tx = px;
+  if (m.cellOnPos.o-px*(l[0]+l[1])>l[1]) px = 2*px+1; else px = 2*px;
+  m.cellOnPos.tx2 = px;
+
+  m.cellOnPos.o = py;
+  py = Math.floor(py/(l[0]+l[1])); m.cellOnPos.ty = py;
+  if (m.cellOnPos.o-py*(l[0]+l[1])>l[1]) py = 2*py+1; else py = 2*py;
+  m.cellOnPos.ty2 = py;
+
+  m.cellOnPos.o = pz;
+  pz = Math.floor(pz/(l[0]+l[1])); m.cellOnPos.tz = pz;
+  if (m.cellOnPos.o-pz*(l[0]+l[1])>l[1]) pz = 2*pz+1; else pz = 2*pz;
+  m.cellOnPos.tz2 = pz;
+ }
+ else
+ {
+  px = Math.floor(px/l[0]); py = Math.floor(py/l[0]); pz = Math.floor(pz/l[0]);
+  m.cellOnPos.tx = px; m.cellOnPos.ty = py; m.cellOnPos.tz = pz;
+  px+=px+1; py+=py+1; pz+=pz+1;
+  m.cellOnPos.tx2 = px; m.cellOnPos.ty2 = py; m.cellOnPos.tz2 = pz;
+ }
+ return tx*ty*pz + tx*py + px;
+}
+m.player.applyMove = function(vec)
+{
+ vec = vec.clone();
+ if (!m.flyMode)
+ {
+  m.player.rx.x = vec.x>0?1:-1; m.player.ry.y = vec.y>0?1:-1; m.player.rz.z = vec.z>0?1:-1;
+  m.player.ray.set(m.camera.position, m.player.rx);
+  var cv = m.player.ray.intersectObject(walls);
+  if (cv.length && cv[0].distance<(m.player.safe+Math.abs(vec.x)))
+  vec.x = m.player.rx.x*Math.max(0, cv[0].distance-m.player.safe);
+
+  m.player.ray.set(m.camera.position, m.player.ry);
+  var cv = m.player.ray.intersectObject(walls);
+  if (cv.length && cv[0].distance<(m.player.safe+Math.abs(vec.y)))
+  vec.y = m.player.ry.y*Math.max(0, cv[0].distance-m.player.safe);
+
+  m.player.ray.set(m.camera.position, m.player.rz);
+  var cv = m.player.ray.intersectObject(walls);
+  if (cv.length && cv[0].distance<(m.player.safe+Math.abs(vec.z)))
+  vec.z = m.player.rz.z*Math.max(0, cv[0].distance-m.player.safe);
+
+  m.player.ray.set(m.camera.position, vec);
+  var cv = m.player.ray.intersectObject(walls);
+  if (cv.length && cv[0].distance<(m.player.safe+Math.abs(vec.length())))
+  m.camera.position.add(vec.setLength(Math.max(0, cv[0].distance-m.player.safe)));
+  else if (!cv.length || cv[0].distance>=Math.abs(vec.length()))
+  m.camera.position.add(vec);
+ } else m.camera.position.add(vec);
+
+ m.newCell = m.cellOnPos(m.camera.position.x, m.camera.position.y, m.camera.position.z);
+ if (m.newCell!=m.currentCell)
+ {
+  if (m.cellOnPos.tx<0 || m.cellOnPos.tx>=x || m.cellOnPos.ty<0 || m.cellOnPos.ty>=y || m.cellOnPos.tz<0 || m.cellOnPos.tz>=z || !board[m.newCell]) m.validCell = 0; else m.validCell = 1;
+
+  if (m.validCell && m.cellNotes[m.newCell]!==undefined && m.cellNotes[m.newCell].length)
+  m.showNote(); else m.hideNote();
+  if (wmaterial.opacity!=0 && wmaterial.opacity!=1)
+  sortForTransparency();
+  m.currentCell = m.newCell;
+ }
+}
+
+m.mouse = {}
+m.mouse.hasLock = false;
+m.mouse.getPos = function(event)
+{
+ m.mouse.x = (m.mouse.lastX=m.mouse.lastX+(event.movementX||event.mozMovementX||event.webkitMovementX||0));
+ m.mouse.y = -(m.mouse.lastY=m.mouse.lastY+(event.movementY||event.mozMovementY||event.webkitMovementY||0));
+}
+m.mouse.onLockChange = function(event)
+{
+ if (!(document.pointerLockElement || document.webkitPointerLockElement || document.mozPointerLockElement))
+ {
+  
+  m.mouse.hasLock = false;
+  document.onmousemove = null;
+ }
+ else
+ {
+  m.mouse.hasLock = true;
+  document.onmousemove = m.onmousemove;
+ }
+}
+document.addEventListener('pointerlockchange', m.mouse.onLockChange, false);
+document.addEventListener('mozpointerlockchange', m.mouse.onLockChange, false);
+document.addEventListener('webkitpointerlockchange', m.mouse.onLockChange, false);
+m.camera.rotation.order = 'YXZ';
+m.renderer.domElement.onclick = function(event)
+{
+ if (!m.mouse.hasLock)
+ {
+  (m.renderer.domElement.requestPointerLock || m.renderer.domElement.webkitRequestPointerLock || m.renderer.domElement.mozRequestPointerLock).call(m.renderer.domElement);
+  if (m.allowFullscreen)
+  (m.element.requestFullScreen || m.element.webkitRequestFullScreen || m.element.mozRequestFullScreen).call(m.element, Element.ALLOW_KEYBOARD_INPUT); 
+ }
+};
+m.mouse.sensitivity = 0.004;
+m.mouse.lastX = 0
+m.mouse.lastY = 0
+m.onmousemove = function(event)
+{
+ m.mouse.getPos(event);
+ m.camera.rotation.y = -m.mouse.sensitivity*m.mouse.x;
+ m.camera.rotation.x = Math.max(-Math.PI, Math.min(m.mouse.sensitivity*m.mouse.y, Math.PI));
+}
+m.hon = 0; //-1 left, 0 no move, 1 right'
+m.von = 0; //-1 bottom, 0 no move, 1 left
+m.mon = 0;
+m.renderer.domElement.onmousedown = function(event)
+{
+ if (event.button==2) m.von=-1;
+}
+m.renderer.domElement.onmouseup = function(event)
+{
+ if (event.button==2) m.von=0;
+}
+m.renderer.domElement.onkeydown = function(event)
+{
+ if (event.keyCode==37 || event.keyCode==65) m.hon = -1;
+ else if (event.keyCode==39 || event.keyCode==68) m.hon=1;
+ else if (event.keyCode==40 || event.keyCode==83) m.von = 1;
+ else if (event.keyCode==38 || event.keyCode==87) m.von=-1;
+ else if (event.keyCode==77 && !m.mon && m.validCell)
+ {
+  m.mon=1;
+  if (board[m.currentCell]==1)
+  {
+   board[m.currentCell] = 5; m.mlast = m.currentCell;
+   assignPlaneColors();
+  }
+  else if (board[m.currentCell]==5)
+  {
+   board[m.currentCell] = 1; m.mlast = m.currentCell;
+   assignPlaneColors();
+  }
+ }
+ else if (event.keyCode==78 && m.validCell) m.openNote(m.currentCell);
+
+ event.preventDefault();
+}
+m.renderer.domElement.onkeyup = function(event)
+{
+ if (event.keyCode==37 || event.keyCode==39 || event.keyCode==65 || event.keyCode==68) m.hon = 0;
+ else if (event.keyCode==40 || event.keyCode==38 || event.keyCode==83 || event.keyCode==87) m.von = 0;
+ else if (event.keyCode==77)
+ {
+  m.mon=0;
+  m.mlast = -1;
+ }
+
+ event.preventDefault();
+}
+
+m.renderer.domElement.focus();
+m.player.goToCell(0, 0, 0);
+var p=0;
+m.keyMove = function()
+{
+ if (!m.hon && !m.von || m.mlocked) return;
+ m.player.mvec.set(m.hon*mv, 0, m.von*mv);
+ m.player.mvec.applyEuler(m.camera.rotation);
+ m.player.applyMove(m.player.mvec);
+ if (m.mon && m.currentCell!=m.mlast)
+ {
+  if (board[m.currentCell]==1)
+  {
+   board[m.currentCell] = 5; m.mlast = m.currentCell;
+   assignPlaneColors();
+  }
+  else if (board[m.currentCell]==5)
+  {
+   board[m.currentCell] = 1; m.mlast = m.currentCell;
+   assignPlaneColors();
+  }
+ }
+};
+
+document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock || document.webkitExitPointerLock;
+
+m.keyNote = function(event)
+{
+ if (event.keyCode==27) m.closeNote();
+}
+m.openNote = function(cell)
+{
+ m.mlocked = cell; document.exitPointerLock();
+ document.getElementById('cellno').innerHTML = '#'+cell;
+ document.getElementById('notearea').value = m.cellNotes[cell]===undefined?'':m.cellNotes[cell];
+ document.getElementById('render-notes').style.display='block';
+ document.getElementById('notearea').selectionStart = document.getElementById('notearea').selectionEnd = document.getElementById('notearea').value.length;
+ document.getElementById('notearea').focus();
+ document.addEventListener('keydown', m.keyNote, false);
+ document.addEventListener('click', m.closeNote, false);
+}
+m.showNote = function()
+{
+ document.getElementById('render-n').style.opacity='1';
+}
+m.hideNote = function()
+{
+ document.getElementById('render-n').style.opacity='0';
+}
+m.closeNote = function(ev)
+{
+ if (ev && ev.target == document.getElementById('notearea')) return;
+ document.removeEventListener('click', m.closeNote, false);
+ document.removeEventListener('keydown', m.keyNote, false);
+ m.cellNotes[m.mlocked] = document.getElementById('notearea').value;
+ if (m.cellNotes[m.mlocked].length) m.showNote(); else m.hideNote();
+ document.getElementById('render-notes').style.display='none';
+ m.renderer.domElement.focus();
+ if (ev)
+ (m.renderer.domElement.webkitRequestPointerLock || m.renderer.domElement.mozRequestPointerLock).call(m.renderer.domElement)
+ m.mlocked=0;
+};
+m.fullscreenEvent = function(e)
+{
+ if (!(document.fullScreenElement || document.webkitFullscreenElement || document.mozFullScreenElement))
+ {
+  document.getElementById('render').style.width=m.width+'px';
+  document.getElementById('render').style.height=m.height+'px';
+  document.getElementById('render').style.borderWidth='1px';
+  document.getElementById('render').style.position='relative';
+  m.renderer.setSize(m.width, m.height);
+  m.camera.aspect = m.width/m.height;
+  m.camera.updateProjectionMatrix();
+ }
+ else
+ {
+  document.getElementById('render').style.position='absolute';
+  document.getElementById('render').style.width='';
+  document.getElementById('render').style.borderWidth='0px';
+  document.getElementById('render').style.height='';
+  m.renderer.setSize(window.screen.width, window.screen.height);
+  m.camera.aspect = window.screen.width/window.screen.height;
+  m.camera.updateProjectionMatrix();
+ }
+};
+document.addEventListener('fullscreenchange', m.fullscreenEvent, false);
+document.addEventListener('mozfullscreenchange',  m.fullscreenEvent, false);
+document.addEventListener('webkitfullscreenchange',  m.fullscreenEvent, false);
+m.tick = window.setInterval(m.keyMove, 30);
+function r()
+{
+ stats.begin();
+ m.renderer.render(m.scene, m.camera);
+ if (m.hudOn)
+ {
+  m.hud.mat.update();
+  m.hud.mat.renderer.render(m.hud.mat.scene, m.hud.mat.camera);
+ }
+ requestAnimationFrame(r);
+ stats.end();
+};
+r();
+</script>

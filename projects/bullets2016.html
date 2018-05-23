@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: Arial;
+}
+input[type=number]
+{
+ width: 40px;
+ background-color: #023;
+ color: white;
+}
+a
+{
+ color: cyan;
+}
+#t16-layout td
+{
+ vertical-align: top;
+}
+#t16-layout td.settings
+{
+ padding-left: 20px;
+}
+#t16-inputmap
+{
+ border-collapse: collapse;
+ border-spacing: 0;
+}
+#t16-inputmap td
+{
+ padding:0;
+}
+#t16-render
+{
+ position: relative;
+}
+#t16-render canvas, #t16-render table
+{
+ position: absolute;
+}
+</style>
+<h1>Bullets 2016</h1>
+<p>What's this? I don't really know, this is a remake of <a href="http://js1k.com/2014-dragons/demo/1777">this js1k</a>, except it's not a game this time - you can't loose and you can cheat, but this was made to experiment with, and by default, blocks are not destroyed, but are moved instead. I just wanted to see how it would look like with this modification, but since the original is more interesting, you can toggle the original behavior with a fancy input of type "checkbox"!</p>
+<p>Maybe the whole thing isn't interesting anymore, but hey - at least you can find it out for yourself with help of this "tool"...<br>And of course, you can laugh at the source code which is terrible (as always), because I had no time, but also because this was meant to be an "old school" zb3 project, and one of the most important part of that kind of project is that the source code is horrible.</p>
+<p><b>Left click</b> to shoot, <b>Right click</b> to paint blocks</p>
+<table id="t16-layout">
+<tr>
+<td>
+<div id="t16-render">
+<canvas id="t16-bgcanvas"></canvas>
+<canvas id="t16-canvas"></canvas>
+<table id="t16-inputmap" ondragstart="return false;"></table>
+</div>
+<td class="settings">
+<b>Board settings:</b><br>
+Board dimensions: <input type=number min=5 id="t16-x" value=50 onchange="readSettings()"> x
+ <input type=number min=5 id="t16-y" value=50 onchange="readSettings()"><br>
+Number of blocks: <input type=number id="t16-initblocks" min=0 value=44 onchange="readSettings()"><br>
+Step time: <input type=number id="t16-steptime" min=4 value=25 onchange="readSettings()"><br>
+<label><input type=checkbox id="t16-destroy" onchange="readSettings()">destroy block on hit</label><br>
+<br><br>
+<b>Style settings:</b><br>
+Cell size: <input type=number min=1 id="t16-blocksize" value=10 onchange="updateBaseStyle()">px <br>
+Board colors: <input type=color id="t16-bgcolor" value="#000000" onchange="updateBaseStyle()"> <input type=color id="t16-bordercolor" value="#333333" onchange="updateBaseStyle()"><br>
+Block colors: <input type=color id="t16-blockcolor" value="#00dddd" onchange="updateStyle()"> <input type=color id="t16-bulletcolor" value="#dddddd" onchange="updateStyle()"><br>
+<br><br>
+<button onclick="newGame();">New board</button> <button onclick="newGame(false);">New empty board</button><br>
+<button onclick="undoShot();">Undo last shot</button> <button id="t16-suspend" onclick="suspendGame();">Suspend engine</button>
+<button id="t16-resume" style="display: none;" onclick="unsuspendGame();">Resume engine</button>
+<br><br><br>
+Shots fired: <b id="t16-shotsfired">0</b><br>
+Blocks on board: <b id="t16-blocksonboard">0</b><br>
+Bullets on board: <b id="t16-bulletsonboard">0</b>
+
+</table>
+
+
+<script>
+function generateDirections(n)
+{
+ var ret = [], base = [], tmp;
+
+ for(var d=0;d<n;d++) base[d] = 0;
+ for(var d=0;d<n;d++)
+ {
+  tmp = base.slice();
+  tmp[d] = -1;
+  ret.push(tmp);
+
+  tmp = base.slice();
+  tmp[d] = 1;
+  ret.push(tmp);
+ }
+ 
+ return ret;
+}
+
+function farr(a, n)
+{
+ for(var t=0;t<n;t++)
+ a[t] = 0;
+}
+
+function aarr(n, d, od, s, os)
+{
+ for(var t=0;t<n;t++)
+ d[od+t] += s[os+t];
+}
+
+function carr(g, coord)
+{
+ var ret = [];
+
+ for(var d=0;d<g.n;d++)
+ {
+  ret.push(coord%g.size[d]);
+  coord = coord/g.size[d]|0;
+ }
+
+ return ret;
+}
+
+function coord(g, carr)
+{
+ var ret = 0;
+ for(var d=g.n-1;d>=0;d--)
+ {
+  ret *= g.size[d];
+  ret += carr[d];
+ }
+ return ret;
+}
+
+
+var n = 2; //can be 4 too
+var directions = generateDirections(n);
+var game = {n: n, board: [], bullets: [], blocks: 0}; //{n, board: ....
+
+//bullets = [[position] [velocity]]
+//board = [[dirty] [velocity]] or null
+
+function initGame(g, size)
+{
+ g.size = size.slice();
+
+ //g.totalsize = g.size.reduce((a,b) => a*b); //surprise? :D
+ g.totalsize = g.size.reduce(function(a,b){return a*b});
+
+ g.bullets.length = 0; 
+ g.board.length = 0;
+ g.blocks = 0;
+
+ farr(g.board, g.totalsize);
+}
+
+function legalPosition(g, carr)
+{
+ //we can't just convert to coord and check!
+
+ for(var d=0;d<g.n;d++)
+ if (carr[d] < 0 || carr[d] >= g.size[d])
+ return false;
+
+ return true;
+}
+
+
+function fillBoard(g, items)
+{
+ while(items)
+ {
+  var coord = Math.floor(Math.random()*(g.totalsize));
+  if (g.board[coord]) continue;
+
+  putBlock(g, coord);
+  items--;
+ }
+}
+
+function fireBullet(g, carr, destroy)
+{
+ if (!legalPosition(g, carr)) return false;
+ 
+ var c = coord(g, carr);
+ if (!destroy && g.board[c]) return false;
+ 
+ for(var t=0,tmp;t<directions.length;t++)
+ {
+  tmp = []; farr(tmp, 2*g.n);
+  aarr(g.n, tmp, 0, carr, 0); //bullet position
+  aarr(g.n, tmp, g.n, directions[t], 0); //bullet velocity
+  g.bullets.push(tmp);
+ }
+ 
+ return true;
+}
+
+function putBlock(g, coord, clear)
+{
+ if (clear && g.board[coord])
+ {
+  g.blocks--;
+  g.board[coord] = null;
+ }
+ else
+ {
+  if (!g.board[coord]) g.blocks++;
+  g.board[coord] = [];
+  farr(g.board[coord], g.n+1);
+ }
+}
+
+function stepBullets(g)
+{
+ for(var t=0;t<g.bullets.length;t++)
+ {
+  aarr(g.n, g.bullets[t], 0, g.bullets[t], g.n); //move bullets, position += velocity
+
+  if (!legalPosition(g, g.bullets[t]))
+  {
+   g.bullets.splice(t--, 1);
+   continue;
+  }
+  
+  var c = coord(g, g.bullets[t]);
+  if (g.board[c])
+  {
+   //add bullet velocity to block velocity
+   g.board[c][0] = 1;
+   aarr(g.n, g.board[c], 1, g.bullets[t], g.n);
+
+   g.bullets.splice(t--, 1);
+   continue;
+  }
+ }
+}
+
+function stepBoard(g, destroy)
+{
+ for(var c=0;c<g.totalsize;c++)
+ {
+  if (g.board[c] && g.board[c][0])
+  {
+   g.board[c][0] = 0;
+ 
+   var pos = carr(g, c);
+  
+   if (destroy)
+   {
+    putBlock(g, c, true);
+    fireBullet(g, pos, true);
+   }
+   else
+   {
+/*
+there's a little problem with this logic. suppose there are two blocks
+but there are 3 bullets, pushing the block by 3 coords. it currently works, even though
+according to logic it shouldn't.
+
+but what would the fix be? if we're moving by [1,1] it makes sense to allow this move
+even if [1, 0] and [0, 1] are not allowed
+
+so maybe a proposed "fix" (which must be an option since it changes the entire effect)
+would be to check how far we can go, but only if one coord is 0 or both coords are the same
+
+but otoh, this would make it less flexible - we can always paint one more block to make this impractical
+so idk
+*/
+    var bullet_pos = pos.slice();
+    var block_pos = pos.slice();
+    aarr(g.n, block_pos, 0, g.board[c], 1);
+    var block_coord = coord(g, block_pos);
+
+    if (!legalPosition(g, block_pos))
+    {
+     putBlock(g, c, true);
+     continue;
+    }
+    else if (!g.board[block_coord])
+    {
+     putBlock(g, c, true);
+     putBlock(g, block_coord);
+     bullet_pos = block_pos;
+    }
+    else putBlock(g, c); //clear velocity
+
+    for(var t=0;t<directions.length;t++)
+    {     
+     var tmp = []; farr(tmp, 2*g.n);
+     aarr(g.n, tmp, 0, bullet_pos, 0);
+     aarr(g.n, tmp, 0, directions[t], 0);
+     aarr(g.n, tmp, g.n, directions[t], 0);
+     
+     if (!legalPosition(g, tmp) || g.board[coord(g, tmp)]) continue;
+     
+     g.bullets.push(tmp);
+    }
+   }
+  }
+ }
+}
+
+</script>
+
+<script>
+var t16Table = document.getElementById('t16-inputmap');
+var bgctx = document.getElementById('t16-bgcanvas').getContext('2d'), ctx = document.getElementById('t16-canvas').getContext('2d'), ctxwidth, ctxheight;
+var t16Style = document.createElement('style');
+document.body.appendChild(t16Style);
+
+var inProgress = false, suspended = false, stepTimeout;
+var shotsFired = 0;
+var gameStack = [];
+
+var destroy = false;
+var initBlocks = 44;
+var x, y; x=y=50;
+var stepTime = 25;
+var size = 10, borderSize = 1;
+var bgcolor, bordercolor, blockcolor, bulletcolor;
+
+function initTable(x, y)
+{
+ t16Table.innerHTML = Array(y+1).join('<tr>'+Array(x+1).join('<td></td>')+'</tr>');
+}
+
+function initRenderer()
+{
+ bgctx.canvas.width = ctx.canvas.width = ctxwidth = x*size + (x+1)*borderSize;
+ bgctx.canvas.height = ctx.canvas.height = ctxheight = y*size + (y+1)*borderSize;
+ 
+ document.getElementById('t16-render').style.width = ctxwidth+'px';
+ document.getElementById('t16-render').style.height = ctxheight+'px';
+ document.getElementById('t16-inputmap').style.width = ctxwidth+'px';
+ document.getElementById('t16-inputmap').style.height = ctxheight+'px';
+
+ bgctx.fillStyle = bordercolor;
+ bgctx.fillRect(0, 0, ctxwidth, ctxheight);
+
+ bgctx.fillStyle = bgcolor;
+ for(var t=0;t<x*y;t++)
+ {
+  fillCanvasRect(bgctx, t/y|0, t%x);
+ }
+}
+
+function fillCanvasRect(ctx, x, y)
+{
+ ctx.fillRect(x*size + (x+1)*borderSize, y*size + (y+1)*borderSize, size, size);
+}
+function paintCanvas(g)
+{
+ ctx.clearRect(0, 0, ctxwidth, ctxheight);
+ ctx.fillStyle=blockcolor;
+ for(var x=0;x<g.size[0];x++)
+ {
+  for(var y=0;y<g.size[1];y++)
+  {
+   if (g.board[coord(g, [x, y])])
+   fillCanvasRect(ctx, x, y);
+  }
+ }
+ ctx.fillStyle=bulletcolor;
+ for(var t=0;t<g.bullets.length;t++)
+ {
+  fillCanvasRect(ctx, g.bullets[t][0], g.bullets[t][1]);
+ }
+}
+
+function printStats()
+{
+ document.getElementById('t16-shotsfired').textContent = shotsFired;
+ document.getElementById('t16-blocksonboard').textContent = game.blocks;
+ document.getElementById('t16-bulletsonboard').textContent = game.bullets.length;
+}
+
+function paint()
+{
+ paintCanvas(game);
+ printStats();
+}
+
+function shoot(e)
+{
+ var cell = e.target;
+ var x = cell.cellIndex, y = cell.parentNode.rowIndex;
+
+ var gameClone = JSON.parse(JSON.stringify(game));
+ if (fireBullet(game, [x, y], destroy))
+ {
+  gameStack.push(gameClone);
+  shotsFired++;
+ }
+
+ tryStartGame();
+}
+
+function paintblocks(e)
+{
+ var cell = e.target;
+ var x = cell.cellIndex, y = cell.parentNode.rowIndex;
+
+ putBlock(game, coord(game, [x, y]), true);
+
+ tryStartGame();
+}
+
+t16Table.oncontextmenu = function(e)
+{
+ e.preventDefault();
+};
+
+t16Table.onmousedown = function(e)
+{
+ e.preventDefault();
+
+ if (e.button)
+ paintblocks(e);
+};
+
+t16Table.onmouseup = function(e)
+{
+ e.preventDefault();
+
+ if (!e.button)
+ shoot(e);
+};
+
+
+var lastCell = null;
+t16Table.onmousemove = function(e)
+{
+ e.preventDefault();
+ if (e.buttons == 2 && lastCell!=e.target)
+ paintblocks(e);
+
+ lastCell=e.target;
+}
+
+function gameStep()
+{
+ inProgress = true;
+ if (!suspended)
+ {
+  stepBullets(game);
+  stepBoard(game, destroy);
+ }
+ paint();
+
+
+ if (game.bullets.length)
+ stepTimeout = setTimeout(gameStep, stepTime);
+ else
+ inProgress = false;
+}
+
+function tryStartGame()
+{
+ if (!inProgress)
+ gameStep();
+}
+
+function stopGame()
+{
+ if (inProgress)
+ {
+  clearTimeout(stepTimeout);
+  inProgress = false;
+ }
+}
+
+function undoShot()
+{
+ if (!gameStack.length) return false;
+
+ game = gameStack.pop();
+ shotsFired--;
+
+ tryStartGame();
+}
+
+function suspendGame()
+{
+ stopGame();
+ suspended = true;
+
+ document.getElementById('t16-suspend').style.display = 'none';
+ document.getElementById('t16-resume').style.display = 'inline';
+}
+
+function unsuspendGame()
+{
+ suspended = false;
+ tryStartGame();
+
+ document.getElementById('t16-suspend').style.display = 'inline';
+ document.getElementById('t16-resume').style.display = 'none';
+}
+
+function readSettings()
+{
+ x = parseInt(document.getElementById('t16-x').value);
+ y = parseInt(document.getElementById('t16-y').value);
+ initBlocks = parseInt(document.getElementById('t16-initblocks').value);
+ stepTime = parseInt(document.getElementById('t16-steptime').value);
+ destroy = document.getElementById('t16-destroy').checked;
+}
+
+function updateStyle()
+{
+ blockcolor = document.getElementById('t16-blockcolor').value;
+ bulletcolor = document.getElementById('t16-bulletcolor').value;
+}
+
+function readBaseStyle()
+{
+ size = parseInt(document.getElementById('t16-blocksize').value);
+ bgcolor = document.getElementById('t16-bgcolor').value;
+ bordercolor = document.getElementById('t16-bordercolor').value;
+ t16Style.innerHTML = '#t16-inputmap td:hover{ background-color: '+bordercolor+';}';
+}
+function updateBaseStyle()
+{
+ readBaseStyle();
+ initRenderer();
+ paint();
+}
+
+readSettings();
+readBaseStyle();
+updateStyle();
+
+
+function newGame(fill)	
+{
+ if (fill === undefined)
+ fill = true;
+ 
+ shotsFired = 0;
+ initGame(game, [x, y]);
+ initRenderer();
+ initTable(x, y);
+ 
+ if (fill)
+ fillBoard(game, initBlocks);
+ 
+ paint();
+}
+
+newGame();
+
+//shoot @ startup, albeit in a way that will move at least some blocks!
+//yes, this is N-dimensional too!
+//NOTE: this isn't really correct, we can hit 2 blocks in a row and fail, we could step game and count blocks
+function getStarted(g)
+{
+ var c, ca;
+ while(true)
+ {
+  c = Math.floor(Math.random()*(g.totalsize));
+  if (g.board[c]) continue;
+  ca = carr(g, c);
+ 
+  //now we need at least one block that differs by one coordinate only
+  var found = false, tca, tc;
+  scan: for(var d=0;d<g.n;d++)
+  {
+   tca = ca.slice();
+   for(var t=0;t<g.size[d];t++)
+   {
+    tca[d] = t;
+    if (g.board[coord(g, tca)])
+    {
+     found = true;
+     break scan;
+    }
+   }
+  }
+
+  if (found)
+  {
+   fireBullet(game, ca);
+   tryStartGame();
+   break;
+  }
+
+ }
+}
+getStarted(game);
+getStarted(game);
+</script>
+<style><body></body></style>

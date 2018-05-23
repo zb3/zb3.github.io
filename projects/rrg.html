@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ margin: 0;
+ padding: 0;
+ -moz-user-select: none;
+ -webkit-user-select: none;
+ user-select: none;
+ font-family: Arial;
+ overflow: hidden;
+}
+#hud-container
+{
+ box-sizing: border-box;
+ position: absolute;
+ right: 0; top: 0;
+ background-color: #111;
+ width: 138px;
+ transform-origin: top right;
+ display: flex;
+ flex-direction: column;
+ justify-content: space-between;
+}
+#hud-container > .top
+{
+ margin: 10px;
+}
+#score-sayer
+{
+ background-color: black;
+ width: 118px;
+ height: 118px;
+ display: flex;
+ align-items:center;
+ justify-content: center;
+ font-size: 40px;
+ color: #99d5dd;
+}
+#lives-container
+{
+ margin-top: 10px;
+ background-color: black;
+ padding: 10px 5px;
+ height: 15px;
+ display: flex;
+ justify-content: space-between;;
+}
+#lives-container span
+{
+ box-sizing: border-box;
+ margin: 0px 5px;
+ width: 100%;
+ height: 100%;
+}
+#lives-container span.on
+{
+ background-color: #aaa;
+ background: linear-gradient(to bottom, #aaa, #555);
+}
+#buttons-container
+{
+ display: flex;
+ justify-content: space-between;
+ margin: 10px -5px 0px -5px;
+}
+#buttons-container .button
+{
+ margin: 0px 5px;
+ padding: 7px 0px;
+ width: 100%;
+ font-size: 18px;
+}
+canvas
+{
+ border-right: 2px solid #444;
+ background: linear-gradient(to top, #0a0a0a, #000);
+ display: block;
+ position: absolute;
+ left: 0; top: 0;
+}
+.flex-column
+{
+ display: flex;
+ flex-direction: column;
+ align-items: stretch;
+}
+.flex-row
+{
+ display: flex;
+ justi
+}
+#gameover
+{
+ position: absolute;
+ top: 0; left: 0;
+ background-color: rgba(10, 10, 10, 0.8);
+ pointer-events: none;
+}
+
+#startup-overlay
+{
+ width: 100%;
+ height: 100%;
+ position: absolute;
+ top: 0; left: 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-direction: column;
+ background: rgba(20, 20, 20, 0.9);
+ font-size: 0.9em;
+}
+.button 
+{
+ display: inline-block;
+ background: black;
+ font-weight: bold;
+ border:none;
+ padding: 10px 20px;
+ font-size: 1.5em;
+ color: #eee;
+ text-align: center;
+}
+.button:active
+{
+ color: #99f4ff;
+}
+#startup-overlay .button
+{
+ margin: 5px;
+ cursor: pointer;
+}
+#startup-overlay, #gameover
+{
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ text-align: center;
+}
+#startup-overlay-inner 
+{
+ width: 80%;
+}
+</style>
+
+<div id="screen-container">
+<canvas id="canvas"></canvas>
+
+<div id="gameover" style="display: none">
+<div id="gameover-inner">
+
+<h1>Game Over :(</h1>
+
+<p>press any key or tap here to try again</p>
+
+
+<span></span>
+
+</div>
+</div>
+
+<div id="hud-container">
+
+<div class="top">
+<div id="score-sayer">
+<span>0</span>
+</div>
+
+<div id="lives-container">
+<span class="on"></span><span class="on"></span><span class="on"></span>
+</div>
+
+<div id="buttons-container" ontouchstart="event.stopPropagation();">
+<span class="button" onclick="tryPauseResume();this.blur();">| |</span> <span class="button" onclick="newGame();this.blur();">↻</span>
+</div>
+
+</div>
+
+
+</div>
+</div>
+
+<div id="startup-overlay">
+<div id="startup-overlay-inner">
+
+<h1>Rotating Rectangle Game</h1>
+
+<div style="text-align: justify; margin-bottom: 20px;">
+<p>This game is simple - avoid obstacles and go as far as you can. Your vehicle (rectangle) is rotating, but you can control the rotation speed to some degree, and you can temporarily suspend the rotation, which is in most cases necessary to pass an obstacle.</p>
+
+
+<p>Use <b>left/right arrow</b> or <b>a/d keys</b> to move horizontally, <b>up/down arrow</b> or <b>w/d</b> keys to rotate faster/slower and <b>space</b> or <b>enter</b> key to temporarily suspend the rotation.</p>
+
+<p>
+On mobile, this game is harder... <b>press the left part of the screen</b> to suspend the rotation, and on the right part, <b>pan left/right</b> to move and <b>pan up/down</b> (over 30px) to control the rotation speed.
+</p>
+
+<p><b>Good luck!</b></p>
+</div>
+
+<div><span class="button" onclick="newGame();">New Game</span><span class="button" onclick="tryFullscreen();">New Game in fullscreen</span></div>
+
+</div>
+</div>
+
+<script>
+var width = 640, height = 432;
+var guiWidth = 139; //coz border...
+var tickTime = 20;
+var cradius = 70, bw2 = 10, bh2 = 60;
+var obstacleHeight = 20;
+var gateWidth = 48; //30 seemed too impossible
+var gateBorder = cradius;
+var minObstacleDist = 220, maxObstacleDist = 400;
+var minGameSpeed = 1;
+var gameSpeedIncreaseEvery = 5;
+var gameSpeedDelta = 0.2;
+var gameSpeedMaxIncreaseAt = 20;
+var cspeedXMax = 6, cspeedXDelta = 0.7;
+var crotSpeedMin = 0.01, crotSpeedMax = 0.15;
+var crotSpeedDelta = 0.001;
+var alternatingRotation = true;
+var maxFreezeDist = 2*cradius+10;
+var owedFreezeDist = 0;
+var freezeRefillSpeed = 15;
+var initialLives = 4;
+
+var cx, crot, gameOn, currSpeed, passedObstacles, score, lives, cspeedX, crotSpeed, crotMode, obstacles = [], gameInterval;
+var freezeDistLeft;
+var gameEndTime = 0;
+
+function newGame()
+{
+ stopGame();
+ 
+ cx = width/2; crot = 0; gameOn = true;
+ currSpeed = 1; passedObstacles = 0;
+ score = 0; lives = initialLives; cspeedX = 0;
+ crotSpeed = 0.012; crotMode = 0;
+ obstacles = []; 
+ freezeDistLeft = maxFreezeDist;
+ tc.enable();
+ 
+ gameInterval = setInterval(update, tickTime);
+ update();
+ displayOver(false);
+ hideStartup();
+}
+
+function stopGame()
+{
+ clearInterval(gameInterval);
+ gameInterval = null;
+}
+
+//keysOn is a part of state, but is not reset on newGame
+
+
+
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function rand2(a, b)
+{
+ return Math.random()<0.5?a:b;
+}
+
+function moveObstacles(x)
+{
+ for(var t=0;t<obstacles.length;t++)
+ {
+  obstacles[t].center += x;
+ }
+ 
+ while(!obstacles.length || obstacles[0].center+obstacleHeight/2>=0)
+ {
+  var obstacle = {
+   center: obstacles.length ? obstacles[0].center - rand(minObstacleDist, maxObstacleDist) : 0, //center...
+   gateX1: 0,
+   gateX2: 0,
+   centerPassed: false,
+   wholePassed: false
+  };
+  
+  var gateCenterX = rand(gateBorder+gateWidth/2, width-gateBorder-gateWidth/2);
+  
+  obstacle.gateX1 = gateCenterX-gateWidth/2;
+  obstacle.gateX2 = gateCenterX+gateWidth/2;
+  
+  obstacles.unshift(obstacle);
+ }
+ 
+ for(var t=0;t<obstacles.length;t++)
+ {
+  if (obstacles[t].center-obstacleHeight/2>=height)
+  obstacles.splice(t--, 1);
+ }
+}
+
+
+
+function setGameHeight(newHeight)
+{
+ moveObstacles(newHeight/2-height/2);
+ height = newHeight;
+} 
+
+function update()
+{
+ if (tc.on) //controlled by touch
+ {
+  cx = Math.max(cradius, Math.min(width-cradius, tc.posX));
+ }
+ else
+ {
+  //update X speed with clamp
+  if (keysDown.left)
+  cspeedX = Math.max(-cspeedXMax, cspeedX-cspeedXDelta);
+  else if (keysDown.right)
+  cspeedX = Math.min(cspeedXMax, cspeedX+cspeedXDelta);
+  else cspeedX = 0;
+  
+  if (cspeedX)
+  cx = Math.max(cradius, Math.min(width-cradius, cx+cspeedX*currSpeed));
+ }
+  
+ if (keysDown.up || tc.speedState === -1)
+ crotSpeed += crotSpeedDelta;
+ else if (keysDown.down || tc.speedState === 1)
+ crotSpeed -= crotSpeedDelta;
+ 
+ crotSpeed = Math.max(crotSpeedMin, Math.min(crotSpeed, crotSpeedMax));
+ 
+ moveObstacles(currSpeed);
+ 
+ for(var t=0;t<obstacles.length;t++)
+ {
+  if (!obstacles[t].wholePassed && obstacles[t].center>obstacleHeight/2+height/2+cradius)
+  {
+   obstacles[t].wholePassed = true;
+   owedFreezeDist = maxFreezeDist;
+   
+   passedObstacles++;
+   if (!obstacles[t].crashed)
+   score++;
+   
+   if (passedObstacles<=gameSpeedMaxIncreaseAt && !(passedObstacles%gameSpeedIncreaseEvery))
+   currSpeed += gameSpeedDelta;
+  }
+  
+  if (alternatingRotation && !obstacles[t].centerPassed && obstacles[t].center>height/2)
+  {
+   obstacles[t].centerPassed = true;
+   crotMode = 1-crotMode;
+  }
+ }
+ 
+ if (owedFreezeDist)
+ {
+  freezeDistLeft = Math.min(maxFreezeDist, freezeDistLeft + Math.min(freezeRefillSpeed, owedFreezeDist));
+  owedFreezeDist -= Math.min(freezeRefillSpeed, owedFreezeDist);
+ }
+ 
+ if (keysDown.space && freezeDistLeft>0)
+ {
+  freezeDistLeft = Math.max(freezeDistLeft - currSpeed, 0);
+ }
+ else
+ {  
+  crot = (crot+(crotMode?-crotSpeed:crotSpeed))%(Math.PI);
+ }
+
+ 
+ for(var t=0;t<obstacles.length;t++)
+ {
+  if (obstacles[t].wholePassed)
+  break;
+ }
+ 
+ var collides = t && isCollision(obstacles[t-1]);
+ if (collides && !obstacles[t-1].crashed)
+ {
+  obstacles[t-1].crashed = true;
+  lives--;
+ }
+ 
+ paint(false);
+ 
+ if (!lives)
+ {
+  gameOver();
+ }
+}
+
+function gameOver()
+{
+ gameEndTime = Date.now();
+ gameOn = false;
+ stopGame();
+ displayOver(true);
+}
+
+function tryPauseResume()
+{
+ if (gameOn && gameInterval !== null)
+ {
+  stopGame();
+ }
+ else if (gameOn)
+ {
+  gameInterval = setInterval(update, tickTime);
+ }
+}
+
+
+</script>
+
+<script>
+var livesElements = document.getElementById('lives-container').children;
+var scoreSayer = document.getElementById('score-sayer').children[0];
+
+var scoreCache = 0, livesCache = 0;
+var ctx = canvas.getContext('2d');
+var scale;
+var overScreen = false;
+var elementsToScale = [document.getElementById('hud-container'), document.getElementById('gameover-inner'), document.getElementById('startup-overlay-inner')]
+
+function initRenderer()
+{
+ scale = innerWidth/(width+guiWidth);
+ setGameHeight(innerHeight/scale);
+ 
+ document.getElementById('gameover').style.height=innerHeight+'px';
+ document.getElementById('gameover').style.width=scale*width+'px';
+ document.getElementById('hud-container').style.height=(innerHeight/scale)+'px';
+ 
+ for(var t=0;t<elementsToScale.length;t++)
+ elementsToScale[t].style.transform='scale('+scale+')';
+
+ canvas.width = width*scale;
+ canvas.height = innerHeight;
+ ctx.scale(scale, scale);
+}
+
+initRenderer();
+
+window.addEventListener('resize', initRenderer);
+
+
+var cradiusColor = 'hsl(186.7,100%,4%)';
+var cradiusOutlineColor = 'hsl(186.7,100%,24%)';
+
+
+var obstacleGradient = ctx.createLinearGradient(0, 0, 0, obstacleHeight);
+obstacleGradient.addColorStop(0, 'hsl(0,0%,66.7%)');
+obstacleGradient.addColorStop(1, 'hsl(0,0%,33.3%)');
+
+var crashedObstacleGradient = ctx.createLinearGradient(0, 0, 0, obstacleHeight);
+crashedObstacleGradient.addColorStop(0,'hsl(0,79.4%,79%)');
+crashedObstacleGradient.addColorStop(1,'hsl(0,21.2%,39.8%)');
+
+var rectGradient = ctx.createLinearGradient(0, 0, 2*bw2, 0);
+
+//create a cylinder-like gradient
+//3 steps arent enough...
+var gsteps = 10, gstart = [0x80, 0x80, 0x80], gend = [0xbb, 0xbb, 0xbb];
+for(var t=0;t<gsteps;t++)
+{
+ var v = Math.sin(Math.PI*(t/(gsteps-1)));
+ rectGradient.addColorStop(t/(gsteps-1),'rgb('+Math.round(v*gend[0]+(1-v)*gstart[0])+','+Math.round(v*gend[1]+(1-v)*gstart[1])+','+Math.round(v*gend[2]+(1-v)*gstart[2])+')');
+}
+
+var rectOutline = '#ccc';
+ctx.strokeStyle = rectOutline;
+
+function langle(x)
+{
+ return -Math.acos(2*x-1);
+}
+
+function paint(crashing)
+{
+ ctx.clearRect(0, 0, width+1, height);
+  
+ ctx.fillStyle = cradiusColor;
+ var freezeAngle = langle((maxFreezeDist-freezeDistLeft)/maxFreezeDist);
+ 
+ ctx.beginPath();
+ if (freezeDistLeft<maxFreezeDist)
+ ctx.arc(cx, height/2, cradius, 5*Math.PI/2+freezeAngle, 1*Math.PI/2-freezeAngle);
+ else
+ ctx.arc(cx, height/2, cradius, 0, 2*Math.PI);
+ ctx.fill();
+
+ ctx.beginPath();
+ ctx.save();
+ ctx.shadowBlur = 10;
+ ctx.strokeStyle = ctx.shadowColor = cradiusOutlineColor;
+ ctx.arc(cx, height/2, cradius, 0, 2*Math.PI);
+ ctx.stroke();
+ ctx.restore();
+ 
+ var lastCrashed = false;
+ ctx.fillStyle = obstacleGradient;
+  
+ for(var t=0;t<obstacles.length;t++)
+ {  
+  if (obstacles[t].crashed && !lastCrashed)
+  ctx.fillStyle = crashedObstacleGradient, lastCrashed = true;
+  else if (!obstacles[t].crashed && lastCrashed)
+  ctx.fillStyle = obstacleGradient, lastCrashed = false;
+  
+  ctx.save();
+  ctx.translate(0, obstacles[t].center-obstacleHeight/2);
+    
+  ctx.fillRect(0, 0, obstacles[t].gateX1, obstacleHeight);
+  ctx.fillRect(obstacles[t].gateX2, 0, width-obstacles[t].gateX2, obstacleHeight);
+  ctx.restore();
+ }
+ 
+ ctx.fillStyle = rectGradient;
+ ctx.save();
+ ctx.translate(cx, height/2);
+ ctx.rotate(crot);
+ ctx.translate(-bw2, -bh2);
+ ctx.fillRect(0, 0, 2*bw2, 2*bh2); 
+ ctx.strokeRect(0, 0, 2*bw2, 2*bh2);
+ ctx.restore(); 
+ 
+ updateGUI(score*10, lives-1);
+}
+
+function updateGUI(score, lives)
+{
+ if (score != scoreCache)
+ {
+  scoreSayer.textContent = score;
+  scoreCache = score;
+ }
+ 
+ if (lives != livesCache)
+ {
+  for(var t=0;t<livesElements.length;t++)
+  {
+   livesElements[t].className = t<lives ? 'on' : '';
+  }
+  
+  livesCache = lives;
+ }
+}
+
+function displayOver(on)
+{
+ overScreen = on;
+ document.getElementById('gameover').style.display = on ? '' : 'none';
+}
+
+function hideStartup()
+{
+ document.getElementById('startup-overlay').style.display = 'none';
+}
+
+function tryFullscreen()
+{
+ var container = document.body;
+ var fullScreenFunc = container.requestFullscreen || container.mozRequestFullScreen || container.webkitRequestFullscreen;
+ 
+ if (fullScreenFunc)
+ fullScreenFunc.call(container);
+ 
+ newGame();
+}
+</script>
+
+
+<script>
+function isCollision(cobstacle)
+{
+ var t;
+ 
+ //skip if can't collide with radius. this is an optimization
+ if (cobstacle.center+obstacleHeight/2 < height/2-cradius)
+ return false;
+ 
+ 
+ var bPointCoords = [-bw2, -bh2, bw2, -bh2, -bw2, bh2, bw2, bh2];
+ var nbPointCoords = [];
+
+ //block inside a wall
+ var cos = Math.cos(crot), sin = Math.sin(crot);
+ for(t=0;t<8;t+=2)
+ {
+  nbPointCoords[t] = bPointCoords[t]*cos - bPointCoords[t+1]*sin;
+  nbPointCoords[t+1] = bPointCoords[t+1]*cos + bPointCoords[t]*sin;
+ }
+
+ //wall coords inside a block
+ var rCoords = [0, cobstacle.center-obstacleHeight/2, cobstacle.gateX1, cobstacle.center-obstacleHeight/2,
+0, cobstacle.center+obstacleHeight/2, cobstacle.gateX1, cobstacle.center+obstacleHeight/2,
+cobstacle.gateX2, cobstacle.center-obstacleHeight/2, width, cobstacle.center-obstacleHeight/2,
+cobstacle.gateX2, cobstacle.center+obstacleHeight/2, width, cobstacle.center+obstacleHeight/2];
+
+ for(t=0;t<16;t+=2)
+ {
+  rCoords[t] -= cx;
+  rCoords[t+1] -= height/2;
+ }
+
+
+ for(t=0;t<4;t++)
+ {
+  if (pointInRect(nbPointCoords[2*t], nbPointCoords[2*t+1], rCoords[0], rCoords[1], rCoords[6], rCoords[7]))
+  return true;
+ 
+  if (pointInRect(nbPointCoords[2*t], nbPointCoords[2*t+1], rCoords[8], rCoords[9], rCoords[14], rCoords[15]))
+  return true;
+ }
+
+
+
+
+ var newRCoords = [];
+
+ cos = Math.cos(-crot); sin = Math.sin(-crot);
+
+ for(t=0;t<16;t+=2)
+ {
+  newRCoords[t] = rCoords[t]*cos - rCoords[t+1]*sin;
+  newRCoords[t+1] = rCoords[t+1]*cos + rCoords[t]*sin;
+ }
+
+ for(t=0;t<16;t+=2)
+ {
+  if (pointInRect(newRCoords[t], newRCoords[t+1], -bw2, -bh2, bw2, bh2))
+  return true;
+ }
+}
+
+function pointInRect(px, py, rx1, ry1, rx2, ry2)
+{
+ var t;
+ 
+ if (rx2 < rx1)
+ {
+  t = rx1;
+  rx1 = rx2;
+  rx2 = t;
+ }
+ 
+ if (ry2 < ry1)
+ {
+  t = ry1;
+  ry1 = ry2;
+  ry2 = t;
+ }
+
+ return px>=rx1 && px<=rx2 && py>=ry1 && py<=ry2;
+}
+
+</script>
+
+<script>
+var keysDown = {up: false, down: false, left: false, right: false, space: false};
+
+function mapKey(keyCode)
+{
+ if (keyCode === 65 || keyCode === 37)
+ return 'left';
+ 
+ if (keyCode === 68 || keyCode === 39)
+ return 'right';
+ 
+ if (keyCode === 87 || keyCode === 38)
+ return 'up';
+ 
+ if (keyCode === 83 || keyCode === 40)
+ return 'down';
+ 
+ if (keyCode === 32 || keyCode === 13)
+ return 'space';
+  
+ return 'void';
+}
+
+document.addEventListener('keydown', function(e)
+{
+ if (e.keyCode === 80)
+ tryPauseResume();
+ else
+ {
+  keysDown[mapKey(e.keyCode)] = true;
+ } 
+});
+
+document.addEventListener('keydown', function(e)
+{
+ if (e.repeat || gameOn || Date.now()-gameEndTime<700) return;
+ 
+ if (overScreen || e.keyCode === 32 || e.keyCode === 13)
+ newGame();
+});
+
+document.addEventListener('keyup', function(e){keysDown[mapKey(e.keyCode)] = false;});
+
+if ('ontouchstart' in window)
+{
+ var spaceDownID = null, touch;
+
+ document.addEventListener('touchstart', function(e)
+ {
+  if (spaceDownID !== null || !gameOn) return; 
+
+  for(var t=0;t<e.changedTouches.length;t++)
+  {
+   touch = e.changedTouches[t];
+   if (touch.pageX < innerWidth/2)
+   {
+    keysDown.space = true;
+    spaceDownID = touch.identifier;
+    e.preventDefault();
+    break;
+   }
+  }
+ }, {passive: false});
+ 
+ function spTouchEnd(e)
+ {
+  if (spaceDownID === null) return;
+
+  for(var t=0;t<e.changedTouches.length;t++)
+  {
+   touch = e.changedTouches[t];
+   if (touch.identifier === spaceDownID)
+   {
+    keysDown.space = false;
+    spaceDownID = null;
+    break;
+   }
+  }
+ };
+
+ document.addEventListener('touchend', spTouchEnd);
+ document.addEventListener('touchcancel', spTouchEnd);
+}
+
+document.getElementById('canvas').addEventListener('touchstart', function()
+{
+ if (!gameOn) newGame();
+});
+
+
+var TControls = function(getInitialX)
+{
+ this.speedThreshold = 30;
+ this.xNoLockThreshold = 5;
+ this.amplifyX = 1;
+ 
+ this.on = false;
+ this.enabled = false;
+ this.posX = 0;
+
+ this.id = null;
+ this.lastX = this.lastY = 0;
+ this.speedState = 0;
+ this.getInitialX = getInitialX;
+
+ this.handleStart = this.handleStart.bind(this);
+ this.handleMove = this.handleMove.bind(this);
+ this.handleEnd = this.handleEnd.bind(this);
+};
+
+TControls.prototype.enable = function()
+{
+ if (this.enabled) return;
+ 
+ document.addEventListener('touchstart', this.handleStart, {passive: false});
+ document.addEventListener('touchmove', this.handleMove, {passive: false});
+ document.addEventListener('touchend', this.handleEnd);
+ document.addEventListener('touchcancel', this.handleEnd);
+ this.enabled = true;
+};
+TControls.prototype.disable = function()
+{
+ if (!this.enabled) return;
+ document.removeEventListener('touchstart', this.handleStart);
+ document.removeEventListener('touchmove', this.handleMove);
+ document.removeEventListener('touchend', this.handleEnd);
+ document.removeEventListener('touchcancel', this.handleEnd);
+ this.enabled = false;
+};
+TControls.prototype.handleStart = function(e)
+{
+ if (this.id!==null || !e.changedTouches || !e.changedTouches.length || e.target.tagName === 'BUTTON')
+ return;
+ 
+ var touch = e.changedTouches[0];
+ if (touch.pageX<innerWidth/2)
+ return;
+
+ this.id = touch.identifier;
+ this.on = true;
+ 
+ this.lastX = touch.pageX;
+ this.lastY = touch.pageY;
+ this.locked = false;
+ this.initial = this.getInitialX();
+ this.posX = this.initial;
+ 
+ e.preventDefault();
+};
+TControls.prototype.handleMove = function(e)
+{
+ if (this.id===null || !e.changedTouches)
+ return;
+ 
+ for(var t=0;t<e.changedTouches.length;t++)
+ {
+  var touch = e.changedTouches[t];
+  if (touch.identifier != this.id)
+  continue;
+
+  var diffX = touch.pageX-this.lastX;
+  
+  if (this.locked !== 1)
+  this.posX = this.initial + this.amplifyX*(diffX);
+  
+  var diffY = touch.pageY-this.lastY;
+
+  if (this.locked !== 0 && Math.abs(diffY)>this.speedThreshold)
+  this.locked = 1;
+  else if (this.locked !== 1 && Math.abs(diffX)>this.xNoLockThreshold)
+  this.locked = 0;
+
+  if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY)>this.speedThreshold)
+  this.speedState = Math.sign(diffY);
+  else
+  this.speedState = 0;
+
+  e.preventDefault();
+  break;
+ }
+};
+TControls.prototype.handleEnd = function(e)
+{
+ if (this.id===null || !e.changedTouches)
+ return;
+ 
+ for(var t=0;t<e.changedTouches.length;t++)
+ {
+  var touch = e.changedTouches[t];
+  if (touch.identifier === this.id)
+  {
+   this.speedState = 0;
+   this.id = null;
+   break;
+  }
+ }
+};
+
+
+
+
+var tc = new TControls(function(){return cx;});
+
+
+
+
+
+</script>
+<style><body></body></style>
+</html>

@@ -1,10 +1,59 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Please wait...</title>
-		<meta http-equiv="refresh" content="0; url=http://zb3.strefa.pl/download.html">
+		<title>zb3</title>
+		<link rel="stylesheet" type="text/css" href="css/style.css">
 	</head>
-	<script type="text/javascript">
-	location = 'http://zb3.strefa.pl/download.html';
-	</script>
+	<!-- body -->
+		<header>
+			<span>zb3</span>
+			<a href="index.html">Home</a>
+			<a href="tools.html">Tools</a>
+			<a href="projects.html">Projects</a>
+			<a class="active">Download</a>
+			<span></span> <!-- grrrrrr.... -->
+		</header>
+		<main>
+			My non-web projects here ;)<br>Please report bugs <a href="mailto:sgv@o2.pl">here</a><br><br>
+
+			<a href="download/zb3shell-1.1.tar.gz">zb3shell</a>(based on VT100.js) - php shell whose task is to completely emulate xterm, but in fact it's task is to provide access to a web server when you don't have SSH access. It supports downloading/uploading files and has a built in file editor (with regex, unicode support). I extended vt100.js to provide 256 colors, more mouse events, vttest compatibility and way more! This requires web server, PHP, and modern web browser, because this project uses modern web technologies like Server Sent Events.<br>First release, may contain bugs.
+
+			<br><br>
+			<a href="download/phptools.tar.gz">zb3's php tools</a> - php shell and file editor. readme included<br> zb3shell.php updated; zb3sh.php is an interactive version of zb3shell.php
+
+			<br><br>
+
+			<a href="download/zb3cbshell.tar.gz">zb3's connect back shell</a> - connect back shell (NOT a shellcode) that allows you to run programs which require a TTY. you can run programs like nano, vi (who uses it anyway...), mc (yes, gpm works fine) and many more. unlike ssh it does not require user's credentials, so it's best for eg. webhostings where you have access to PHP(exec, shell exec) or SSI(with exec), but you don't have access to SSH. it even supports resizing and terminal detection.<br><br>
+
+			<a href="download/zb3cbproxy.tar.gz">zb3's connect back proxy (SOCKS5)</a> - connect back (or not) SOCKS5 proxy which will allow you to use your website as a proxy. But not as a "web proxy" or HTTP proxy. This is a real, SOCKS5 proxy. This consists of 2 parts. You launch "dual server" on your computer, then launch server on the target, and configure firefox. Simple, useful, and I haven't seen any tool like this on the internet.<br><br>
+			
+			<a href="download/suer.c">suer</a> - A small C program that lets you run non-interactive commands as other user using su or sudo without a tty or interactive password prompt. Password can be given as an argument or read from stdin. This tool can also help bruteforcing local accounts since the login timeout may be skipped and it's return code may be checked programatically.<br><br>
+			
+			<a href="download/assembly-tools.tar.gz">assembly tools</a> - Tools written in python to display string / function referecnes in  an objdump disassembly of ARM and MIPS ELF executables, plus a tool to insert NOPs in ARM ELF executables. They require objdump and readelf installed.<br><br>
+			
+			<a href="download/shsearch.tar.gz">shsearch</a> - A lighweight dictionary based HTTP scanner written in python designed to find shells and other interesting things...<br><br>
+
+			<a href="download/zgitignore.tar.gz">.zgitignore</a> - A little python library for checking if a file is ignored by the .zgitignore file, compatible with .gitignore syntax<br><br>
+
+			<a href="download/zgit.tar.gz">zgit</a> - Tool for managing snapshots of a directory (push/pull to FTP server, check status etc). I use it as a substitute of a version control system for my toy projects. Just "zgit push" after each commit. You can also use .zgitignore file. (so as you may've guessed, this requires .zgitignore library :D)<br><br>
+
+			<a href="download/stopwatch.c">stopwatch</a> - 2KB "pauseable" linux terminal stopwatch.<br><br>
+			
+			<a href="download/splitab.py">SplitAB</a> - <span class="boldgrey">[zombie]</span> Split file into two parts just by clicking on a line to move it to another file. Good for selecting packages from file. Written in Python 2 + PyGTK<br><br>
+
+			<a href="download/teleport.tar.gz">teleport</a> - <span class="boldgrey">[zombie]</span> a program to transfer one big file to another machine via network with resume option. Written in C++, contains readme.
+			<br><br>
+
+			<a href="download/malbolge.tar.gz">Malbolge VM + Code generators</a> - VM and code generators for the most useful programming language ever created - Malbolge, written in JS. I've implemened 3 different code generators, including the shortest possible, fixed length generator which can actually make use of the default memory after the end of the program. The world is saved!
+			<br><br>
+
+			<a href="download/gtkdrag.zip">gtk drag</a> - an experiment to see if it is possible to implement some kind of "tab drag drop" in GTK2. this is only an experiment, the code isn't written properly, that was just for fun and may not be working at all<br><br>
+
+			<a href="download/termpaint.zip">termpaint</a> - my program to play with when i'm bored. its just putting # at a given position in the terminal, supports lines (BH algo)<br><br>
+
+			<a href="download/3dcube.zip">3d Cube</a> - my program to test what 3D cube looks like in the terminal, with movement. auto resizing (lines using BH algo)<br><br><a href="download/testwave.zip">testwave</a> = nothing interesting, really<br><br>
+
+			<a href="download/tabsstruct.zip">terminal tabs</a> - terminal htop-like tabs sample, use arrows to navigate, nothing interesting.<br><br>
+		</main>
+	</body>
 </html>

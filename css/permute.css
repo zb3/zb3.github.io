@@ -1,0 +1,23 @@
+.permute-modetab {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-block;
+    padding: 4px;
+    border: none;
+    background: black;
+    color: inherit;
+    font-size: inherit;
+    border-bottom: 2px solid grey;
+    margin: 3px;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+.permute-modetab:active {
+    background: black;
+}
+.permute-modetab.active {
+    border-bottom-color: cyan;
+}
+#permute-numberpart-tset {
+    display: none;
+}

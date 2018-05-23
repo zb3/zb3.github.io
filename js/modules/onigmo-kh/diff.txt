@@ -1,0 +1,1984 @@
+Only in pr/Onigmo/enc: big5.c
+Only in pr/Onigmo/enc: cp1251.c
+Only in pr/Onigmo/enc: cp932.c
+Only in pr/Onigmo/enc: euc_jp.c
+Only in pr/Onigmo/enc: euc_kr.c
+Only in pr/Onigmo/enc: euc_tw.c
+Only in pr/Onigmo/enc: gb18030.c
+Only in pr/Onigmo/enc: iso8859_10.c
+Only in pr/Onigmo/enc: iso8859_11.c
+Only in pr/Onigmo/enc: iso8859_13.c
+Only in pr/Onigmo/enc: iso8859_14.c
+Only in pr/Onigmo/enc: iso8859_15.c
+Only in pr/Onigmo/enc: iso8859_16.c
+Only in pr/Onigmo/enc: iso8859_2.c
+Only in pr/Onigmo/enc: iso8859_3.c
+Only in pr/Onigmo/enc: iso8859_4.c
+Only in pr/Onigmo/enc: iso8859_5.c
+Only in pr/Onigmo/enc: iso8859_6.c
+Only in pr/Onigmo/enc: iso8859_7.c
+Only in pr/Onigmo/enc: iso8859_8.c
+Only in pr/Onigmo/enc: iso8859_9.c
+Only in pr/Onigmo/enc: koi8.c
+Only in pr/Onigmo/enc: koi8_r.c
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/enc/mktable.c Onigmo/enc/mktable.c
+--- pr/Onigmo/enc/mktable.c	2016-09-25 17:53:08.293146044 +0200
++++ Onigmo/enc/mktable.c	2016-09-22 15:37:54.853680939 +0200
+@@ -39,22 +39,6 @@
+ #define ASCII                0
+ #define UNICODE_ISO_8859_1   1
+ #define ISO_8859_1           2
+-#define ISO_8859_2           3
+-#define ISO_8859_3           4
+-#define ISO_8859_4           5
+-#define ISO_8859_5           6
+-#define ISO_8859_6           7
+-#define ISO_8859_7           8
+-#define ISO_8859_8           9
+-#define ISO_8859_9          10
+-#define ISO_8859_10         11
+-#define ISO_8859_11         12
+-#define ISO_8859_13         13
+-#define ISO_8859_14         14
+-#define ISO_8859_15         15
+-#define ISO_8859_16         16
+-#define KOI8                17
+-#define KOI8_R              18
+ 
+ typedef struct {
+   int   num;
+@@ -64,23 +48,7 @@
+ static ENC_INFO Info[] = {
+   { ASCII,               "ASCII" },
+   { UNICODE_ISO_8859_1,  "UNICODE_ISO_8859_1"  },
+-  { ISO_8859_1,  "ISO_8859_1"  },
+-  { ISO_8859_2,  "ISO_8859_2"  },
+-  { ISO_8859_3,  "ISO_8859_3"  },
+-  { ISO_8859_4,  "ISO_8859_4"  },
+-  { ISO_8859_5,  "ISO_8859_5"  },
+-  { ISO_8859_6,  "ISO_8859_6"  },
+-  { ISO_8859_7,  "ISO_8859_7"  },
+-  { ISO_8859_8,  "ISO_8859_8"  },
+-  { ISO_8859_9,  "ISO_8859_9"  },
+-  { ISO_8859_10, "ISO_8859_10" },
+-  { ISO_8859_11, "ISO_8859_11" },
+-  { ISO_8859_13, "ISO_8859_13" },
+-  { ISO_8859_14, "ISO_8859_14" },
+-  { ISO_8859_15, "ISO_8859_15" },
+-  { ISO_8859_16, "ISO_8859_16" },
+-  { KOI8,        "KOI8" },
+-  { KOI8_R,      "KOI8_R" }
++  { ISO_8859_1,  "ISO_8859_1"  }
+ };
+ 
+ 
+@@ -95,7 +63,6 @@
+   switch (enc) {
+   case UNICODE_ISO_8859_1:
+   case ISO_8859_1:
+-  case ISO_8859_9:
+     if (c == 0xaa) return 1;
+     if (c == 0xb5) return 1;
+     if (c == 0xba) return 1;
+@@ -103,157 +70,7 @@
+     if (c >= 0xd8 && c <= 0xf6) return 1;
+     if (c >= 0xf8 && c <= 0xff) return 1;
+     break;
+-
+-  case ISO_8859_2:
+-    if (c == 0xa1 || c == 0xa3) return 1;
+-    if (c == 0xa5 || c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c >= 0xae && c <= 0xaf) return 1;
+-    if (c == 0xb1 || c == 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_3:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xb1) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbc) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xc2) return 1;
+-    if (c >= 0xc4 && c <= 0xcf) return 1;
+-    if (c >= 0xd1 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xe2) return 1;
+-    if (c >= 0xe4 && c <= 0xef) return 1;
+-    if (c >= 0xf1 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_4:
+-    if (c >= 0xa1 && c <= 0xa3) return 1;
+-    if (c == 0xa5 || c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c == 0xae) return 1;
+-    if (c == 0xb1 || c == 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_5:
+-    if (c >= 0xa1 && c <= 0xcf && c != 0xad) return 1;
+-    if (c >= 0xd0 && c <= 0xff && c != 0xf0 && c != 0xfd) return 1;
+-    break;
+-
+-  case ISO_8859_6:
+-    if (c >= 0xc1 && c <= 0xda) return 1;
+-    if (c >= 0xe0 && c <= 0xf2) return 1;
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c == 0xb6) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xbf) return 1;
+-    if (c == 0xc0) return 1;
+-    if (c >= 0xc1 && c <= 0xdb && c != 0xd2) return 1;
+-    if (c >= 0xdc && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-    if (c == 0xb5) return 1;
+-    if (c >= 0xe0 && c <= 0xfa) return 1;
+-    break;
+-
+-  case ISO_8859_10:
+-    if (c >= 0xa1 && c <= 0xa6) return 1;
+-    if (c >= 0xa8 && c <= 0xac) return 1;
+-    if (c == 0xae || c == 0xaf) return 1;
+-    if (c >= 0xb1 && c <= 0xb6) return 1;
+-    if (c >= 0xb8 && c <= 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_11:
+-    if (c >= 0xa1 && c <= 0xda) return 1;
+-    if (c >= 0xdf && c <= 0xfb) return 1;
+-    break;
+-
+-  case ISO_8859_13:
+-    if (c == 0xa8) return 1;
+-    if (c == 0xaa) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xb5) return 1;
+-    if (c == 0xb8) return 1;
+-    if (c == 0xba) return 1;
+-    if (c >= 0xbf && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_14:
+-    if (c == 0xa1 || c == 0xa2) return 1;
+-    if (c == 0xa4 || c == 0xa5) return 1;
+-    if (c == 0xa6 || c == 0xa8) return 1;
+-    if (c >= 0xaa && c <= 0xac) return 1;
+-    if (c >= 0xaf && c <= 0xb5) return 1;
+-    if (c >= 0xb7 && c <= 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_15:
+-    if (c == 0xaa) return 1;
+-    if (c == 0xb5) return 1;
+-    if (c == 0xba) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xff) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xb4) return 1;
+-    if (c == 0xb8) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c == 0xbd) return 1;
+-    if (c == 0xbe) return 1;
+-    break;
+-
+-  case ISO_8859_16:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa2) return 1;
+-    if (c == 0xa3) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xaa) return 1;
+-    if (c == 0xac) return 1;
+-    if (c == 0xae) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xb2) return 1;
+-    if (c == 0xb3) return 1;
+-    if (c == 0xb4) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c == 0xbd) return 1;
+-    if (c == 0xbe) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xde) return 1;
+-    if (c >= 0xdf && c <= 0xff) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c == 0xa3 || c == 0xb3) return 1;
+-    /* fall */
+-  case KOI8:
+-    if (c >= 0xc0 && c <= 0xff) return 1;
+-    break;
+-
++    
+   default:
+     exit(-1);
+   }
+@@ -271,28 +88,9 @@
+   switch (enc) {
+   case UNICODE_ISO_8859_1:
+   case ISO_8859_1:
+-  case ISO_8859_2:
+-  case ISO_8859_3:
+-  case ISO_8859_4:
+-  case ISO_8859_5:
+-  case ISO_8859_6:
+-  case ISO_8859_7:
+-  case ISO_8859_8:
+-  case ISO_8859_9:
+-  case ISO_8859_10:
+-  case ISO_8859_11:
+-  case ISO_8859_13:
+-  case ISO_8859_14:
+-  case ISO_8859_15:
+-  case ISO_8859_16:
+-  case KOI8:
+     if (c == 0xa0) return 1;
+     break;
+ 
+-  case KOI8_R:
+-    if (c == 0x9a) return 1;
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -312,29 +110,9 @@
+     if (c == 0xad) return 1;
+     /* fall */
+   case ISO_8859_1:
+-  case ISO_8859_2:
+-  case ISO_8859_3:
+-  case ISO_8859_4:
+-  case ISO_8859_5:
+-  case ISO_8859_6:
+-  case ISO_8859_7:
+-  case ISO_8859_8:
+-  case ISO_8859_9:
+-  case ISO_8859_10:
+-  case ISO_8859_11:
+-  case ISO_8859_13:
+-  case ISO_8859_14:
+-  case ISO_8859_15:
+-  case ISO_8859_16:
+-  case KOI8:
+     if (c >= 0x7f && c <= 0x9F) return 1;
+     break;
+ 
+-
+-  case KOI8_R:
+-    if (c == 0x7f) return 1;
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -358,61 +136,9 @@
+   switch (enc) {
+   case UNICODE_ISO_8859_1:
+   case ISO_8859_1:
+-  case ISO_8859_2:
+-  case ISO_8859_4:
+-  case ISO_8859_5:
+-  case ISO_8859_9:
+-  case ISO_8859_10:
+-  case ISO_8859_13:
+-  case ISO_8859_14:
+-  case ISO_8859_15:
+-  case ISO_8859_16:
+     if (c >= 0xa1 && c <= 0xff) return 1;
+     break;
+ 
+-  case ISO_8859_3:
+-    if (c >= 0xa1) {
+-      if (c == 0xa5 || c == 0xae || c == 0xbe || c == 0xc3 || c == 0xd0 ||
+-	  c == 0xe3 || c == 0xf0)
+-	return 0;
+-      else
+-	return 1;
+-    }
+-    break;
+-
+-  case ISO_8859_6:
+-    if (c == 0xa4 || c == 0xac || c == 0xad || c == 0xbb || c == 0xbf)
+-      return 1;
+-    if (c >= 0xc1 && c <= 0xda) return 1;
+-    if (c >= 0xe0 && c <= 0xf2) return 1;
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c >= 0xa1 && c <= 0xfe &&
+-	c != 0xa4 && c != 0xa5 && c != 0xaa &&
+-	c != 0xae && c != 0xd2) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-    if (c >= 0xa2 && c <= 0xfa) {
+-      if (c >= 0xbf && c <= 0xde) return 0;
+-      return 1;
+-    }
+-    break;
+-
+-  case ISO_8859_11:
+-    if (c >= 0xa1 && c <= 0xda) return 1;
+-    if (c >= 0xdf && c <= 0xfb) return 1;
+-    break;
+-
+-  case KOI8:
+-    if (c >= 0xc0 && c <= 0xff) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c >= 0x80 && c <= 0xff && c != 0x9a) return 1;
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -430,119 +156,11 @@
+   switch (enc) {
+   case UNICODE_ISO_8859_1:
+   case ISO_8859_1:
+-  case ISO_8859_9:
+-    if (c == 0xaa) return 1;
+-    if (c == 0xb5) return 1;
+-    if (c == 0xba) return 1;
+-    if (c >= 0xdf && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_2:
+-    if (c == 0xb1 || c == 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xbf) return 1;
+-    if (c >= 0xdf && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_3:
+-    if (c == 0xb1) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbc) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c == 0xdf) return 1;
+-    if (c >= 0xe0 && c <= 0xe2) return 1;
+-    if (c >= 0xe4 && c <= 0xef) return 1;
+-    if (c >= 0xf1 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_4:
+-    if (c == 0xa2) return 1;
+-    if (c == 0xb1 || c == 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xbf) return 1;
+-    if (c == 0xdf) return 1;
+-    if (c >= 0xe0 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_5:
+-    if (c >= 0xd0 && c <= 0xff && c != 0xf0 && c != 0xfd) return 1;
+-    break;
+-
+-  case ISO_8859_6:
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c == 0xc0) return 1;
+-    if (c >= 0xdc && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-    if (c == 0xb5) return 1;
+-    break;
+-
+-  case ISO_8859_10:
+-    if (c >= 0xb1 && c <= 0xb6) return 1;
+-    if (c >= 0xb8 && c <= 0xbc) return 1;
+-    if (c == 0xbe || c == 0xbf) return 1;
+-    if (c >= 0xdf && c <= 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_11:
+-    break;
+-
+-  case ISO_8859_13:
+-    if (c == 0xb5) return 1;
+-    if (c == 0xb8) return 1;
+-    if (c == 0xba) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c >= 0xdf && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_14:
+-    if (c == 0xa2) return 1;
+-    if (c == 0xa5) return 1;
+-    if (c == 0xab) return 1;
+-    if (c == 0xb1 || c == 0xb3 || c == 0xb5) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c == 0xbe || c == 0xbf) return 1;
+-    if (c >= 0xdf && c <= 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_15:
+     if (c == 0xaa) return 1;
+     if (c == 0xb5) return 1;
+     if (c == 0xba) return 1;
+     if (c >= 0xdf && c <= 0xf6) return 1;
+     if (c >= 0xf8 && c <= 0xff) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xb8) return 1;
+-    if (c == 0xbd) return 1;
+-    break;
+-
+-  case ISO_8859_16:
+-    if (c == 0xa2) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xae) return 1;
+-    if (c == 0xb3) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c == 0xbd) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c >= 0xdf && c <= 0xff) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c == 0xa3) return 1;
+-    /* fall */
+-  case KOI8:
+-    if (c >= 0xc0 && c <= 0xdf) return 1;
+     break;
+ 
+   default:
+@@ -565,64 +183,9 @@
+     if (c == 0x85) return 1;
+     /* fall */
+   case ISO_8859_1:
+-  case ISO_8859_2:
+-  case ISO_8859_4:
+-  case ISO_8859_5:
+-  case ISO_8859_9:
+-  case ISO_8859_10:
+-  case ISO_8859_13:
+-  case ISO_8859_14:
+-  case ISO_8859_15:
+-  case ISO_8859_16:
+     if (c >= 0xa0 && c <= 0xff) return 1;
+     break;
+ 
+-  case ISO_8859_3:
+-    if (c >= 0xa0) {
+-      if (c == 0xa5 || c == 0xae || c == 0xbe || c == 0xc3 || c == 0xd0 ||
+-	  c == 0xe3 || c == 0xf0)
+-	return 0;
+-      else
+-	return 1;
+-    }
+-    break;
+-
+-  case ISO_8859_6:
+-    if (c == 0xa0) return 1;
+-    if (c == 0xa4 || c == 0xac || c == 0xad || c == 0xbb || c == 0xbf)
+-      return 1;
+-    if (c >= 0xc1 && c <= 0xda) return 1;
+-    if (c >= 0xe0 && c <= 0xf2) return 1;
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c >= 0xa0 && c <= 0xfe &&
+-	c != 0xa4 && c != 0xa5 && c != 0xaa &&
+-	c != 0xae && c != 0xd2) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-    if (c >= 0xa0 && c <= 0xfa) {
+-      if (c >= 0xbf && c <= 0xde) return 0;
+-      if (c == 0xa1) return 0;
+-      return 1;
+-    }
+-    break;
+-
+-  case ISO_8859_11:
+-    if (c >= 0xa0 && c <= 0xda) return 1;
+-    if (c >= 0xdf && c <= 0xfb) return 1;
+-    break;
+-
+-  case KOI8:
+-    if (c == 0xa0) return 1;
+-    if (c >= 0xc0 && c <= 0xff) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c >= 0x80 && c <= 0xff) return 1;
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -648,8 +211,6 @@
+ 
+   switch (enc) {
+   case ISO_8859_1:
+-  case ISO_8859_9:
+-  case ISO_8859_15:
+     if (c == 0xad) return 1;
+     /* fall */
+   case UNICODE_ISO_8859_1:
+@@ -660,68 +221,6 @@
+     if (c == 0xbf) return 1;
+     break;
+ 
+-  case ISO_8859_2:
+-  case ISO_8859_4:
+-  case ISO_8859_5:
+-  case ISO_8859_14:
+-    if (c == 0xad) return 1;
+-    break;
+-
+-  case ISO_8859_3:
+-  case ISO_8859_10:
+-    if (c == 0xad) return 1;
+-    if (c == 0xb7) return 1;
+-    if (c == 0xbd) return 1;
+-    break;
+-
+-  case ISO_8859_6:
+-    if (c == 0xac) return 1;
+-    if (c == 0xad) return 1;
+-    if (c == 0xbb) return 1;
+-    if (c == 0xbf) return 1;
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c == 0xa1 || c == 0xa2) return 1;
+-    if (c == 0xab) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xad) return 1;
+-    if (c == 0xb7 || c == 0xbb) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-    if (c == 0xab) return 1;
+-    if (c == 0xad) return 1;
+-    if (c == 0xb7) return 1;
+-    if (c == 0xbb) return 1;
+-    if (c == 0xdf) return 1;
+-    break;
+-
+-  case ISO_8859_13:
+-    if (c == 0xa1 || c == 0xa5) return 1;
+-    if (c == 0xab || c == 0xad) return 1;
+-    if (c == 0xb4 || c == 0xb7) return 1;
+-    if (c == 0xbb) return 1;
+-    if (c == 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_16:
+-    if (c == 0xa5) return 1;
+-    if (c == 0xab) return 1;
+-    if (c == 0xad) return 1;
+-    if (c == 0xb5) return 1;
+-    if (c == 0xb7) return 1;
+-    if (c == 0xbb) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c == 0x9e) return 1;
+-    break;
+-
+-  case ISO_8859_11:
+-  case KOI8:
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -742,28 +241,9 @@
+     if (c == 0x85) return 1;
+     /* fall */
+   case ISO_8859_1:
+-  case ISO_8859_2:
+-  case ISO_8859_3:
+-  case ISO_8859_4:
+-  case ISO_8859_5:
+-  case ISO_8859_6:
+-  case ISO_8859_7:
+-  case ISO_8859_8:
+-  case ISO_8859_9:
+-  case ISO_8859_10:
+-  case ISO_8859_11:
+-  case ISO_8859_13:
+-  case ISO_8859_14:
+-  case ISO_8859_15:
+-  case ISO_8859_16:
+-  case KOI8:
+     if (c == 0xa0) return 1;
+     break;
+ 
+-  case KOI8_R:
+-    if (c == 0x9a) return 1;
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -781,116 +261,10 @@
+   switch (enc) {
+   case UNICODE_ISO_8859_1:
+   case ISO_8859_1:
+-  case ISO_8859_9:
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xde) return 1;
+-    break;
+-
+-  case ISO_8859_2:
+-    if (c == 0xa1 || c == 0xa3) return 1;
+-    if (c == 0xa5 || c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c >= 0xae && c <= 0xaf) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xde) return 1;
+-    break;
+-
+-  case ISO_8859_3:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c >= 0xc0 && c <= 0xc2) return 1;
+-    if (c >= 0xc4 && c <= 0xcf) return 1;
+-    if (c >= 0xd1 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xde) return 1;
+-    break;
+-
+-  case ISO_8859_4:
+-    if (c == 0xa1 || c == 0xa3) return 1;
+-    if (c == 0xa5 || c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c == 0xae) return 1;
+-    if (c == 0xbd) return 1;
+     if (c >= 0xc0 && c <= 0xd6) return 1;
+     if (c >= 0xd8 && c <= 0xde) return 1;
+     break;
+ 
+-  case ISO_8859_5:
+-    if (c >= 0xa1 && c <= 0xcf && c != 0xad) return 1;
+-    break;
+-
+-  case ISO_8859_6:
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c == 0xb6) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xbf) return 1;
+-    if (c >= 0xc1 && c <= 0xdb && c != 0xd2) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-  case ISO_8859_11:
+-    break;
+-
+-  case ISO_8859_10:
+-    if (c >= 0xa1 && c <= 0xa6) return 1;
+-    if (c >= 0xa8 && c <= 0xac) return 1;
+-    if (c == 0xae || c == 0xaf) return 1;
+-    if (c >= 0xc0 && c <= 0xde) return 1;
+-    break;
+-
+-  case ISO_8859_13:
+-    if (c == 0xa8) return 1;
+-    if (c == 0xaa) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xde) return 1;
+-    break;
+-
+-  case ISO_8859_14:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa4 || c == 0xa6) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xaa || c == 0xac) return 1;
+-    if (c == 0xaf || c == 0xb0) return 1;
+-    if (c == 0xb2 || c == 0xb4 || c == 0xb7) return 1;
+-    if (c == 0xbb || c == 0xbd) return 1;
+-    if (c >= 0xc0 && c <= 0xde) return 1;
+-    break;
+-
+-  case ISO_8859_15:
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xde) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c == 0xb4) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c == 0xbe) return 1;
+-    break;
+-
+-  case ISO_8859_16:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa3) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c == 0xaa) return 1;
+-    if (c == 0xac) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xb2) return 1;
+-    if (c == 0xb4) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c == 0xbe) return 1;
+-    if (c >= 0xc0 && c <= 0xde) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c == 0xb3) return 1;
+-    /* fall */
+-  case KOI8:
+-    if (c >= 0xe0 && c <= 0xff) return 1;
+-    break;
+-
+   default:
+     exit(-1);
+   }
+@@ -923,123 +297,6 @@
+   switch (enc) {
+   case UNICODE_ISO_8859_1:
+   case ISO_8859_1:
+-  case ISO_8859_9:
+-    if (c == 0xaa) return 1;
+-    if (c >= 0xb2 && c <= 0xb3) return 1;
+-    if (c == 0xb5) return 1;
+-    if (c >= 0xb9 && c <= 0xba) return 1;
+-    if (c >= 0xbc && c <= 0xbe) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xff) return 1;
+-    break;
+-
+-  case ISO_8859_2:
+-    if (c == 0xa1 || c == 0xa3) return 1;
+-    if (c == 0xa5 || c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c >= 0xae && c <= 0xaf) return 1;
+-    if (c == 0xb1 || c == 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbc) return 1;
+-    if (c >= 0xbe && c <= 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_3:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c >= 0xb1 && c <= 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbd) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xc2) return 1;
+-    if (c >= 0xc4 && c <= 0xcf) return 1;
+-    if (c >= 0xd1 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xe2) return 1;
+-    if (c >= 0xe4 && c <= 0xef) return 1;
+-    if (c >= 0xf1 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_4:
+-    if (c >= 0xa1 && c <= 0xa3) return 1;
+-    if (c == 0xa5 || c == 0xa6) return 1;
+-    if (c >= 0xa9 && c <= 0xac) return 1;
+-    if (c == 0xae) return 1;
+-    if (c == 0xb1 || c == 0xb3) return 1;
+-    if (c == 0xb5 || c == 0xb6) return 1;
+-    if (c >= 0xb9 && c <= 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_5:
+-    if (c >= 0xa1 && c <= 0xcf && c != 0xad) return 1;
+-    if (c >= 0xd0 && c <= 0xff && c != 0xf0 && c != 0xfd) return 1;
+-    break;
+-
+-  case ISO_8859_6:
+-    if (c >= 0xc1 && c <= 0xda) return 1;
+-    if (c >= 0xe0 && c <= 0xea) return 1;
+-    if (c >= 0xeb && c <= 0xf2) return 1;
+-    break;
+-
+-  case ISO_8859_7:
+-    if (c == 0xb2 || c == 0xb3) return 1;
+-    if (c == 0xb6) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c >= 0xbc && c <= 0xbf) return 1;
+-    if (c == 0xc0) return 1;
+-    if (c >= 0xc1 && c <= 0xdb && c != 0xd2) return 1;
+-    if (c >= 0xdc && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_8:
+-    if (c == 0xb2 || c == 0xb3 || c == 0xb5 || c == 0xb9) return 1;
+-    if (c >= 0xbc && c <= 0xbe) return 1;
+-    if (c >= 0xe0 && c <= 0xfa) return 1;
+-    break;
+-
+-  case ISO_8859_10:
+-    if (c >= 0xa1 && c <= 0xff) {
+-      if (c != 0xa7 && c != 0xad && c != 0xb0 && c != 0xb7 && c != 0xbd)
+-	return 1;
+-    }
+-    break;
+-
+-  case ISO_8859_11:
+-    if (c >= 0xa1 && c <= 0xda) return 1;
+-    if (c >= 0xdf && c <= 0xfb) return 1;
+-    break;
+-
+-  case ISO_8859_13:
+-    if (c == 0xa8) return 1;
+-    if (c == 0xaa) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xb2 || c == 0xb3 || c == 0xb5 || c == 0xb9) return 1;
+-    if (c >= 0xbc && c <= 0xbe) return 1;
+-    if (c == 0xb8) return 1;
+-    if (c == 0xba) return 1;
+-    if (c >= 0xbf && c <= 0xd6) return 1;
+-    if (c >= 0xd8 && c <= 0xf6) return 1;
+-    if (c >= 0xf8 && c <= 0xfe) return 1;
+-    break;
+-
+-  case ISO_8859_14:
+-    if (c >= 0xa1 && c <= 0xff) {
+-      if (c == 0xa3 || c == 0xa7 || c == 0xa9 || c == 0xad || c == 0xae ||
+-	  c == 0xb6) return 0;
+-      return 1;
+-    }
+-    break;
+-
+-  case ISO_8859_15:
+     if (c == 0xaa) return 1;
+     if (c >= 0xb2 && c <= 0xb3) return 1;
+     if (c == 0xb5) return 1;
+@@ -1048,40 +305,6 @@
+     if (c >= 0xc0 && c <= 0xd6) return 1;
+     if (c >= 0xd8 && c <= 0xf6) return 1;
+     if (c >= 0xf8 && c <= 0xff) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xb4) return 1;
+-    if (c == 0xb8) return 1;
+-    break;
+-
+-  case ISO_8859_16:
+-    if (c == 0xa1) return 1;
+-    if (c == 0xa2) return 1;
+-    if (c == 0xa3) return 1;
+-    if (c == 0xa6) return 1;
+-    if (c == 0xa8) return 1;
+-    if (c == 0xaa) return 1;
+-    if (c == 0xac) return 1;
+-    if (c == 0xae) return 1;
+-    if (c == 0xaf) return 1;
+-    if (c == 0xb2) return 1;
+-    if (c == 0xb3) return 1;
+-    if (c == 0xb4) return 1;
+-    if (c >= 0xb8 && c <= 0xba) return 1;
+-    if (c == 0xbc) return 1;
+-    if (c == 0xbd) return 1;
+-    if (c == 0xbe) return 1;
+-    if (c == 0xbf) return 1;
+-    if (c >= 0xc0 && c <= 0xde) return 1;
+-    if (c >= 0xdf && c <= 0xff) return 1;
+-    break;
+-
+-  case KOI8_R:
+-    if (c == 0x9d) return 1;
+-    if (c == 0xa3 || c == 0xb3) return 1;
+-    /* fall */
+-  case KOI8:
+-    if (c >= 0xc0 && c <= 0xff) return 1;
+     break;
+ 
+   default:
+Only in pr/Onigmo/enc: sjis.c
+Only in pr/Onigmo/enc: utf16_be.c
+Only in pr/Onigmo/enc: utf32_be.c
+Only in pr/Onigmo/enc: utf32_le.c
+Only in pr/Onigmo/enc: utf8.c
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/Makefile.am Onigmo/Makefile.am
+--- pr/Onigmo/Makefile.am	2016-09-25 17:53:08.276479377 +0200
++++ Onigmo/Makefile.am	2016-09-22 16:16:09.433642050 +0200
+@@ -10,29 +10,15 @@
+ 
+ SUBDIRS = . sample
+ 
+-include_HEADERS = oniguruma.h oniggnu.h onigposix.h
++include_HEADERS = oniguruma.h
+ lib_LTLIBRARIES = $(libname)
+ 
+ libonig_la_SOURCES = regint.h regparse.h regenc.h st.h \
+-	regerror.c regparse.c regext.c regcomp.c regexec.c reggnu.c \
++	regerror.c regparse.c regext.c regcomp.c regexec.c \
+ 	regenc.c regsyntax.c regtrav.c regversion.c st.c \
+-	regposix.c regposerr.c \
+-	$(encdir)/unicode.c $(encdir)/ascii.c $(encdir)/utf8.c \
+-	$(encdir)/utf16_be.c $(encdir)/utf16_le.c \
+-	$(encdir)/utf32_be.c $(encdir)/utf32_le.c \
++	$(encdir)/unicode.c $(encdir)/ascii.c $(encdir)/utf16_le.c \
+ 	$(encdir)/unicode/casefold.h $(encdir)/unicode/name2ctype.h \
+-	$(encdir)/euc_jp.c $(encdir)/sjis.c $(encdir)/cp932.c \
+-	$(encdir)/jis/props.h $(encdir)/jis/props.kwd \
+-	$(encdir)/iso8859_1.c \
+-	$(encdir)/iso8859_2.c  $(encdir)/iso8859_3.c \
+-	$(encdir)/iso8859_4.c  $(encdir)/iso8859_5.c \
+-	$(encdir)/iso8859_6.c  $(encdir)/iso8859_7.c \
+-	$(encdir)/iso8859_8.c  $(encdir)/iso8859_9.c \
+-	$(encdir)/iso8859_10.c $(encdir)/iso8859_11.c \
+-	$(encdir)/iso8859_13.c $(encdir)/iso8859_14.c \
+-	$(encdir)/iso8859_15.c $(encdir)/iso8859_16.c \
+-	$(encdir)/euc_tw.c $(encdir)/euc_kr.c $(encdir)/big5.c \
+-	$(encdir)/gb18030.c $(encdir)/koi8_r.c $(encdir)/cp1251.c
++	$(encdir)/iso8859_1.c
+ 
+ libonig_la_LDFLAGS = -version-info $(LTVERSION) -no-undefined
+ 
+@@ -44,9 +30,9 @@
+ 	tool/enc-unicode.rb tool/download-ucd.sh tool/update-doc.py \
+ 	win32/Makefile win32/Makefile.mingw win32/config.h win32/testc.c \
+ 	win32/makedef.py win32/onig.rc \
+-	$(encdir)/koi8.c $(encdir)/mktable.c \
+-	$(sampledir)/encode.c $(sampledir)/listcap.c $(sampledir)/names.c \
+-	$(sampledir)/posix.c $(sampledir)/simple.c $(sampledir)/sql.c \
++	$(encdir)/mktable.c \
++	$(sampledir)/listcap.c $(sampledir)/names.c \
++	$(sampledir)/simple.c $(sampledir)/sql.c \
+ 	$(sampledir)/syntax.c $(sampledir)/crnl.c \
+ 	test.rb testconv.rb testconvu.rb \
+ 	onig.py testpy.py .editorconfig
+@@ -92,8 +78,6 @@
+ atest: testc testp testcu
+ 	@echo "[Oniguruma API, ASCII/EUC-JP check]"
+ 	@$(top_builddir)/testc  | grep RESULT
+-	@echo "[POSIX API, ASCII/EUC-JP check]"
+-	@$(top_builddir)/testp  | grep RESULT
+ 	@echo "[Oniguruma API, UTF-16 check]"
+ 	@$(top_builddir)/testcu | grep RESULT
+ 
+@@ -102,7 +86,6 @@
+ 
+ testp_SOURCES = testc.c
+ testp_LDADD = libonig.la
+-testp_CFLAGS = -DPOSIX_TEST
+ 
+ testcu_SOURCES = testu.c
+ testcu_LDADD = libonig.la
+@@ -119,12 +102,6 @@
+ 
+ # Python TEST
+ pytest:
+-	LD_LIBRARY_PATH=.libs python testpy.py EUC-JP
+-	LD_LIBRARY_PATH=.libs python testpy.py SJIS
+-	LD_LIBRARY_PATH=.libs python testpy.py UTF-8
+ 	LD_LIBRARY_PATH=.libs python testpy.py UTF-16LE
+-	LD_LIBRARY_PATH=.libs python testpy.py UTF-16BE
+-	LD_LIBRARY_PATH=.libs python testpy.py UTF-32LE
+-	LD_LIBRARY_PATH=.libs python testpy.py UTF-32BE
+ 
+ ## END OF FILE
+Only in pr/Onigmo: oniggnu.h
+Only in pr/Onigmo: onigposix.h
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/oniguruma.h Onigmo/oniguruma.h
+--- pr/Onigmo/oniguruma.h	2016-09-25 17:53:08.313146043 +0200
++++ Onigmo/oniguruma.h	2016-09-24 18:21:14.659840920 +0200
+@@ -93,6 +93,8 @@
+ 
+ #include <stddef.h>		/* for size_t */
+ 
++ONIG_EXTERN int onig_stepcount;
++
+ /* PART: character encoding */
+ 
+ #ifndef ONIG_ESCAPE_UCHAR_COLLISION
+@@ -170,70 +172,11 @@
+ 
+ ONIG_EXTERN OnigEncodingType OnigEncodingASCII;
+ ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_1;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_2;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_3;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_4;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_5;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_6;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_7;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_8;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_9;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_10;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_11;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_13;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_14;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_15;
+-ONIG_EXTERN OnigEncodingType OnigEncodingISO_8859_16;
+-ONIG_EXTERN OnigEncodingType OnigEncodingUTF8;
+-ONIG_EXTERN OnigEncodingType OnigEncodingUTF16_BE;
+ ONIG_EXTERN OnigEncodingType OnigEncodingUTF16_LE;
+-ONIG_EXTERN OnigEncodingType OnigEncodingUTF32_BE;
+-ONIG_EXTERN OnigEncodingType OnigEncodingUTF32_LE;
+-ONIG_EXTERN OnigEncodingType OnigEncodingEUC_JP;
+-ONIG_EXTERN OnigEncodingType OnigEncodingEUC_TW;
+-ONIG_EXTERN OnigEncodingType OnigEncodingEUC_KR;
+-ONIG_EXTERN OnigEncodingType OnigEncodingEUC_CN;
+-ONIG_EXTERN OnigEncodingType OnigEncodingSJIS;
+-ONIG_EXTERN OnigEncodingType OnigEncodingCP932;
+-ONIG_EXTERN OnigEncodingType OnigEncodingKOI8;
+-ONIG_EXTERN OnigEncodingType OnigEncodingKOI8_R;
+-ONIG_EXTERN OnigEncodingType OnigEncodingCP1251;
+-ONIG_EXTERN OnigEncodingType OnigEncodingBIG5;
+-ONIG_EXTERN OnigEncodingType OnigEncodingGB18030;
+ 
+ #define ONIG_ENCODING_ASCII        (&OnigEncodingASCII)
+ #define ONIG_ENCODING_ISO_8859_1   (&OnigEncodingISO_8859_1)
+-#define ONIG_ENCODING_ISO_8859_2   (&OnigEncodingISO_8859_2)
+-#define ONIG_ENCODING_ISO_8859_3   (&OnigEncodingISO_8859_3)
+-#define ONIG_ENCODING_ISO_8859_4   (&OnigEncodingISO_8859_4)
+-#define ONIG_ENCODING_ISO_8859_5   (&OnigEncodingISO_8859_5)
+-#define ONIG_ENCODING_ISO_8859_6   (&OnigEncodingISO_8859_6)
+-#define ONIG_ENCODING_ISO_8859_7   (&OnigEncodingISO_8859_7)
+-#define ONIG_ENCODING_ISO_8859_8   (&OnigEncodingISO_8859_8)
+-#define ONIG_ENCODING_ISO_8859_9   (&OnigEncodingISO_8859_9)
+-#define ONIG_ENCODING_ISO_8859_10  (&OnigEncodingISO_8859_10)
+-#define ONIG_ENCODING_ISO_8859_11  (&OnigEncodingISO_8859_11)
+-#define ONIG_ENCODING_ISO_8859_13  (&OnigEncodingISO_8859_13)
+-#define ONIG_ENCODING_ISO_8859_14  (&OnigEncodingISO_8859_14)
+-#define ONIG_ENCODING_ISO_8859_15  (&OnigEncodingISO_8859_15)
+-#define ONIG_ENCODING_ISO_8859_16  (&OnigEncodingISO_8859_16)
+-#define ONIG_ENCODING_UTF8         (&OnigEncodingUTF8)
+-#define ONIG_ENCODING_UTF16_BE     (&OnigEncodingUTF16_BE)
+ #define ONIG_ENCODING_UTF16_LE     (&OnigEncodingUTF16_LE)
+-#define ONIG_ENCODING_UTF32_BE     (&OnigEncodingUTF32_BE)
+-#define ONIG_ENCODING_UTF32_LE     (&OnigEncodingUTF32_LE)
+-#define ONIG_ENCODING_EUC_JP       (&OnigEncodingEUC_JP)
+-#define ONIG_ENCODING_EUC_TW       (&OnigEncodingEUC_TW)
+-#define ONIG_ENCODING_EUC_KR       (&OnigEncodingEUC_KR)
+-#define ONIG_ENCODING_EUC_CN       (&OnigEncodingEUC_CN)
+-#define ONIG_ENCODING_SJIS         (&OnigEncodingSJIS)
+-#define ONIG_ENCODING_CP932        (&OnigEncodingCP932)
+-#define ONIG_ENCODING_KOI8         (&OnigEncodingKOI8)
+-#define ONIG_ENCODING_KOI8_R       (&OnigEncodingKOI8_R)
+-#define ONIG_ENCODING_CP1251       (&OnigEncodingCP1251)
+-#define ONIG_ENCODING_BIG5         (&OnigEncodingBIG5)
+-#define ONIG_ENCODING_GB18030      (&OnigEncodingGB18030)
+-
+ #define ONIG_ENCODING_UNDEF    ((OnigEncoding )0)
+ 
+ 
+@@ -424,32 +367,10 @@
+   OnigMetaCharTableType meta_char_table;
+ } OnigSyntaxType;
+ 
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxASIS;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxPosixBasic;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxPosixExtended;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxEmacs;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxGrep;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxGnuRegex;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxJava;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxPerl58;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxPerl58_NG;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxPerl;
+ ONIG_EXTERN OnigSyntaxType OnigSyntaxRuby;
+-ONIG_EXTERN OnigSyntaxType OnigSyntaxPython;
+ 
+ /* predefined syntaxes (see regsyntax.c) */
+-#define ONIG_SYNTAX_ASIS               (&OnigSyntaxASIS)
+-#define ONIG_SYNTAX_POSIX_BASIC        (&OnigSyntaxPosixBasic)
+-#define ONIG_SYNTAX_POSIX_EXTENDED     (&OnigSyntaxPosixExtended)
+-#define ONIG_SYNTAX_EMACS              (&OnigSyntaxEmacs)
+-#define ONIG_SYNTAX_GREP               (&OnigSyntaxGrep)
+-#define ONIG_SYNTAX_GNU_REGEX          (&OnigSyntaxGnuRegex)
+-#define ONIG_SYNTAX_JAVA               (&OnigSyntaxJava)
+-#define ONIG_SYNTAX_PERL58             (&OnigSyntaxPerl58)
+-#define ONIG_SYNTAX_PERL58_NG          (&OnigSyntaxPerl58_NG)
+-#define ONIG_SYNTAX_PERL               (&OnigSyntaxPerl)
+ #define ONIG_SYNTAX_RUBY               (&OnigSyntaxRuby)
+-#define ONIG_SYNTAX_PYTHON             (&OnigSyntaxPython)
+ 
+ /* default syntax */
+ ONIG_EXTERN OnigSyntaxType*   OnigDefaultSyntax;
+@@ -757,7 +678,7 @@
+ ONIG_EXTERN
+ int onig_init P_((void));
+ ONIG_EXTERN
+-int onig_error_code_to_str PV_((OnigUChar* s, OnigPosition err_code, ...));
++int onig_error_code_to_str PV_((OnigUChar* s, OnigPosition err_code, OnigErrorInfo *einfo));
+ ONIG_EXTERN
+ void onig_set_warn_func P_((OnigWarnFunc f));
+ ONIG_EXTERN
+@@ -863,6 +784,20 @@
+ ONIG_EXTERN
+ const char* onig_copyright P_((void));
+ 
++//additions
++ONIG_EXTERN
++int onig_get_stepcount(void);
++ONIG_EXTERN
++void* onig_getvar_ENCODING_ISO_8859_1(void);
++ONIG_EXTERN
++void* onig_getvar_ENCODING_UTF16_LE(void);
++ONIG_EXTERN
++void* onig_getvar_SYNTAX_DEFAULT(void);
++ONIG_EXTERN
++int onig_getsize_OnigErrorInfo(void);
++
++
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regcomp.c Onigmo/regcomp.c
+--- pr/Onigmo/regcomp.c	2016-09-25 17:53:08.316479377 +0200
++++ Onigmo/regcomp.c	2016-09-24 18:22:02.383172932 +0200
+@@ -1586,13 +1586,16 @@
+ 
+   case NT_ALT:
+     {
+-      int n;
+-
+-      n = r = 0;
++      int n = 0;
++      len = 0;
++      
+       do {
+-	r += compile_length_tree(NCAR(node), reg);
+-	n++;
++        r = compile_length_tree(NCAR(node), reg);
++        if (r < 0) return r;
++        len += r;
++        n++;
+       } while (IS_NOT_NULL(node = NCDR(node)));
++      r = len;
+       r += (SIZE_OP_PUSH + SIZE_OP_JUMP) * (n - 1);
+     }
+     break;
+@@ -5750,7 +5753,7 @@
+     r = unset_addr_list_init(&uslist, scan_env.num_call);
+     if (r != 0) goto err;
+     scan_env.unset_addr_list = &uslist;
+-    r = setup_subexp_call(root, &scan_env);
++    r = setup_subexp_call(root, &scan_env);      
+     if (r != 0) goto err_unset;
+     r = subexp_recursive_check_trav(root, &scan_env);
+     if (r  < 0) goto err_unset;
+@@ -5872,8 +5875,10 @@
+   }
+ 
+   onig_node_free(root);
++
+   if (IS_NOT_NULL(scan_env.mem_nodes_dynamic))
+       xfree(scan_env.mem_nodes_dynamic);
++  
+   return r;
+ }
+ 
+@@ -5979,6 +5984,7 @@
+     onig_free(*reg);
+     *reg = NULL;
+   }
++
+   return r;
+ }
+ 
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regerror.c Onigmo/regerror.c
+--- pr/Onigmo/regerror.c	2016-09-25 17:53:08.316479377 +0200
++++ Onigmo/regerror.c	2016-09-25 15:37:04.046705246 +0200
+@@ -251,24 +251,12 @@
+ /* for ONIG_MAX_ERROR_MESSAGE_LEN */
+ #define MAX_ERROR_PAR_LEN   30
+ 
+-extern int
+-#ifdef HAVE_STDARG_PROTOTYPES
+-onig_error_code_to_str(UChar* s, OnigPosition code, ...)
+-#else
+-onig_error_code_to_str(s, code, va_alist)
+-  UChar* s;
+-  OnigPosition code;
+-  va_dcl
+-#endif
++extern int onig_error_code_to_str(UChar* s, OnigPosition code, OnigErrorInfo* einfo)
+ {
+   UChar *p, *q;
+-  OnigErrorInfo* einfo;
+   size_t len;
+   int is_over;
+   UChar parbuf[MAX_ERROR_PAR_LEN];
+-  va_list vargs;
+-
+-  va_init_list(vargs, code);
+ 
+   switch (code) {
+   case ONIGERR_UNDEFINED_NAME_REFERENCE:
+@@ -278,7 +266,6 @@
+   case ONIGERR_INVALID_GROUP_NAME:
+   case ONIGERR_INVALID_CHAR_IN_GROUP_NAME:
+   case ONIGERR_INVALID_CHAR_PROPERTY_NAME:
+-    einfo = va_arg(vargs, OnigErrorInfo*);
+     len = to_ascii(einfo->enc, einfo->par, einfo->par_end,
+ 		   parbuf, MAX_ERROR_PAR_LEN - 3, &is_over);
+     q = onig_error_code_to_format(code);
+@@ -319,7 +306,6 @@
+     break;
+   }
+ 
+-  va_end(vargs);
+   return (int )len;
+ }
+ 
+@@ -354,7 +340,8 @@
+   if (n + need < (size_t )bufsize) {
+     strcat((char* )buf, ": /");
+     s = buf + onigenc_str_bytelen_null(ONIG_ENCODING_ASCII, buf);
+-
++    UChar *buf_end = s + need;
++    
+     p = pat;
+     while (p < pat_end) {
+       if (*p == '\\') {
+@@ -373,13 +360,19 @@
+         }
+         else { /* for UTF16 */
+           int blen;
+-
++          int is_over;
++    
++          s += to_ascii(enc, p, p+len, s, buf_end-s, &is_over); //this is experimental
++          p += len;
++	
++/*
+           while (len-- > 0) {
+             sprint_byte_with_x((char* )bs, (unsigned int )(*p++));
+             blen = onigenc_str_bytelen_null(ONIG_ENCODING_ASCII, bs);
+             bp = bs;
+             while (blen-- > 0) *s++ = *bp++;
+           }
++*/
+         }
+       }
+       else if (!ONIGENC_IS_CODE_PRINT(enc, *p) &&
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regexec.c Onigmo/regexec.c
+--- pr/Onigmo/regexec.c	2016-09-25 17:53:08.316479377 +0200
++++ Onigmo/regexec.c	2016-09-24 13:41:59.336971136 +0200
+@@ -30,6 +30,8 @@
+ 
+ #include "regint.h"
+ 
++int onig_stepcount = 0;
++
+ #define USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE
+ 
+ #ifdef USE_CRNL_AS_LINE_TERMINATOR
+@@ -1404,6 +1406,7 @@
+   s = (UChar* )sstart;
+   pkeep = (UChar* )sstart;
+   while (1) {
++    if (s) onig_stepcount++;
+ #ifdef ONIG_DEBUG_MATCH
+     if (s) {
+       UChar *q, *bp, buf[50];
+@@ -1423,7 +1426,7 @@
+       fputs((char* )buf, stderr);
+       for (i = 0; i < 20 - (bp - buf); i++) fputc(' ', stderr);
+       fprintf(stderr, "%4"PRIdPTR":", (p == FinishCode) ? (ptrdiff_t )-1 : p - reg->p);
+-      onig_print_compiled_byte_code(stderr, p, NULL, encode);
++      //onig_print_compiled_byte_code(stderr, p, NULL, encode);
+       fprintf(stderr, "\n");
+     }
+ #endif
+@@ -3607,6 +3610,8 @@
+   ptrdiff_t r;
+   UChar *prev;
+   OnigMatchArg msa;
++  
++  onig_stepcount = 0;
+ 
+ #if defined(USE_RECOMPILE_API) && defined(USE_MULTI_THREAD_SYSTEM)
+  start:
+@@ -3920,6 +3925,8 @@
+   const UChar *orig_range = range;
+ #endif
+ 
++  onig_stepcount = 0; 
++
+ #if defined(USE_RECOMPILE_API) && defined(USE_MULTI_THREAD_SYSTEM)
+  start:
+   THREAD_ATOMIC_START;
+@@ -4365,3 +4372,8 @@
+   *to = *from;
+ }
+ 
++extern int onig_get_stepcount(void){ return onig_stepcount;}
++extern void* onig_getvar_ENCODING_ISO_8859_1(void){ return ONIG_ENCODING_ISO_8859_1; };
++extern void* onig_getvar_ENCODING_UTF16_LE(void){ return ONIG_ENCODING_UTF16_LE; };
++extern void* onig_getvar_SYNTAX_DEFAULT(void){ return ONIG_SYNTAX_DEFAULT; };
++extern int onig_getsize_OnigErrorInfo(void){ return sizeof(OnigErrorInfo); };
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regext.c Onigmo/regext.c
+--- pr/Onigmo/regext.c	2016-09-25 17:53:08.316479377 +0200
++++ Onigmo/regext.c	2016-09-22 15:59:51.956991950 +0200
+@@ -98,24 +98,7 @@
+ {
+   ptrdiff_t len = end - s;
+ 
+-  if (to == ONIG_ENCODING_UTF16_BE) {
+-    if (from == ONIG_ENCODING_ASCII || from == ONIG_ENCODING_ISO_8859_1) {
+-      *conv = (UChar* )xmalloc(len * 2);
+-      CHECK_NULL_RETURN_MEMERR(*conv);
+-      *conv_end = *conv + (len * 2);
+-      conv_ext0be(s, end, *conv);
+-      return 0;
+-    }
+-    else if (from == ONIG_ENCODING_UTF16_LE) {
+-    swap16:
+-      *conv = (UChar* )xmalloc(len);
+-      CHECK_NULL_RETURN_MEMERR(*conv);
+-      *conv_end = *conv + len;
+-      conv_swap2bytes(s, end, *conv);
+-      return 0;
+-    }
+-  }
+-  else if (to == ONIG_ENCODING_UTF16_LE) {
++  if (to == ONIG_ENCODING_UTF16_LE) {
+     if (from == ONIG_ENCODING_ASCII || from == ONIG_ENCODING_ISO_8859_1) {
+       *conv = (UChar* )xmalloc(len * 2);
+       CHECK_NULL_RETURN_MEMERR(*conv);
+@@ -123,38 +106,6 @@
+       conv_ext0le(s, end, *conv);
+       return 0;
+     }
+-    else if (from == ONIG_ENCODING_UTF16_BE) {
+-      goto swap16;
+-    }
+-  }
+-  if (to == ONIG_ENCODING_UTF32_BE) {
+-    if (from == ONIG_ENCODING_ASCII || from == ONIG_ENCODING_ISO_8859_1) {
+-      *conv = (UChar* )xmalloc(len * 4);
+-      CHECK_NULL_RETURN_MEMERR(*conv);
+-      *conv_end = *conv + (len * 4);
+-      conv_ext0be32(s, end, *conv);
+-      return 0;
+-    }
+-    else if (from == ONIG_ENCODING_UTF32_LE) {
+-    swap32:
+-      *conv = (UChar* )xmalloc(len);
+-      CHECK_NULL_RETURN_MEMERR(*conv);
+-      *conv_end = *conv + len;
+-      conv_swap4bytes(s, end, *conv);
+-      return 0;
+-    }
+-  }
+-  else if (to == ONIG_ENCODING_UTF32_LE) {
+-    if (from == ONIG_ENCODING_ASCII || from == ONIG_ENCODING_ISO_8859_1) {
+-      *conv = (UChar* )xmalloc(len * 4);
+-      CHECK_NULL_RETURN_MEMERR(*conv);
+-      *conv_end = *conv + (len * 4);
+-      conv_ext0le32(s, end, *conv);
+-      return 0;
+-    }
+-    else if (from == ONIG_ENCODING_UTF32_BE) {
+-      goto swap32;
+-    }
+   }
+ 
+   return ONIGERR_NOT_SUPPORTED_ENCODING_COMBINATION;
+Only in pr/Onigmo: reggnu.c
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regint.h Onigmo/regint.h
+--- pr/Onigmo/regint.h	2016-09-25 17:53:08.316479377 +0200
++++ Onigmo/regint.h	2016-09-22 18:47:48.490154502 +0200
+@@ -101,7 +101,7 @@
+ #endif
+ 
+ #define USE_WORD_BEGIN_END          /* "\<": word-begin, "\>": word-end */
+-#define USE_CAPTURE_HISTORY
++#undef USE_CAPTURE_HISTORY
+ #define USE_VARIABLE_META_CHARS
+ #define USE_POSIX_API_REGION_OPTION     /* needed for POSIX API support */
+ #define USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regparse.c Onigmo/regparse.c
+--- pr/Onigmo/regparse.c	2016-09-25 17:53:08.319812710 +0200
++++ Onigmo/regparse.c	2016-09-24 18:54:50.266451824 +0200
+@@ -59,13 +59,12 @@
+   , ( SYN_GNU_REGEX_BV |
+       ONIG_SYN_ALLOW_INTERVAL_LOW_ABBREV |
+       ONIG_SYN_DIFFERENT_LEN_ALT_LOOK_BEHIND |
+-      ONIG_SYN_CAPTURE_ONLY_NAMED_GROUP |
+       ONIG_SYN_ALLOW_MULTIPLEX_DEFINITION_NAME |
+       ONIG_SYN_FIXED_INTERVAL_IS_GREEDY_ONLY |
+       ONIG_SYN_WARN_CC_OP_NOT_ESCAPED |
+       ONIG_SYN_WARN_REDUNDANT_NESTED_REPEAT )
+   , ( ONIG_OPTION_ASCII_RANGE | ONIG_OPTION_POSIX_BRACKET_ALL_RANGE |
+-      ONIG_OPTION_WORD_BOUND_ALL_RANGE )
++      ONIG_OPTION_WORD_BOUND_ALL_RANGE)
+   ,
+   {
+       (OnigCodePoint )'\\'                       /* esc */
+@@ -2784,6 +2783,8 @@
+       name_end = end;
+     }
+ 
++    if (r) goto err;
++ 
+     if (is_num != 0) {
+       *rback_num = onig_scan_unsigned_number(&pnum_head, name_end, enc);
+       if (*rback_num < 0) return ONIGERR_TOO_BIG_NUMBER;
+@@ -3957,7 +3958,7 @@
+       if (! IS_SYNTAX_OP(syn, ONIG_SYN_OP_LINE_ANCHOR)) break;
+       tok->type = TK_ANCHOR;
+       tok->u.anchor.subtype = (IS_SINGLELINE(env->option)
+-			       ? ANCHOR_SEMI_END_BUF : ANCHOR_END_LINE);
++			       ? ANCHOR_END_BUF : ANCHOR_END_LINE);
+       break;
+ 
+     case '[':
+@@ -4530,7 +4531,7 @@
+   }
+ 
+   if (r < 0) return r;
+-  if (r == TK_CC_CLOSE) {
++  if (r == TK_CC_CLOSE && !neg) { //allow JS's [^] to match everything
+     if (! code_exist_check((OnigCodePoint )']',
+                            *src, env->pattern_end, 1, env))
+       return ONIGERR_EMPTY_CHAR_CLASS;
+@@ -6381,7 +6382,10 @@
+     NENCLOSE(np)->regnum = num;
+     NENCLOSE(np)->target = *top;
+     r = scan_env_set_mem_node(env, num, np);
+-    if (r != 0) return r;
++    if (r != 0) {
++       onig_node_free(np);
++       return r;
++    }
+     *top = np;
+   }
+ #endif
+Only in pr/Onigmo: regposerr.c
+Only in pr/Onigmo: regposix.c
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/regsyntax.c Onigmo/regsyntax.c
+--- pr/Onigmo/regsyntax.c	2016-09-25 17:53:08.319812710 +0200
++++ Onigmo/regsyntax.c	2016-09-23 13:08:20.187525805 +0200
+@@ -30,264 +30,6 @@
+ 
+ #include "regint.h"
+ 
+-OnigSyntaxType OnigSyntaxASIS = {
+-    0
+-  , ONIG_SYN_OP2_INEFFECTIVE_ESCAPE
+-  , 0
+-  , ONIG_OPTION_NONE
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxPosixBasic = {
+-  ( SYN_POSIX_COMMON_OP | ONIG_SYN_OP_ESC_LPAREN_SUBEXP |
+-    ONIG_SYN_OP_ESC_BRACE_INTERVAL )
+-  , 0
+-  , 0
+-  , ( ONIG_OPTION_SINGLELINE | ONIG_OPTION_MULTILINE )
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxPosixExtended = {
+-  ( SYN_POSIX_COMMON_OP | ONIG_SYN_OP_LPAREN_SUBEXP |
+-    ONIG_SYN_OP_BRACE_INTERVAL |
+-    ONIG_SYN_OP_PLUS_ONE_INF | ONIG_SYN_OP_QMARK_ZERO_ONE | ONIG_SYN_OP_VBAR_ALT )
+-  , 0
+-  , ( ONIG_SYN_CONTEXT_INDEP_ANCHORS |
+-      ONIG_SYN_CONTEXT_INDEP_REPEAT_OPS | ONIG_SYN_CONTEXT_INVALID_REPEAT_OPS |
+-      ONIG_SYN_ALLOW_UNMATCHED_CLOSE_SUBEXP |
+-      ONIG_SYN_ALLOW_DOUBLE_RANGE_OP_IN_CC )
+-  , ( ONIG_OPTION_SINGLELINE | ONIG_OPTION_MULTILINE )
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxEmacs = {
+-  ( ONIG_SYN_OP_DOT_ANYCHAR | ONIG_SYN_OP_BRACKET_CC |
+-    ONIG_SYN_OP_ESC_BRACE_INTERVAL |
+-    ONIG_SYN_OP_ESC_LPAREN_SUBEXP | ONIG_SYN_OP_ESC_VBAR_ALT |
+-    ONIG_SYN_OP_ASTERISK_ZERO_INF | ONIG_SYN_OP_PLUS_ONE_INF |
+-    ONIG_SYN_OP_QMARK_ZERO_ONE | ONIG_SYN_OP_DECIMAL_BACKREF |
+-    ONIG_SYN_OP_LINE_ANCHOR | ONIG_SYN_OP_ESC_CONTROL_CHARS )
+-  , ONIG_SYN_OP2_ESC_GNU_BUF_ANCHOR
+-  , ONIG_SYN_ALLOW_EMPTY_RANGE_IN_CC
+-  , ONIG_OPTION_NONE
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxGrep = {
+-  ( ONIG_SYN_OP_DOT_ANYCHAR | ONIG_SYN_OP_BRACKET_CC | ONIG_SYN_OP_POSIX_BRACKET |
+-    ONIG_SYN_OP_ESC_BRACE_INTERVAL | ONIG_SYN_OP_ESC_LPAREN_SUBEXP |
+-    ONIG_SYN_OP_ESC_VBAR_ALT |
+-    ONIG_SYN_OP_ASTERISK_ZERO_INF | ONIG_SYN_OP_ESC_PLUS_ONE_INF |
+-    ONIG_SYN_OP_ESC_QMARK_ZERO_ONE | ONIG_SYN_OP_LINE_ANCHOR |
+-    ONIG_SYN_OP_ESC_W_WORD | ONIG_SYN_OP_ESC_B_WORD_BOUND |
+-    ONIG_SYN_OP_ESC_LTGT_WORD_BEGIN_END | ONIG_SYN_OP_DECIMAL_BACKREF )
+-  , 0
+-  , ( ONIG_SYN_ALLOW_EMPTY_RANGE_IN_CC | ONIG_SYN_NOT_NEWLINE_IN_NEGATIVE_CC )
+-  , ONIG_OPTION_NONE
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxGnuRegex = {
+-  SYN_GNU_REGEX_OP
+-  , 0
+-  , SYN_GNU_REGEX_BV
+-  , ONIG_OPTION_NONE
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxJava = {
+-  (( SYN_GNU_REGEX_OP | ONIG_SYN_OP_QMARK_NON_GREEDY |
+-     ONIG_SYN_OP_ESC_CONTROL_CHARS | ONIG_SYN_OP_ESC_C_CONTROL |
+-     ONIG_SYN_OP_ESC_OCTAL3 | ONIG_SYN_OP_ESC_X_HEX2 )
+-   & ~ONIG_SYN_OP_ESC_LTGT_WORD_BEGIN_END )
+-  , ( ONIG_SYN_OP2_ESC_CAPITAL_Q_QUOTE | ONIG_SYN_OP2_QMARK_GROUP_EFFECT |
+-      ONIG_SYN_OP2_OPTION_PERL | ONIG_SYN_OP2_PLUS_POSSESSIVE_REPEAT |
+-      ONIG_SYN_OP2_PLUS_POSSESSIVE_INTERVAL | ONIG_SYN_OP2_CCLASS_SET_OP |
+-      ONIG_SYN_OP2_ESC_V_VTAB | ONIG_SYN_OP2_ESC_U_HEX4 |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CHAR_PROPERTY )
+-  , ( SYN_GNU_REGEX_BV | ONIG_SYN_DIFFERENT_LEN_ALT_LOOK_BEHIND )
+-  , ( ONIG_OPTION_SINGLELINE | ONIG_OPTION_ASCII_RANGE |
+-      ONIG_OPTION_WORD_BOUND_ALL_RANGE )
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-/* Perl 5.8 */
+-OnigSyntaxType OnigSyntaxPerl58 = {
+-  (( SYN_GNU_REGEX_OP | ONIG_SYN_OP_QMARK_NON_GREEDY |
+-     ONIG_SYN_OP_ESC_OCTAL3 | ONIG_SYN_OP_ESC_X_HEX2 |
+-     ONIG_SYN_OP_ESC_X_BRACE_HEX8 | ONIG_SYN_OP_ESC_CONTROL_CHARS |
+-     ONIG_SYN_OP_ESC_C_CONTROL )
+-   & ~ONIG_SYN_OP_ESC_LTGT_WORD_BEGIN_END )
+-  , ( ONIG_SYN_OP2_ESC_CAPITAL_Q_QUOTE |
+-      ONIG_SYN_OP2_QMARK_GROUP_EFFECT | ONIG_SYN_OP2_OPTION_PERL |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CHAR_PROPERTY |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CIRCUMFLEX_NOT |
+-      ONIG_SYN_OP2_ESC_CAPITAL_X_EXTENDED_GRAPHEME_CLUSTER |
+-      ONIG_SYN_OP2_QMARK_LPAREN_CONDITION)
+-  , SYN_GNU_REGEX_BV
+-  , ONIG_OPTION_SINGLELINE
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-/* Perl 5.8 + named group */
+-OnigSyntaxType OnigSyntaxPerl58_NG = {
+-  (( SYN_GNU_REGEX_OP | ONIG_SYN_OP_QMARK_NON_GREEDY |
+-     ONIG_SYN_OP_ESC_OCTAL3 | ONIG_SYN_OP_ESC_X_HEX2 |
+-     ONIG_SYN_OP_ESC_X_BRACE_HEX8 | ONIG_SYN_OP_ESC_CONTROL_CHARS |
+-     ONIG_SYN_OP_ESC_C_CONTROL )
+-   & ~ONIG_SYN_OP_ESC_LTGT_WORD_BEGIN_END )
+-  , ( ONIG_SYN_OP2_ESC_CAPITAL_Q_QUOTE |
+-      ONIG_SYN_OP2_QMARK_GROUP_EFFECT | ONIG_SYN_OP2_OPTION_PERL |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CHAR_PROPERTY  |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CIRCUMFLEX_NOT |
+-      ONIG_SYN_OP2_ESC_CAPITAL_X_EXTENDED_GRAPHEME_CLUSTER |
+-      ONIG_SYN_OP2_QMARK_LPAREN_CONDITION     |
+-      ONIG_SYN_OP2_QMARK_LT_NAMED_GROUP       |
+-      ONIG_SYN_OP2_ESC_K_NAMED_BACKREF        |
+-      ONIG_SYN_OP2_ESC_G_SUBEXP_CALL )
+-  , ( SYN_GNU_REGEX_BV |
+-      ONIG_SYN_CAPTURE_ONLY_NAMED_GROUP |
+-      ONIG_SYN_ALLOW_MULTIPLEX_DEFINITION_NAME )
+-  , ONIG_OPTION_SINGLELINE
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-/* Perl 5.10+ */
+-OnigSyntaxType OnigSyntaxPerl = {
+-  (( SYN_GNU_REGEX_OP | ONIG_SYN_OP_QMARK_NON_GREEDY |
+-     ONIG_SYN_OP_ESC_OCTAL3 | ONIG_SYN_OP_ESC_X_HEX2 |
+-     ONIG_SYN_OP_ESC_X_BRACE_HEX8 | ONIG_SYN_OP_ESC_CONTROL_CHARS |
+-     ONIG_SYN_OP_ESC_C_CONTROL )
+-   & ~ONIG_SYN_OP_ESC_LTGT_WORD_BEGIN_END )
+-  , ( ONIG_SYN_OP2_ESC_CAPITAL_Q_QUOTE |
+-      ONIG_SYN_OP2_QMARK_GROUP_EFFECT | ONIG_SYN_OP2_OPTION_PERL |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CHAR_PROPERTY  |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CIRCUMFLEX_NOT |
+-      ONIG_SYN_OP2_ESC_CAPITAL_X_EXTENDED_GRAPHEME_CLUSTER |
+-      ONIG_SYN_OP2_QMARK_LPAREN_CONDITION |
+-      ONIG_SYN_OP2_PLUS_POSSESSIVE_REPEAT |
+-      ONIG_SYN_OP2_PLUS_POSSESSIVE_INTERVAL |
+-      ONIG_SYN_OP2_ESC_CAPITAL_R_LINEBREAK |
+-      ONIG_SYN_OP2_ESC_CAPITAL_K_KEEP |
+-      ONIG_SYN_OP2_QMARK_SUBEXP_CALL |
+-      ONIG_SYN_OP2_ESC_G_BRACE_BACKREF |
+-      ONIG_SYN_OP2_QMARK_CAPITAL_P_NAMED_GROUP |
+-      ONIG_SYN_OP2_QMARK_LT_NAMED_GROUP |
+-      ONIG_SYN_OP2_ESC_K_NAMED_BACKREF )
+-  , ( SYN_GNU_REGEX_BV |
+-      ONIG_SYN_ALLOW_MULTIPLEX_DEFINITION_NAME |
+-      ONIG_SYN_ALLOW_MULTIPLEX_DEFINITION_NAME_CALL )
+-  , ( ONIG_OPTION_SINGLELINE | ONIG_OPTION_CAPTURE_GROUP )
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+-
+-OnigSyntaxType OnigSyntaxPython = {
+-  (( SYN_GNU_REGEX_OP | ONIG_SYN_OP_QMARK_NON_GREEDY |
+-     ONIG_SYN_OP_ESC_OCTAL3 | ONIG_SYN_OP_ESC_X_HEX2 |
+-     ONIG_SYN_OP_ESC_X_BRACE_HEX8 | ONIG_SYN_OP_ESC_CONTROL_CHARS |
+-     ONIG_SYN_OP_ESC_C_CONTROL )
+-   & ~ONIG_SYN_OP_ESC_LTGT_WORD_BEGIN_END )
+-  , ( ONIG_SYN_OP2_QMARK_GROUP_EFFECT | ONIG_SYN_OP2_OPTION_PERL |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CHAR_PROPERTY  |
+-      ONIG_SYN_OP2_ESC_P_BRACE_CIRCUMFLEX_NOT |
+-      ONIG_SYN_OP2_PLUS_POSSESSIVE_REPEAT |
+-      ONIG_SYN_OP2_ESC_V_VTAB |
+-      ONIG_SYN_OP2_ESC_U_HEX4 |
+-      ONIG_SYN_OP2_QMARK_LPAREN_CONDITION |
+-      ONIG_SYN_OP2_QMARK_CAPITAL_P_NAMED_GROUP )
+-  , ( SYN_GNU_REGEX_BV |
+-      ONIG_SYN_ALLOW_INTERVAL_LOW_ABBREV )
+-  , ( ONIG_OPTION_SINGLELINE | ONIG_OPTION_ASCII_RANGE )
+-  ,
+-  {
+-      (OnigCodePoint )'\\'                       /* esc */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar '.'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anytime '*'  */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* zero or one time '?' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* one or more time '+' */
+-    , (OnigCodePoint )ONIG_INEFFECTIVE_META_CHAR /* anychar anytime */
+-  }
+-};
+ 
+ 
+ 
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/crnl.c Onigmo/sample/crnl.c
+--- pr/Onigmo/sample/crnl.c	2016-09-25 17:53:08.319812710 +0200
++++ Onigmo/sample/crnl.c	2016-09-24 18:19:05.226511167 +0200
+@@ -71,7 +71,7 @@
+   }
+   else { /* error */
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     fprintf(stderr, "ERROR: %s\n", s);
+     return -1;
+   }
+Only in pr/Onigmo/sample: encode.c
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/listcap.c Onigmo/sample/listcap.c
+--- pr/Onigmo/sample/listcap.c	2016-09-25 17:53:08.323146043 +0200
++++ Onigmo/sample/listcap.c	2016-09-24 18:17:57.153179718 +0200
+@@ -69,7 +69,7 @@
+   }
+   else { /* error */
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     return -1;
+   }
+ 
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/Makefile.am Onigmo/sample/Makefile.am
+--- pr/Onigmo/sample/Makefile.am	2016-09-25 17:53:08.319812710 +0200
++++ Onigmo/sample/Makefile.am	2016-09-22 16:23:01.090301740 +0200
+@@ -1,13 +1,11 @@
+-noinst_PROGRAMS = encode listcap names posix simple sql syntax crnl
++noinst_PROGRAMS = listcap names simple sql syntax
+ 
+ libname = $(top_builddir)/libonig.la
+ LDADD   = $(libname)
+ INCLUDES  = -I$(top_srcdir) -I$(includedir)
+ 
+-encode_SOURCES  = encode.c
+ listcap_SOURCES = listcap.c
+ names_SOURCES   = names.c
+-posix_SOURCES   = posix.c
+ simple_SOURCES  = simple.c
+ sql_SOURCES     = sql.c
+ syntax_SOURCES  = syntax.c
+@@ -15,11 +13,9 @@
+ 
+ sampledir = $(top_builddir)/sample
+ 
+-test: encode listcap names posix simple sql syntax
+-	$(sampledir)/encode
++test: listcap names posix simple sql
+ 	$(sampledir)/listcap
+ 	$(sampledir)/names
+-	$(sampledir)/posix
+ 	$(sampledir)/simple
+ 	$(sampledir)/sql
+ 	$(sampledir)/syntax
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/names.c Onigmo/sample/names.c
+--- pr/Onigmo/sample/names.c	2016-09-25 17:53:08.323146043 +0200
++++ Onigmo/sample/names.c	2016-09-24 18:19:40.193176868 +0200
+@@ -62,7 +62,7 @@
+   }
+   else { /* error */
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     return -1;
+   }
+ 
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/simple.c Onigmo/sample/simple.c
+--- pr/Onigmo/sample/simple.c	2016-09-25 17:53:08.323146043 +0200
++++ Onigmo/sample/simple.c	2016-09-24 18:18:22.553179015 +0200
+@@ -1,9 +1,20 @@
+ /*
+  * simple.c
+  */
++#define HAVE_STDARG_PROTOTYPES
+ #include <stdio.h>
+ #include <string.h>
+ #include "oniguruma.h"
++#include <inttypes.h>
++
++
++/*
++wtf, so it's a link issue with wrong types on shared library...
++
++do we have different def in oniguruma.h? PV_ ?
++
++#define HAVE_STDARG_PROTOTYPES, solves 
++*/
+ 
+ extern int main(int argc, char* argv[])
+ {
+@@ -13,11 +24,22 @@
+   OnigErrorInfo einfo;
+   OnigRegion *region;
+ 
+-  static UChar* pattern = (UChar* )"a(.*)b|[e-f]+";
+-  static UChar* str     = (UChar* )"zzzzaffffffffb";
++  //static UChar* pattern = (UChar* )"a(.*)b|[e-f]+";
++  //static UChar* str     = (UChar* )"zzzzaffffffffb";
++  
++  //static UChar* pattern = (UChar* )"acx[^]avxz";
++  //static UChar* str     = (UChar* )"acx\navxz";
++  
++  
++  //static UChar* pattern = (UChar* )"^a([^][^])(?<lol>[^])$"; //for singleline
++  //static UChar* str     = (UChar* )"a\na\n";
++  
++  static UChar* pattern = (UChar* )"ahf(?<ghgh>k)?(?<ghgh>p)?rt(dfdf)r\\g<ghgh>t";
++  static UChar* str     = (UChar* )"ahfkrtdfdfrt";
+ 
+   r = onig_new(&reg, pattern, pattern + strlen((char* )pattern),
+-	ONIG_OPTION_DEFAULT, ONIG_ENCODING_ASCII, ONIG_SYNTAX_DEFAULT, &einfo);
++	 ONIG_OPTION_SINGLELINE , ONIG_ENCODING_ASCII, ONIG_SYNTAX_DEFAULT, &einfo);
++      
+   if (r != ONIG_NORMAL) {
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+     onig_error_code_to_str(s, r, &einfo);
+@@ -31,6 +53,8 @@
+   start = str;
+   range = end;
+   r = onig_search(reg, str, end, start, range, region, ONIG_OPTION_NONE);
++  fprintf(stderr, "stepcount %d\n", onig_get_stepcount());
++  
+   if (r >= 0) {
+     int i;
+ 
+@@ -46,7 +70,7 @@
+   }
+   else { /* error */
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     fprintf(stderr, "ERROR: %s\n", s);
+     return -1;
+   }
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/sql.c Onigmo/sample/sql.c
+--- pr/Onigmo/sample/sql.c	2016-09-25 17:53:08.323146043 +0200
++++ Onigmo/sample/sql.c	2016-09-24 18:18:45.843178371 +0200
+@@ -63,7 +63,7 @@
+   }
+   else { /* error */
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     fprintf(stderr, "ERROR: %s\n", s);
+     return -1;
+   }
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/sample/syntax.c Onigmo/sample/syntax.c
+--- pr/Onigmo/sample/syntax.c	2016-09-25 17:53:08.323146043 +0200
++++ Onigmo/sample/syntax.c	2016-09-24 18:19:18.416510804 +0200
+@@ -46,7 +46,7 @@
+   }
+   else { /* error */
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     fprintf(stderr, "ERROR: %s\n", s);
+     return -1;
+   }
+@@ -61,16 +61,6 @@
+ {
+   int r = 0;
+ 
+-  r |= exec(ONIG_SYNTAX_PERL,
+-	   "\\p{XDigit}\\P{XDigit}\\p{^XDigit}\\P{^XDigit}\\p{XDigit}",
+-	   "bgh3a");
+-
+-  r |= exec(ONIG_SYNTAX_JAVA,
+-	   "\\p{XDigit}\\P{XDigit}[a-c&&b-g]\\u0020[\\u0021]", "bgc !");
+-
+-  r |= exec(ONIG_SYNTAX_ASIS,
+-           "abc def* e+ g?ddd[a-rvvv] (vv){3,7}hv\\dvv(?:aczui ss)\\W\\w$",
+-           "abc def* e+ g?ddd[a-rvvv] (vv){3,7}hv\\dvv(?:aczui ss)\\W\\w$");
+   onig_end();
+   return r;
+ }
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/testc.c Onigmo/testc.c
+--- pr/Onigmo/testc.c	2016-09-25 17:53:08.323146043 +0200
++++ Onigmo/testc.c	2016-09-24 18:16:14.016515905 +0200
+@@ -93,7 +93,7 @@
+   /* ONIG_OPTION_OFF(syn.options, ONIG_OPTION_ASCII_RANGE); */
+ 
+   r = onig_new(&reg, (UChar* )pattern, (UChar* )(pattern + SLEN(pattern)),
+-	       ONIG_OPTION_DEFAULT, ONIG_ENCODING_EUC_JP, &syn, &einfo);
++	       ONIG_OPTION_DEFAULT, ONIG_ENCODING_ISO_8859_1, &syn, &einfo);
+   if (r) {
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+     onig_error_code_to_str((UChar* )s, r, &einfo);
+@@ -107,7 +107,7 @@
+ 		  region, ONIG_OPTION_NONE);
+   if (r < ONIG_MISMATCH) {
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str((UChar* )s, r);
++    onig_error_code_to_str((UChar* )s, r, NULL);
+     fprintf(err_file, "ERROR: %s\n", s);
+     nerror++;
+     return ;
+diff -ru -x '*m4' -x configure -x '*in' -x '*sh' -x casefold.h -x name2ctype.h -x libonig.js -x libtool -x Makefile -x ogtest.html -x tmp pr/Onigmo/testu.c Onigmo/testu.c
+--- pr/Onigmo/testu.c	2016-09-25 17:53:08.326479376 +0200
++++ Onigmo/testu.c	2016-09-24 18:17:26.896513889 +0200
+@@ -153,7 +153,7 @@
+ 		  region, ONIG_OPTION_NONE);
+   if (r < ONIG_MISMATCH) {
+     char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+-    onig_error_code_to_str(s, r);
++    onig_error_code_to_str(s, r, NULL);
+     fprintf(err_file, "ERROR: %s\n", s);
+     nerror++;
+     return ;
+@@ -213,9 +213,9 @@
+   region = onig_region_new();
+ #endif
+ #ifdef POSIX_TEST
+-  reg_set_encoding(REG_POSIX_ENCODING_UTF16_BE);
++  reg_set_encoding(REG_POSIX_ENCODING_UTF16_LE);
+ #else
+-  ENC = ONIG_ENCODING_UTF16_BE;
++  ENC = ONIG_ENCODING_UTF16_LE;
+ #endif
+   x2("\000\000", "\000\000", 0, 0);
+   x2("\000^\000\000", "\000\000", 0, 0);

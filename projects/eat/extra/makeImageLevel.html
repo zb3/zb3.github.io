@@ -1,0 +1,23 @@
+<canvas id="canvas"></canvas>
+<script>
+/*
+I can't do fonts... they don't scale and don't look the same
+also not all sizes are ok.. borders don't look correctly
+*/
+var ctx = canvas.getContext('2d');
+var scale = 1.5;
+canvas.width = canvas.height = scale*500;
+
+ctx.font = '258px Arial';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.lineWidth = 8;
+
+ctx.translate(canvas.width/2, canvas.height/2);
+//ctx.fillStyle = 'grey';
+ctx.fillStyle = 'black';
+ctx.strokeStyle = '#333';
+ctx.scale(scale, scale);
+//ctx.strokeText('zb3', 0, 0);
+ctx.fillText('zb3', 0, 0);
+</script>

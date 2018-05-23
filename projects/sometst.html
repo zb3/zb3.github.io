@@ -1,0 +1,832 @@
+<style>
+body{background-color: black; color: white;font-family:arial}
+#cmain
+{
+ width: 720px;
+ margin: auto;
+}
+</style>
+<center><h1>SomeTst</h1></center>
+<div id="cmain">
+This is an unfinished (but playable (but hard to play)) game inspired by Rubiks cube but way worse :)<br>Your objective is to make each face consist of the same signs. But instead of rotating you move... Move modulo! And faces inside count to.<br><br>Initial state is your goal, to get started, click scramble and then click on cubes on the edges/corners. Good luck!<br><br>Why no undo and other features? Well, this is a <b>zombie project</b> which means it's been rescued from the graveyard of unfinished projects... Meaning it's not finished, but won't be updated. (well you can do this but the code is horrible)<br><br><br>
+<button onclick="scramble(5)">Scramble a bit(5)</button> <button onclick="scramble(10)">Scramble a bit more(10)</button> <button onclick="scramble(4000)">Scramble totally(4000)</button> <button onclick="scramble(parseInt(ntimes.value));">Scramble</button> <input type="text" id="ntimes" value="15"> times<br><br>
+<div id="render" style="border: 1px solid grey; width: 720px; height: 480px;"></div>
+</div>
+<br><br>
+<script src="thr.sometst.js"></script>
+<script>
+var cnew = document.createElement('canvas'), conew = cnew.getContext('2d');
+var bk = 80;
+cnew.width = 4*bk; cnew.height = 16*bk;
+
+function fillThatRect(x, y, color, mode)
+{
+ conew.fillStyle=color;
+ conew.fillRect(x, y, 80, 80);
+ conew.fillStyle='black';
+ conew.fillRect(x+15, y+15, 50, 50);
+ conew.fillStyle=color;
+ conew.fillRect(x+40-(mode==1?8:12), y+40-2, (mode==1?16:24), 4);
+ if(mode!=1)
+ conew.fillRect(x+40-2, y+40-12, 4, 24);
+}
+function fillThatRect2(x, y, color, font, char, cx, cy, rot)
+{
+ conew.fillStyle=color;
+ conew.fillRect(x, y, 80, 80);
+ conew.fillStyle='black';
+ conew.fillRect(x+15, y+15, 50, 50);
+ conew.fillStyle=color;
+ conew.textBaseline = 'middle';
+ conew.textAlign = 'center';
+ conew.font = font;
+ conew.save();
+ conew.translate(x+40, y+40);
+ conew.rotate(Math.PI/4);
+ conew.fillText(char, 0, 0);
+ conew.rotate(Math.PI/8);
+ conew.restore();
+}
+function fillThatArrow(x, y, color, mode)
+{
+ var t = mode;
+ mode = mode%3;
+ conew.fillStyle=color;
+ conew.save();
+ conew.translate(x+40, y+40);
+ if (t>8)
+ {
+  conew.scale(-1, -1);
+ }
+ else if (t>5)
+ {
+  conew.scale(1, -1);
+ }
+ else if (t>2)
+ {
+  conew.scale(-1, 1);
+ }
+ conew.rotate(mode==0?0:mode==1?Math.PI/2:Math.PI/4);
+ conew.fillRect(-5, -7, 10, 24);
+ conew.beginPath();
+ conew.moveTo(-13, -7);
+ conew.lineTo(+13, -7);
+ conew.lineTo(0, -20);
+ conew.fill();
+ conew.restore();
+}
+for(t=0;t<16;t++)
+{
+ fillThatRect(0, t*bk, '#ffffaa', 0);
+ fillThatRect(bk, t*bk, '#aaffff', 1);
+ fillThatRect2(2*bk, t*bk, '#aaffaa', '55px Arial', '+', 30, 30, true);
+ if (t>0 && t<=12)
+ {
+  fillThatArrow(0, t*bk, 'rgba(255, 255, 170, 0.3)', t-1);
+  fillThatArrow(bk, t*bk, 'rgba(170, 255, 255, 0.3)', t-1);
+  fillThatArrow(2*bk, t*bk, 'rgba(170, 255, 170, 0.3)', t-1);
+ }
+}
+function compileY(end, mtype, y_flip, x_flip)
+{
+ var ct = mtype+2+3*x_flip+6*y_flip;
+ ct = (16-ct)/16;
+ if (end)
+ return ct+1/16-0.0078125;
+ else return ct+0.0078125;
+}
+
+//document.body.appendChild(cnew);
+
+
+
+m = {};
+m.gpt = 0; m.cx = 0; m.cy = 0;
+m.gp = function(el, type)
+{
+ m.gpt = 0;
+ while(el)
+ {
+  m.gpt += (el[type?'offsetTop':'offsetLeft'] - el[type?'scrollTop':'scrollLeft'] + el[type?'clientTop':'clientLeft']);
+  el = el.offsetParent;
+ }
+ return m.gpt;
+};
+m.rn = function(min, max){return Math.floor(Math.random() * (max - min + 1) + min);};
+m.rf = function(min, max){return Math.random() * (max - min) + min;}
+m.width=720; m.height=480;
+m.element=document.getElementById('render');
+m.scene=new THREE.Scene();
+m.camera=new THREE.PerspectiveCamera(45, m.width/m.height, 0.1, 30000); 
+m.camera.position.set(0,0, 12);
+m.camera.lookAt(new THREE.Vector3(0, 0, 0));
+m.scene.add(m.camera);
+m.renderer = new THREE.WebGLRenderer({antialias:false});
+m.renderer.setSize(m.width, m.height);
+m.element.appendChild(m.renderer.domElement);
+m.renderer.domElement.tabIndex = 1;
+m.renderer.domElement.oncontextmenu = function(event){event.preventDefault();}
+m.light = new THREE.PointLight(0xffffff);
+m.light.position = m.camera.position;
+m.scene.add(m.light);
+m.g = function(event){m.mx = getClientX(event)-m.gp(m.renderer.domElement, 0);m.my = getClientY(event)-m.gp(m.renderer.domElement, 1);}
+
+var ttx = new THREE.Texture(cnew);
+ttx.needsUpdate = true;
+
+
+var mattt = [];
+
+var cubes = []; 
+//m.scene.add(ctest);
+function moveMeh(type, row, tmove, tq)
+{
+ var t;
+ for(t=0;t<cubes.length;t++)
+ {
+  if (Math.abs(cubes[t].position[ltable[type]]-vtable[row])<0.0001)
+  {
+   cubes[t].position[ltable[tmove]] += xn*tq;
+   if (cubes[t].position[ltable[tmove]]>vtable[2]) cubes[t].position[ltable[tmove]] = vtable[0];
+   else if (cubes[t].position[ltable[tmove]]<vtable[0]) cubes[t].position[ltable[tmove]] = vtable[2];
+  }
+ }
+}
+
+var co = new THREE.Object3D();
+m.scene.add(co)
+var xn = 2.5, n=3, t, t2, t4, m_idx=0;
+var carray = [0xffffff, 0x00ff00, 0x0000ff]
+var vtable = [];
+for(t=0;t<n;t++)
+vtable.push((t-(n-1)/2)*xn);
+var ltable = ['x', 'y', 'z']
+
+function setUV4(arr, face, x0, x1, y0, y1)
+{
+ arr[face][0].x = x0; arr[face][0].y = y1;
+ arr[face][1].x = x0; arr[face][1].y = y0;
+ arr[face][2].x = x1; arr[face][2].y = y1;
+ arr[face+1][0].x = x0; arr[face+1][0].y = y0;
+ arr[face+1][1].x = x1; arr[face+1][1].y = y0;
+ arr[face+1][2].x = x1; arr[face+1][2].y = y1;
+ if (!arr[face].uvinfo)
+ {
+  arr[face].uvinfo = [x0, x1, y0, y1];
+  arr[face+1].uvinfo = arr[face].uvinfo;
+ }
+ arr[face].uvinfo[0] = x0; arr[face].uvinfo[1] = x1; arr[face].uvinfo[2] = y0; arr[face].uvinfo[3] = y1;
+}
+for(t=0;t<n;t++)
+for(t2=0;t2<n;t2++)
+for(t4=0;t4<n;t4++)
+{
+ mattt.push(new THREE.MeshPhongMaterial({color: 0xffffff,map: ttx,  transparent: true}));
+
+ (tmp=cubes[cubes.push(new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), mattt[m_idx++]))-1]).position.set(vtable[t], vtable[t2], vtable[t4]);
+
+ for(g=0;g<4;g+=2)
+ {
+  setUV4(tmp.geometry.faceVertexUvs[0], g, t*0.25+0.03125, 0.25+t*0.25-0.03125, 0.9375+0.0078125, 1-0.0078125);
+ }
+ for(g=4;g<8;g+=2)
+ {
+  setUV4(tmp.geometry.faceVertexUvs[0], g, t2*0.25+0.03125, 0.25+t2*0.25-0.03125, 0.9375+0.0078125, 1-0.0078125);
+ }
+ for(g=8;g<12;g+=2)
+ {
+  setUV4(tmp.geometry.faceVertexUvs[0], g, t4*0.25+0.03125, 0.25+t4*0.25-0.03125, 0.9375+0.0078125, 1-0.0078125);
+ }
+ co.add(tmp);
+}
+function r(max, not)
+{
+ var can = Math.floor(Math.random() * (max + 1));
+ if (can==not) return r(max, not);
+ else return can;
+}
+
+function resetCubes()
+{
+ for(t=0;t<n;t++)
+ for(t2=0;t2<n;t2++)
+ for(t4=0;t4<n;t4++)
+ {
+  cubes[9*t+3*t2+t4].position.set(vtable[t], vtable[t2], vtable[t4]);
+ }
+}
+function scramble(n)
+{
+ resetCubes();
+ for(t=0;t<n;t++)
+ moveMeh(tt=r(2), r(2), r(2, tt), r(1)*2-1); 
+}
+
+
+
+
+function moveScript(str)
+{
+ var v = str.split(''), t;
+ if (v[3]=='-') t = -parseInt(v[4]);
+ else t = parseInt(v[3]);
+ moveMeh(parseInt(v[0]), parseInt(v[1]), parseInt(v[2]), t);
+ m.render();
+}
+
+m.animation = 0;
+m.alist = [];
+m.atype = -1;
+m.render = function()
+{
+ m.renderer.render(m.scene, m.camera)
+}
+function animateMove(type, row, tmove, tq)
+{
+ var t, mode, we, mtype, start, stop1, stop2, end, etype = 0, p, tvec = new THREE.Vector3(0, 0, 0);
+ for(t=0;t<m.alist.length;t++)
+ if (m.alist[t].type==type && m.alist[t].row==row && m.alist[t].tmove==tmove) 
+ {
+  if (m.alist[t].tq==tq) etype=1;
+  else
+  {
+   m.alist[t].tq *= -1;
+   etype=-1;
+  }
+  break;
+ }
+ if (!etype)
+ we = m.alist.push({type: type, row: row, tmove: tmove, tq: tq, bmoves: [], percent: 0, curve: 0})-1;
+ else we = t;
+
+ if (!etype)
+ {
+  //this adds a new one
+  //console.log('adding a new one');
+  m.alist[we].bmoves.push([]);
+  for(t=0;t<cubes.length;t++)
+  {
+   if (type==-1 || Math.abs(cubes[t].position[ltable[type]]-vtable[row])<0.0001)
+   {
+    //use only one, predefined coordinate
+    tvec = cubes[t].position[ltable[tmove]]+xn*tq; //because now this isn't an array but a primitive value
+    if (tvec>vtable[2] || tvec<vtable[0])
+    {
+     tvec = vtable[tvec>vtable[2]?0:2];
+     m.alist[we].bmoves[0].push({object: cubes[t], type: 1, start: cubes[t].position[ltable[tmove]], stop1: cubes[t].position[ltable[tmove]]+(xn*tq)/2, stop2: tvec-(xn*tq)/2, end: tvec});
+    }
+    else
+    m.alist[we].bmoves[0].push({object: cubes[t], type: 0, start: cubes[t].position[ltable[tmove]], end: tvec});
+   }
+  }
+ }
+ else if (etype==-1)
+ {
+  //console.log('reversing the old one');
+  m.alist[we].bmoves.length=1;
+  p = animCurve(m.alist[we].curve, m.alist[we].percent);
+  m.alist[we].percent = Math.acos(1-2*(1-p))/Math.PI
+  m.alist[we].curve = 0;
+  for(t=0;t<m.alist[we].bmoves[0].length;t++)
+  {
+   //start<->end
+   p = m.alist[we].bmoves[0][t].start;
+   m.alist[we].bmoves[0][t].start = m.alist[we].bmoves[0][t].end
+   m.alist[we].bmoves[0][t].end = p;
+   if (m.alist[we].bmoves[0][t].type)
+   {
+    p = m.alist[we].bmoves[0][t].stop1;
+    m.alist[we].bmoves[0][t].stop1 = m.alist[we].bmoves[0][t].stop2;
+    m.alist[we].bmoves[0][t].stop2 = p;
+   }
+  }
+ }
+ else
+ {
+  console.log('extending the old one');
+  //instead of checking that somewhere else, we'll check it here, so bmoves length MUST be 1
+  m.alist[we].bmoves.length=1;
+  p = animCurve(m.alist[we].curve, m.alist[we].percent);
+  m.alist[we].percent = 2*Math.acos(1-p)/Math.PI;
+  m.alist[we].curve = 1;
+
+  //now tickclock will simply splice that entry and if something is there, reset percent
+  m.alist[we].bmoves.push([]);
+  for(t=0;t<cubes.length;t++)
+  {
+   if (type==-1 || Math.abs(cubes[t].position[ltable[type]]-vtable[row])<0.0001)
+   {
+    mode=0;
+    our_anim = m.alist[we].bmoves[0];
+    //but this isn't bmove entry, this is m.alist entry
+    //we do need to extend boxes though...
+    for(t2=0;t2<m.alist[we].bmoves[0].length;t2++) 
+    {
+     if (m.alist[we].bmoves[0][t2].object==cubes[t]) break;
+    }
+    our_anim = m.alist[we].bmoves[0][t2];
+
+    tvec = our_anim.end+xn*tq;
+    if (tvec>vtable[2] || tvec<vtable[0]) 
+    { 
+     tvec = vtable[tvec>vtable[2]?0:2];
+     m.alist[we].bmoves[1].push({object: cubes[t], type: 1, start: our_anim.end, stop1: our_anim.end+(xn*tq)/2, stop2: tvec-(xn*tq)/2, end: tvec});
+    }
+    else
+    m.alist[we].bmoves[1].push({object: cubes[t], type: 0, start: our_anim.end, end: tvec});
+   }
+  }
+ }
+ m.animation = type+1;
+ m.arow = row;
+}
+function animCurve(type, percent)
+{
+ var p;
+ if (type==2)
+ p = Math.cos((percent-1)*Math.PI/2);
+ else if (type==1)
+ p = 1-Math.cos(percent*Math.PI/2);
+ else
+ p = 0.5-Math.cos(Math.PI*percent)/2;
+ return p;
+}
+function tickTheClock()
+{
+ //idea1: test velocity in MICRO scale
+ var t, t2, p, far, mal = m.alist.length;
+ for(t=0;t<m.alist.length;t++)
+ {
+  if (m.alist[t].percent==1)
+  {
+//console.log('anim %d ended, splicing bmoves 0', t);
+   m.alist[t].bmoves.splice(0, 1);
+   m.alist[t].percent = 0;
+   m.alist[t].curve=2;
+   if (m.anim_move)
+   m.anim_move--;
+  }
+  if (!m.alist[t].bmoves.length)
+  {
+  //console.log('cleaning', t);
+   m.alist.splice(t, 1);
+   t--; 
+   continue;
+  }
+  //console.log(m.alist[t].curve)
+  m.alist[t].percent += 0.03;
+  m.alist[t].percent = Math.max(0, Math.min(m.alist[t].percent, 1));
+  p = animCurve(m.alist[t].curve, m.alist[t].percent);
+  for(t2=0;t2<m.alist[t].bmoves[0].length;t2++)
+  {
+   tt = m.alist[t].bmoves[0][t2];
+   if (tt.type)
+   {
+    far = 0;
+    if (tt.object.position.x<vtable[0])
+    far = Math.max(far, (tt.object.position.x-vtable[0])*(tt.object.position.x-vtable[0]));
+    else if (tt.object.position.x>vtable[2])
+    far =  Math.max(far, (tt.object.position.x-vtable[2])*(tt.object.position.x-vtable[2]));
+
+    if (tt.object.position.y<vtable[0])
+    far = Math.max(far, (tt.object.position.y-vtable[0])*(tt.object.position.y-vtable[0]));
+    else if (tt.object.position.y>vtable[2])
+    far = Math.max(far, (tt.object.position.y-vtable[2])*(tt.object.position.y-vtable[2]));
+
+    if (tt.object.position.z<vtable[0])
+    far = Math.max(far, (tt.object.position.z-vtable[0])*(tt.object.position.z-vtable[0]));
+    else if (tt.object.position.z>vtable[2])
+    far = Math.max(far, (tt.object.position.z-vtable[2])*(tt.object.position.z-vtable[2]));
+
+    far = Math.min(1, Math.sqrt(far)/(xn/2));
+
+    tt.object.material.opacity = tt.object.material.opacity = tt.object.material.opacity =  1-(0.5-Math.cos(Math.PI*far)/2);
+
+    tt.object.position[ltable[m.alist[t].tmove]] = tt[(p>0.5)?'stop2':'start']*(1-((p>0.5)?(2*(p-0.5)):2*p))+tt[(p>0.5)?'end':'stop1']*((p>0.5)?(2*(p-0.5)):2*p);
+   }
+   else tt.object.position[ltable[m.alist[t].tmove]] = tt.start*(1-p)+tt.end*p;
+  }
+ }
+ if (!m.alist.length && mal && csolved())
+ {
+  alert('Game solved!');
+ }
+ if (!m.alist.length)
+ {
+  m.anim_scroll = 0;
+  m.anim_move = 0;
+  if (m.anim_move_maybe_cleared)
+  m.anim_move_maybe = 1;
+ }
+ else  m.render();
+} 
+function paint()
+{
+ requestAnimationFrame(paint);
+ m.render();
+}
+function getVTableFromPos(pos)
+{
+ var score = [Math.abs(pos-vtable[0]), Math.abs(pos-vtable[1]), Math.abs(pos-vtable[2])];
+ var mx = Math.min.apply(this, score);
+ if (mx==score[0]) return 0;
+ else if (mx==score[1]) return 1;
+ else if (mx==score[2]) return 2;
+}
+m.unhighlightObject = function()
+{
+ setUV4(m.hilObject.geometry.faceVertexUvs[0], m.hilFace, m.hilObject.geometry.faceVertexUvs[0][m.hilFace].uvinfo[0], m.hilObject.geometry.faceVertexUvs[0][m.hilFace].uvinfo[1], 0.9375+0.0078125, 1-0.0078125);
+ m.hilObject.geometry.uvsNeedUpdate = true;
+ m.hilObject = null;
+}
+m.rotateDown = 0;
+m.rotateDownMoved = 0;
+m.raycaster = new THREE.Raycaster();
+m.projector = new THREE.Projector();
+m.mouse_vec = new THREE.Vector3();
+m.hill=-1;
+m.touchScreen = 0;
+m.anim_scroll = 0;
+m.anim_scrolltype = 0;
+m.anim_scrolldir = 0;
+m.anim_move = 0; //and type row etc
+m.anim_movetype = 0;
+m.anim_movedir = 0;
+m.anim_move_maybe = 0;
+m.anim_move_maybe_type = 0;
+m.anim_move_maybe_row = 0;
+m.anim_move_maybe_tmove = 0;
+m.anim_move_maybe_tq = 0;
+m.renderer.domElement.evt_touchstart = function(event, tmode)
+{
+ //we forgot about scroll...
+ m.touchScreen = 1;
+ m.touchEvent = event;
+
+ m.renderer.domElement.onmousemove(event, true);
+ m.renderer.domElement.onmousedown(event, true);
+
+
+// event.preventDefault();
+}
+//unhighlight the scroll ax on touchend
+m.renderer.domElement.evt_touchmove = function(event, tmode)
+{
+ m.touchEvent = event;
+ m.renderer.domElement.onmousemove(event, true);
+ event.preventDefault();
+}
+m.renderer.domElement.evt_touchend = function(event, tmode)
+{
+//if maybe, but touch maybe different, don't move
+ if (!m.renderer.domElement.onmouseup(m.touchEvent, true))
+ m.renderer.domElement.onmousemove(m.touchEvent, true);
+ ax.material.emissive.setHex(0x000000);
+ ay.material.emissive.setHex(0x000000);
+ az.material.emissive.setHex(0x000000);
+
+ ax.material.color.setHex(0x88ff88);
+ ay.material.color.setHex(0x88ffff);
+ az.material.color.setHex(0xffff88);
+
+ if (m.anim_move_maybe)
+ {
+  m.anim_move_maybe_touch_type = m.anim_move_maybe_type;
+  m.anim_move_maybe_touch_row = m.anim_move_maybe_row;
+  m.anim_move_maybe_touch_tmove = m.anim_move_maybe_tmove.toString();
+  m.anim_move_maybe_touch_tq = m.anim_move_maybe_tq.toString();
+  m.rotateDownMoved = 0;
+ } 
+ else
+ {
+  m.anim_move_maybe_touch_row = -1;
+ }
+  m.render();
+ event.preventDefault();
+}
+m.renderer.domElement.addEventListener('touchenter', m.renderer.domElement.evt_touchstart, false);
+m.renderer.domElement.addEventListener('touchstart', m.renderer.domElement.evt_touchstart, false);
+m.renderer.domElement.addEventListener('touchmove', m.renderer.domElement.evt_touchmove, false);
+m.renderer.domElement.addEventListener('touchend', m.renderer.domElement.evt_touchend, false);
+m.renderer.domElement.addEventListener('touchleave', m.renderer.domElement.evt_touchend, false);
+m.renderer.domElement.addEventListener('touchcancel', m.renderer.domElement.evt_touchend, false);
+function getClientX(event)
+{
+ if ('clientX' in event)
+ return event.clientX;
+ else return event.targetTouches[0].clientX;
+}
+function getClientY(event)
+{
+ if ('clientY' in event)
+ return event.clientY;
+ else return event.targetTouches[0].clientY;
+}
+m.renderer.domElement.onmousedown = function(event, tmode)
+{
+ if (m.touchScreen && !tmode) return false;
+ if (m.hill!=-1)
+ {
+  m.scrollDown = 1;
+  m.posX = getClientX(event); m.posY = getClientY(event);
+  return;
+ }
+ m.rotateDown = 1;
+ m.rotateDownMoved = 0;
+ m.posX = getClientX(event); m.posY = getClientY(event);
+ m.rotX = co.rotation.x; m.rotY = co.rotation.y;
+ event.preventDefault();
+}
+m.renderer.domElement.onwheel = function(event, tmode)
+{
+ if (m.touchScreen && !tmode) return false;
+ //getAxVector is NOT precise. but I don't have time to check what's going on there
+ if ((m.hill==1 || m.hill==0 || m.hill==2) && !m.anim_move)
+ {
+ //not this way.
+  var tvec = getAxVector(m.hill);
+  var t = ((event.deltaY<0?-1:1)*tvec[1]>0)?1:-1;
+  if (m.hill==0) t *= -1;
+  m.anim_scroll = 1;
+  animateMove(-1, -1, m.hill, -t);
+ }
+ event.preventDefault();
+}
+m.renderer.domElement.onmousemove = function(event, tmode)
+{
+ if (m.touchScreen && !tmode) return false;
+ m.anim_move_maybe_cleared = 0;
+ if (m.scrollDown && !m.anim_move)
+ {
+  if ((getClientX(event)-m.posX)*(getClientX(event)-m.posX)+(getClientY(event)-m.posY)*(getClientY(event)-m.posY)>300)
+  {
+   var vec = getAxVector(m.hill);
+   var t = ((getClientX(event)-m.posX)*vec[0] + (m.posY-getClientY(event))*vec[1])>0?1:-1;
+   if (m.hill==0) t *= -1;
+   m.anim_scroll = 1;
+   animateMove(-1, -1, m.hill, t);
+   m.scrollDown=0;
+  }
+  m.render();
+  return;
+ }
+ else if (!m.rotateDown)
+ {
+  m.g(event);
+  m.mouse_vec.set((m.mx/m.width)*2-1, -(m.my/m.height)*2+1, 0.5);
+  m.projector.unprojectVector(m.mouse_vec, m.camera);
+  m.raycaster.set(m.camera.position, m.mouse_vec.sub(m.camera.position).normalize());
+
+  ax.material.emissive.setHex(0x000000);
+  ay.material.emissive.setHex(0x000000);
+  az.material.emissive.setHex(0x000000);
+
+  ax.material.color.setHex(0x88ff88);
+  ay.material.color.setHex(0x88ffff);
+  az.material.color.setHex(0xffff88);
+  m.anim_move_maybe = 0;
+  var nx = m.raycaster.intersectObjects(coset.children);
+  if (nx.length)
+  {
+   if (nx[0].object==ax)
+   {
+    m.hill = 1;
+    ax.material.emissive.setHex(0x335533);
+    //ax.material.color.setHex(0x448844);
+   }
+   else if (nx[0].object==ay)
+   {
+    m.hill = 2;
+    ay.material.emissive.setHex(0x335533);
+    //ay.material.color.setHex(0x448888);
+   }
+   else if (nx[0].object==az)
+   {
+    m.hill = 0;
+    az.material.emissive.setHex(0x335533);
+    //az.material.color.setHex(0x888844);
+   }
+   else m.hill = -1;
+  }
+  else
+  {
+   m.hill = -1; 
+   nx = m.raycaster.intersectObjects(co.children);
+   if (nx.length)
+   {
+    m.anim_move_maybe = 1;
+    m.anim_move_maybe_tmove = [];
+    m.anim_move_maybe_tq = [];
+    if (Math.abs(nx[0].face.normal.x)==1) m.anim_move_maybe_type = 0; 
+    else if (Math.abs(nx[0].face.normal.y)==1) m.anim_move_maybe_type = 1;
+    else if (Math.abs(nx[0].face.normal.z)==1) m.anim_move_maybe_type = 2;
+    
+    m.anim_move_maybe_row = getVTableFromPos(nx[0].object.position[ltable[m.anim_move_maybe_type]]);
+
+    m.anim_tr1 = getVTableFromPos(nx[0].object.position[ltable[(3+m.anim_move_maybe_type+1)%3]]);
+    m.anim_tr2 = getVTableFromPos(nx[0].object.position[ltable[(3+m.anim_move_maybe_type-1)%3]]);
+
+    if (m.anim_tr1==1 && m.anim_tr2==1)
+    {
+     m.anim_move_maybe = 0;
+    }
+    else
+    {
+     if (m.anim_tr1!=1)
+     {
+      m.anim_move_maybe_tmove.push((3+m.anim_move_maybe_type+1)%3);
+      if (m.anim_tr1==0)
+      m.anim_move_maybe_tq.push(-1);
+      else
+      m.anim_move_maybe_tq.push(1);
+     }
+     if (m.anim_tr2!=1)
+     {
+      m.anim_move_maybe_tmove.push((3+m.anim_move_maybe_type-1)%3);
+      if (m.anim_tr2==0)
+      m.anim_move_maybe_tq.push(-1);
+      else
+      m.anim_move_maybe_tq.push(1);
+     }
+     
+     if (m.hilObject) m.unhighlightObject();
+     var nface = nx[0].object.geometry.faces.indexOf(nx[0].face), nface2 = (nface%2)?nface-1:nface;
+     m.hilObject = nx[0].object; m.hilFace = nface2;
+
+     var x_flip, y_flip, x0, x1, y0, y1, m1, m2;
+     x0=nx[0].object.geometry.faceVertexUvs[0][nface2].uvinfo[0];
+     x1=nx[0].object.geometry.faceVertexUvs[0][nface2].uvinfo[1];
+     y0=nx[0].object.geometry.faceVertexUvs[0][nface2].uvinfo[2];
+     y1=nx[0].object.geometry.faceVertexUvs[0][nface2].uvinfo[3];
+ 
+
+     if (m.anim_move_maybe_tmove.length==1)
+     {
+      if (m.anim_move_maybe_tmove[0]==(m.anim_move_maybe_type==1?2:1))
+      {
+       y_flip = m.anim_move_maybe_tq[0]==-1?1:0;
+       if ((m.anim_move_maybe_type==1 && nface2%4<=1)) y_flip = 1-y_flip;
+       y0 = compileY(0, 0, y_flip, 0);
+       y1 = compileY(1, 0, y_flip, 0);
+      }
+      else if (m.anim_move_maybe_tmove[0]==(m.anim_move_maybe_type==0?2:0))
+      {
+       x_flip = m.anim_move_maybe_tq[0]==-1?1:0;
+       if ((m.anim_move_maybe_type==2 && nface2%4>1) || (m.anim_move_maybe_type==0 && nface2%4<=1)) x_flip = 1-x_flip;
+       y0 = compileY(0, 1, 0, x_flip);
+       y1 = compileY(1, 1, 0, x_flip);
+      }
+     }
+     else
+     {
+      m1 = (m.anim_move_maybe_tmove[0]==(m.anim_move_maybe_type==0?2:0))?m.anim_move_maybe_tq[0]:m.anim_move_maybe_tq[1];
+      m2 = (m.anim_move_maybe_tmove[0]==(m.anim_move_maybe_type==1?2:1))?m.anim_move_maybe_tq[0]:m.anim_move_maybe_tq[1];
+      y_flip = (m2==-1?1:0);
+      if (m.anim_move_maybe_type==1 && nface2%4<=1) y_flip = 1-y_flip;
+      x_flip = (m1==-1?1:0);
+      if ((m.anim_move_maybe_type==2 && nface2%4>1) || (m.anim_move_maybe_type==0 && nface2%4<=1)) x_flip = 1-x_flip;
+      y0 = compileY(0, 2, y_flip, x_flip);
+      y1 = compileY(1, 2, y_flip, x_flip);
+     }
+   
+     setUV4(nx[0].object.geometry.faceVertexUvs[0], nface2, x0, x1, y0, y1);
+     nx[0].object.geometry.uvsNeedUpdate = true;
+    }
+   }
+  }
+
+  if (!m.anim_move_maybe && m.hilObject)
+  {
+   m.unhighlightObject();
+  }
+  m.render();
+  return;
+ }
+ else 
+ { 
+  m.rotateDownMoved=1;
+  if (m.hilObject) m.unhighlightObject();  
+ }
+ coset.rotation.x = co.rotation.x =  Math.max(-Math.PI, Math.min(m.rotX+0.003*(getClientY(event)-m.posY), Math.PI));
+ coset.rotation.y = co.rotation.y =  m.rotY+0.003*(getClientX(event)-m.posX);
+ m.render();
+}
+m.renderer.domElement.onmouseout = function(event, tmode)
+{
+ if (m.touchScreen && !tmode) return false;
+ m.rotateDown=0;
+}
+m.renderer.domElement.onmouseup = function(event, tmode)
+{
+ if (m.touchScreen && !tmode) return false;
+ m.madeMove=0;
+ if (!m.rotateDownMoved && !m.anim_scroll && (!m.anim_move || m.anim_movetype==m.anim_move_maybe_type) &&m.anim_move_maybe && (!m.touchScreen || ((m.anim_move_maybe_touch_type==m.anim_move_maybe_type) && (m.anim_move_maybe_touch_row==m.anim_move_maybe_row) && (m.anim_move_maybe_touch_tmove==m.anim_move_maybe_tmove.toString()) && (m.anim_move_maybe_touch_tq==m.anim_move_maybe_tq.toString()))))
+ {
+
+  if (m.hilObject)
+  {
+   m.unhighlightObject();
+  }
+  m.anim_move_maybe = 0;
+  m.anim_move_maybe_touch_row = -1;
+  m.anim_move_maybe_cleared = 1;
+  m.anim_move += 1;
+  m.anim_movetype = m.anim_move_maybe_type;
+  m.rotateDown = 1;
+  animateMove(m.anim_move_maybe_type, m.anim_move_maybe_row, m.anim_move_maybe_tmove[0], m.anim_move_maybe_tq[0]);
+  if (m.anim_move_maybe_tmove.length>1)
+  animateMove(m.anim_move_maybe_type, m.anim_move_maybe_row, m.anim_move_maybe_tmove[1], m.anim_move_maybe_tq[1]);
+  m.madeMove=1;
+ }
+ else {m.rotateDown = 0;m.renderer.domElement.onmousemove(event);}
+ m.rotateDown = 0;
+ m.scrollDown = 0;
+ if (m.madeMove)
+ {
+  m.madeMove=0;
+  return true;
+ }
+ else return false;
+}
+var coset = new THREE.Object3D();
+window.setInterval(tickTheClock, 20);
+var cx = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7), new THREE.MeshLambertMaterial({color: 0xffffff}))
+cx.position.set(0, 0, 0); cx.translateY(0.35);
+var cy = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7), new THREE.MeshLambertMaterial({color: 0xffffff}))
+cy.position.set(0, 0, 0); cy.translateZ(0.35); cy.rotateX(Math.PI/2);
+var cz = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7), new THREE.MeshLambertMaterial({color: 0xffffff}))
+cz.position.set(0, 0, 0); cz.translateX(-0.35);cz.rotateZ(Math.PI/2);
+var ax = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0, 0.3), new THREE.MeshLambertMaterial({color: 0x88ff88}))
+ax.position.set(0, 0.74, 0);ax.rotateX(Math.PI)
+var ay = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0, 0.3), new THREE.MeshLambertMaterial({color: 0x88ffff}))
+ay.position.set(0, 0, 0.74);ay.rotateX(-Math.PI/2);
+var az = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0, 0.3), new THREE.MeshLambertMaterial({color: 0xffff88}))
+az.position.set(-0.74, 0, 0);az.rotateX(-Math.PI/2);az.rotateZ(-Math.PI/2);
+
+
+coset.add(cx);
+coset.add(cy);
+coset.add(cz);
+coset.add(ax);coset.add(ay);coset.add(az);
+coset.position.set(3.7, -2.5, 4)
+m.scene.add(coset);
+m.render();
+
+function debugCube(x, y, z)
+{
+ var none = new THREE.Mesh(new THREE.CubeGeometry(0.1, 0.1, 0.1), new THREE.MeshLambertMaterial());
+ none.position.set(x, y, z);
+ m.scene.add(none);
+ m.render();
+}
+function getAxVector(type)
+{
+ var cbase = m.projector.projectVector(new THREE.Vector3(3.7, -2.5, 4), m.camera);
+ var carrow = m.projector.projectVector(new THREE.Vector3(0, 0, 0).applyMatrix4((type==0?az:type==1?ax:ay).matrixWorld), m.camera);
+ var vec = [(carrow.x-cbase.x), -(cbase.y-carrow.y)];
+ var lvec = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+ vec[0] /= lvec; vec[1] /= lvec;
+ return vec;
+}
+function csolved()
+{
+/*
+ok, but does this 
+
+for(t=0;t<n;t++)
+vtable.push((t-(n-1)/2)*xn);
+var ltable = ['x', 'y', 'z']
+
+well let's assume trow is 0,1,2 and type determines the normal to the surface of that row.
+not sure if that's the way but...
+
+then for each row and type
+you check coordinate for that type
+I meant ... check what is @ that face
+
+but it checks the location. dafuq?
+ah ok it checks if that belongs to that row
+and then it should check the face
+
+ah but we know what is @ that face by cube id!
+ah I used to be clever... 
+*/
+ var trow, ttype, mr, fsolved = 0, t, t2, t4;
+
+ for(trow=0;trow<3;trow++)
+ for(ttype=0;ttype<3;ttype++)
+ {
+  mr = [0, 0, 0]; //+, -, x
+  for(t=0;t<3;t++)
+  for(t2=0;t2<3;t2++)
+  for(t4=0;t4<3;t4++)
+  if (cubes[t*9+t2*3+t4].position[ltable[ttype]]==vtable[trow])
+  mr[ttype==0?t:ttype==1?t2:t4]++;
+  
+  mr = Math.max.apply(this, mr);
+  if (mr==n*n)
+  fsolved++;
+ }
+ return fsolved==9;
+}
+</script>

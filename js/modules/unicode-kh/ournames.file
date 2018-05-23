@@ -1,0 +1,29 @@
+sans-serif bold italic|sans-serif bold italic
+sans-serif bold|sans-serif bold
+sans-serif italic|sans-serif italic
+sans-serif|sans-serif
+script|script
+script bold|script bold
+fraktur|fraktur
+fraktur bold|fraktur bold
+fullwidth|fullwidth
+monospace|monospace
+doublestruck|doublestruck
+capital|small capitals
+parenthesized|parenthesized
+circled|circled
+bold italic|bold italic
+bold|bold
+italic|italic
+negative circled|negative circled capitals + digits
+squared|squared capitals + signs
+negative squared|negative squared capitals
+subscript|subscript (mostly digits + small letters)
+superscript|superscript
+dingbat circled sans-serif|dingbat circled sans-serif digits
+dingbat negative circled sans-serif|dingbat negative circled sans-serif digits
+double circled|double circled digits
+full stop|full stop after digits
+comma|comma after digits
+telegraph hour|digits as telegraph hours symbols
+telegraph day|digits as telegraph days symbols

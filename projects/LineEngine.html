@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="dat.gui.js"></script> 
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ margin:0;
+}
+canvas
+{
+ position: absolute;
+ top: 0; left: 0;
+}
+#togglemsg
+{
+ display: none;
+}
+#msg-overlay
+{
+ font-family:Arial;
+ position: absolute;
+ width: 100%;
+ height: 100%;
+ top: 0; bottom: 0;
+ left: 0; right: 0;
+ background-color: rgba(0,0,0,0.5);
+ color: #ddd;
+ z-index: 4;
+ transition: opacity 0.25s;
+}
+#msg-overlay > div {
+	width: 600px;
+	height: 290px;
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+	margin: auto;
+	border: 3px solid #888;
+	background-color: rgba(0,0,0,0.5);
+	font-size: 14px;
+}
+#msg-overlay > div> div.head {
+	padding: 10px;
+        background-colfor:rgba(48,48,48,0.5);
+ text-align: center;
+}
+#msg-overlay > div> div.content {
+	padding: 10px;
+}
+#msg-overlay > div > div > span:first-child {
+	font-size: 26px;
+	font-weight: bold;
+	margin-right: 2px;
+}
+#msg-overlay #okbutton {
+	position: absolute;
+	bottom: 0px;
+	width: 100%;
+	margin: auto;
+	text-align: center;
+	padding: 10px 0;
+	font-size: 21px;
+	font-weight: bold;
+	box-sizing: border-box;
+	cursor: pointer;
+background-color: rgba(48,48,48,0.5);
+}
+#msg-overlay #okbutton:active {
+	background-color: black;
+}
+</style>
+<canvas id="canvas"></canvas>
+<div id="msg-overlay">
+
+<div>
+<div class="head"><span>Line Engine</span> by zb3</div>
+<div class="content">
+What's this? I don't know, this is random, but I know for sure that this isn't a game, and for sure it isn't useful.<br>These are just moving lines on a canvas.. that's it!<br><br>
+
+This stuff is interactive - drag around to "zoom" in another direction... Usually zooming into dense areas will give you better effect<br><br>
+Note that in 3D version, there are two independent move mechanisms - 2D "scaling" and 3D z-axis movement, but most of the preceived movement actually comes from 2D scaling, so the actual 3D distance may be different than what you think... the "depth color" feature can help here.
+</div>
+
+<div id="okbutton">Press this "button" to start</div>
+
+</div>
+</div>
+<script>
+var w, h;
+
+var conf = {
+ backgroundColor: '#000000',
+ strokeColor: [255,255,255],
+ strokeColorFar: [1,255,255],
+ strokeColorFarZ: 0,
+ strokeAlpha: 0.4,
+ speed: 0.011,
+ moveFactor: 4,
+ originResetFactor: 0.03,
+ divFreedom: 1,
+ maxLines: 720,
+ maxChildren: 5,
+ alphaStep: 0.05,
+ relativeLength: 0.5,
+ minChildren: 0,
+ syncChildren: false,
+ anim: false,
+ animStep: 0.05,
+ animPixelStep: 3,
+ zfar: 2,
+ zmin: 0.03,
+ zmax: 0.33,
+ zspeed: 0.273,
+ nominalUpdateTime: 20
+};
+
+
+var presets = [{}, {zspeed: 0, zfar: 1, moveFactor: 0, zmin: 0, zmax: 0}, {divFreedom: 0.06}, {strokeColorFarZ: 4}];
+var preset = 0;
+
+for(var t=0;t<presets.length;t++)
+{
+ for(var prop in conf)
+ {
+  if (!conf.hasOwnProperty(prop) || presets[t].hasOwnProperty(prop)) continue;
+  presets[t][prop] = conf[prop];
+ }
+}
+function applyPreset(){ for(var k in presets[preset]) {presets[preset].hasOwnProperty(k) && (conf[k] = presets[preset][k]);}}
+
+var ctx = document.getElementById('canvas').getContext('2d');
+ctx.canvas.width = w;
+ctx.canvas.height = h;
+
+function resize()
+{
+ w = window.innerWidth; h = window.innerHeight;
+ ctx.canvas.width = w*devicePixelRatio; ctx.canvas.height = h*devicePixelRatio;
+ ctx.canvas.style.width = w + 'px';
+ ctx.canvas.style.height = h + 'px';
+ ctx.scale(devicePixelRatio, devicePixelRatio);
+ ctx.lineWidth /= devicePixelRatio;
+ 
+ restart();
+}
+
+
+//on new stuff
+var lines, gcenter, seen, running, _strokeColor;
+var cdown = false;
+
+function updateColor()
+{
+ conf.strokeColor[0] |= 0; conf.strokeColor[1] |= 0; conf.strokeColor[2] |= 0;
+ _strokeColor = conf.strokeColor+'';
+}
+
+function restart()
+{
+ lines = [];
+ gcenter = [w/2, h/2];
+ seen = false;
+ updateColor();
+}
+restart();
+
+function start() {running = true;}
+function stop() {running = false;}
+
+function paint()
+{
+ var tmp, tmp2, strokeColor;
+ ctx.clearRect(0, 0, w, h);
+
+ if (!conf.strokeColorFarZ) //optimize for common case - exotic cases may not slow the whole app down...
+ {
+  ctx.strokeStyle = 'rgba('+_strokeColor+','+(conf.strokeAlpha)+')';
+  for(var t=0;t<lines.length;t++)
+  {
+   if (lines[t].alpha !== 1) continue;
+   
+   ctx.beginPath();
+   tmp = project(lines[t].a, lines[t].z);
+   ctx.moveTo(tmp[0], tmp[1]);
+   tmp = project(lines[t].b, lines[t].z)
+   ctx.lineTo(tmp[0], tmp[1]);
+   ctx.stroke();
+  }
+ }
+
+ for(var t=0;t<lines.length;t++)
+ {
+  if (!conf.strokeColorFarZ && lines[t].alpha === 1) continue;
+
+  if (conf.strokeColorFarZ)
+  {
+   tmp = Math.min(1, lines[t].z/conf.strokeColorFarZ);
+   strokeColor = (tmp*conf.strokeColorFar[0]+(1-tmp)*conf.strokeColor[0]|0)+','+(tmp*conf.strokeColorFar[1]+(1-tmp)*conf.strokeColor[1]|0)+','+(tmp*conf.strokeColorFar[2]+(1-tmp)*conf.strokeColor[2]|0);
+  }
+  else strokeColor = _strokeColor;
+
+  ctx.strokeStyle = 'rgba('+strokeColor+','+(lines[t].alpha*conf.strokeAlpha)+')';
+  
+  ctx.beginPath();
+  tmp = project(lines[t].a, lines[t].z);
+  ctx.moveTo(tmp[0], tmp[1]);
+  tmp = project(lines[t].b, lines[t].z)
+  ctx.lineTo(tmp[0], tmp[1]);
+  ctx.stroke();
+ }
+}
+
+/*
+note len2 is not an actual length/2 because lines are clipped.
+but it's needed for animation purposes
+*/
+
+function Z(x)
+{
+ return conf.zfar+x;
+}
+
+
+function project(coord, z)
+{
+ return [w/2+(coord[0]-w/2)/Z(z), h/2+(coord[1]-h/2)/Z(z)]
+}
+
+function clipProjected(coord, z)
+{
+ coord[0] = Math.min(coord[0], Z(z)*(w/2) + w/2);
+ coord[0] = Math.max(coord[0], Z(z)*(-w/2) + w/2);
+ coord[1] = Math.min(coord[1], Z(z)*(h/2) + h/2);
+ coord[1] = Math.max(coord[1], Z(z)*(-h/2) + h/2);
+}
+
+
+function addInitial()
+{
+ lines.push({a: [w/2-w*(conf.zfar+0.1)/2, h/2], b: [w/2+w*(conf.zfar+0.1)/2, h/2], z: 0, children: 0, parent: {children: 0}, alpha: 0, animProgress: 1, coord: 0, center: w/2, len2: w/2});
+}
+
+
+function newLine()
+{
+ var pt = 0;
+ while(!pt) pt = ((1-conf.divFreedom)/2)+(conf.divFreedom)*Math.random();
+
+ var eligible = [];
+ for(var t=0;t<lines.length;t++)
+ {
+  if (lines[t].animProgress<1) continue;
+  if (lines[t].parent.children < conf.minChildren) continue;
+  if (lines[t].children>conf.maxChildren) continue;
+
+  eligible.push(lines[t]);
+ }
+
+ if (!eligible.length) return false;
+ var line = eligible[Math.floor(Math.random()*eligible.length)];
+
+ var nlen = (conf.relativeLength)*(line.b[0]-line.a[0]+line.b[1]-line.a[1])/2;
+ var center = [line.a[0]+pt*(line.b[0]-line.a[0]), line.a[1]+pt*(line.b[1]-line.a[1])];
+
+ var cc = 1-line.coord;
+ var nline = {a: center, b: center.slice(), z: line.z+Math.random()*(conf.zmax-conf.zmin)+conf.zmin, children: 0, parent: line, alpha: 0, animProgress: 0, coord: cc, center: center[cc], len2: nlen};
+
+ if (!conf.anim || !seen || conf.anim == 3)
+ {
+  nline.animProgress = conf.anim == 3 ? 0 : 1;
+  nline.a[cc] -= nlen;
+  nline.b[cc] += nlen;
+ }
+
+ lines.push(nline);
+ line.children++;
+
+ return true;
+}
+
+
+function fill()
+{
+ while(lines.length<conf.maxLines)
+ {
+  if (!newLine())
+  break;
+ }
+}
+
+function move(x, y, z)
+{
+ for(var t=0;t<lines.length;t++)
+ {
+  lines[t].a[0] -= x; lines[t].a[1] -= y;
+  lines[t].b[0] -= x; lines[t].b[1] -= y;
+  
+  lines[t].z = Math.max(0, lines[t].z-z);
+  lines[t].center -= lines[t].coord?y:x;
+ }
+}
+
+function scale(x)
+{
+ for(var t=0;t<lines.length;t++)
+ {
+  for(var c=0;c<2;c++)
+  {
+   lines[t].a[c] *= x;
+   lines[t].b[c] *= x;
+  }
+
+  lines[t].center *= x;
+  lines[t].len2 *= x;
+ }
+}
+function clip()
+{
+ for(var t=0;t<lines.length;t++)
+ {
+  var cline = [], bad = false;
+
+  if (lines[t].z <= -conf.zfar)
+  bad = true; 
+  else
+  {
+   cline = cline.concat(project(lines[t].a, lines[t].z));
+   cline = cline.concat(project(lines[t].b, lines[t].z));
+
+   var type = (cline[0] === cline[2]) ? 0 : 1;
+   if ((cline[type]<0 || cline[type]>(type==0?w:h)))
+   bad = true;
+   else
+   {
+    clipProjected(lines[t].a, lines[t].z);
+    clipProjected(lines[t].b, lines[t].z);
+ 
+    if (lines[t].a[0]===lines[t].b[0] && lines[t].a[1]===lines[t].b[1])
+    bad = true;
+   }
+  }
+
+  if (bad)
+  {
+   if (conf.syncChildren) lines[t].parent.children--;
+   lines[t].parent = null;
+   lines[t].children = undefined;
+   lines.splice(t--, 1);
+   continue;
+  }
+ }
+
+ if (!lines.length)
+ addInitial();
+
+ if (lines.length===1)
+ lines[0].children = 0;
+}
+
+
+function partialUpdate(fact)
+{
+ if (!running) return;
+
+ for(var t=0;t<lines.length;t++)
+ {
+  lines[t].alpha = Math.min(1, lines[t].alpha+fact*conf.alphaStep);
+
+  if (lines[t].animProgress == 1) continue; 
+
+  if (conf.anim == 1 || conf.anim == 3)
+  lines[t].animProgress = Math.min(1, lines[t].animProgress+fact*conf.animStep);
+  else if (conf.anim == 2)
+  lines[t].animProgress = Math.min(lines[t].len2, lines[t].len2*lines[t].animProgress+fact*conf.animPixelStep)/lines[t].len2;
+
+  if (conf.anim !== 3)
+  {
+   lines[t].a[lines[t].coord] = lines[t].center-lines[t].len2*lines[t].animProgress;
+   lines[t].b[lines[t].coord] = lines[t].center+lines[t].len2*lines[t].animProgress;
+  }
+ }
+
+ move(gcenter[0], gcenter[1], fact*conf.speed*conf.zspeed);
+ scale(Math.pow(1+conf.speed, fact));
+ move(-gcenter[0], -gcenter[1], 0);
+ 
+ if (!cdown)
+ {
+  gcenter[0] = (1-conf.originResetFactor)*(gcenter[0]-w/2)+w/2;
+  gcenter[1] = (1-conf.originResetFactor)*(gcenter[1]-h/2)+h/2;
+ }
+ 
+ clip();
+ fill();
+}
+
+var lastUpdateTime = Date.now();
+
+function frame()
+{
+ requestAnimationFrame(frame);
+
+ partialUpdate((Date.now()-lastUpdateTime)/conf.nominalUpdateTime);
+ 
+ lastUpdateTime = Date.now();
+ 
+ paint();
+
+ seen = true;
+}
+
+window.onresize = resize;
+resize();
+
+ctx.canvas.onmousedown=mdown;
+ctx.canvas.onmousemove=mmove;
+ctx.canvas.addEventListener('touchstart', tstart);
+ctx.canvas.addEventListener('touchmove', tmove);
+window.addEventListener('mouseup', cup);
+window.addEventListener('touchend', cup);
+window.addEventListener('touchcancel', cup);
+function mdown(e)
+{
+ e.preventDefault();
+ cdown=true;
+ updpos(e.clientX, e.clientY, true);
+}
+function mmove(e)
+{
+ e.preventDefault();
+ if (!cdown) return false;
+ updpos(e.clientX, e.clientY);
+}
+function tstart(e)
+{
+ e.preventDefault(); cdown=true;
+ if (e.changedTouches.length)
+ updpos(e.changedTouches[0].clientX, e.changedTouches[0].clientY, true);
+}
+function tmove(e)
+{
+ e.preventDefault();
+ if (!cdown) return false;
+ if (e.changedTouches.length)
+ updpos(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+}
+function cup()
+{
+ cdown = false;
+}
+function updpos(x, y/*, init*/)
+{
+ /*
+ if (init)
+ {
+  cdx = gcenter[0]; mdx = x;
+  cdy = gcenter[1]; mdy = y;
+ }
+ */
+
+ gcenter[0] = (conf.moveFactor?conf.moveFactor*(conf.zfar+1):conf.zfar)*(x-w/2)+w/2;
+ gcenter[1] = (conf.moveFactor?conf.moveFactor*(conf.zfar+1):conf.zfar)*(y-h/2)+h/2;
+
+ /*
+ gcenter[0] = cdx + (conf.moveFactor?conf.moveFactor*(conf.zfar+1):conf.zfar)*(x-mdx);
+ gcenter[1] = cdy + (conf.moveFactor?conf.moveFactor*(conf.zfar+1):conf.zfar)*(y-mdy);
+ */
+}
+
+
+var statsGUI = [];
+var stats = {minz: 0, avgz: 0, maxz: 0, count: 0};
+
+function computeStats()
+{
+ var minz=Infinity,avgz=0,avgn=0,maxz=0;
+
+ for(var t=0;t<lines.length;t++)
+ {
+  minz = Math.min(minz, lines[t].z);
+  avgz += lines[t].z, avgn++;
+  maxz = Math.max(maxz, lines[t].z);
+ }
+ avgz /= avgn;
+
+ stats.minz = minz;
+ stats.avgz = avgz;
+ stats.maxz = maxz;
+ stats.count = lines.length;
+ 
+ for(var t=0;t<statsGUI.length;t++)
+ statsGUI[t].updateDisplay();
+}
+
+var lastUpdateTime = Date.now();
+
+running=true;
+frame();
+for(var t=0;t<lines.length;t++)
+lines[t].alpha = 1;
+
+running=false;//rem this
+setInterval(computeStats, 1000);
+
+function updateGUIDisplay(gui) {
+  if (gui.__controllers)
+    for (var c in gui.__controllers)
+      if (gui.__controllers.hasOwnProperty(c))
+        gui.__controllers[c].updateDisplay();
+
+  if (gui.__folders)
+    for (var f in gui.__folders)
+      if (gui.__folders.hasOwnProperty(f))
+        updateGUIDisplay(gui.__folders[f]);
+}
+
+
+ var gui = new dat.GUI({
+    width: 350
+  });
+  gui.close();
+
+ var mp = gui.addFolder('Presets');
+ 
+ mp.add(window, 'preset', {'Default 3D': 0, 'Original 2D idea': 1, 'divFreedom 0.06': 2,  'Depth color test': 3}).onChange(function()
+ {
+  applyPreset();
+  updateGUIDisplay(gui);
+  restart();
+ }).name('Preset');
+ mp.open();
+
+  var ma = gui.addFolder('Appearance');
+  ma.addColor(conf, 'backgroundColor').name('Background color').onChange(function()
+  {
+   document.body.style.backgroundColor = conf.backgroundColor;
+  });
+  ma.addColor(conf, 'strokeColor').name('Line color').onChange(updateColor);
+  ma.addColor(conf, 'strokeColorFar').name('Line color (far)');
+  ma.add(conf, 'strokeColorFarZ').min(0).step(0.1).name('Far line color at z').onChange(function()
+  {
+   if (conf.strokeColorFarZ < 0.09) conf.strokeColorFarZ = 0;
+  });
+  ma.add(ctx, 'lineWidth').name('Line width');
+  ma.add(conf, 'strokeAlpha').min(0.1).max(1).name('Line alpha');
+  ma.add(conf, 'alphaStep').name('Alpha step');
+
+  var mg = gui.addFolder('Generation');
+  mg.add(conf, 'maxLines').name('Number of lines').min(1).step(1);
+  mg.add(conf, 'maxChildren').name('Max children').min(0).step(1);
+  mg.add(conf, 'minChildren').name('Min children').min(0).step(1);
+  mg.add(conf, 'relativeLength').name('Relative length');
+  mg.add(conf, 'syncChildren').name('Decrease children count');
+  mg.add(conf, 'divFreedom').step(0.01).min(0.001).max(1);
+  mg.add(conf, 'zmin').min(0);
+  mg.add(conf, 'zmax').min(0);
+
+  var man = gui.addFolder('Animation');
+  man.add(conf, 'anim', {'None': false, 'Step': 1, 'Pixel': 2, 'Step delay only': 3}).name('Mode').onChange(function()
+  {
+   for(var t=0;t<lines.length;t++)
+   lines.animProgress = 1;
+  });
+  man.add(conf, 'animStep').name('Step');
+  man.add(conf, 'animPixelStep').name('Pixel');
+
+  var mm = gui.addFolder('Movement');
+  mm.add(conf, 'speed').step(0.0001);
+  mm.add(conf, 'zspeed');
+  mm.add(conf, 'moveFactor');
+  mm.add(conf, 'originResetFactor');
+  mm.open();
+
+
+  var ms = gui.addFolder('Stats (readonly)');
+  statsGUI.push(ms.add(stats, 'count'));
+  statsGUI.push(ms.add(stats, 'minz').step(0.0001));
+  statsGUI.push(ms.add(stats, 'avgz').step(0.0001));
+  statsGUI.push(ms.add(stats, 'maxz').step(0.0001));
+
+
+
+ gui.add(conf, 'zfar').min(0);
+ gui.add(conf, 'nominalUpdateTime').min(1).step(1).name('ms between ticks');
+ gui.add(window, 'restart').name('Restart');
+ gui.add(window, 'stop').name('Pause');
+ gui.add(window, 'start').name('Resume');
+
+document.getElementById('okbutton').onclick = function()
+{
+ document.getElementById('msg-overlay').style.opacity = '0';
+ running=true;
+ setTimeout(function() {document.getElementById('msg-overlay').style.display = 'none';}, 250);
+};
+
+
+</script>
+<style><body></body></style>

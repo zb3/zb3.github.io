@@ -1,0 +1,105 @@
+diff -u Onigmo/oniguruma.h Onigmocopy1/oniguruma.h
+--- Onigmo/oniguruma.h	2016-09-24 18:21:14.659840920 +0200
++++ Onigmocopy1/oniguruma.h	2016-09-27 16:18:49.793679228 +0200
+@@ -93,8 +93,6 @@
+ 
+ #include <stddef.h>		/* for size_t */
+ 
+-ONIG_EXTERN int onig_stepcount;
+-
+ /* PART: character encoding */
+ 
+ #ifndef ONIG_ESCAPE_UCHAR_COLLISION
+@@ -786,6 +784,11 @@
+ 
+ //additions
+ ONIG_EXTERN
++int onig_stepcount;
++ONIG_EXTERN
++int(*onig_is_history_wanted_callback)(int);
++
++ONIG_EXTERN
+ int onig_get_stepcount(void);
+ ONIG_EXTERN
+ void* onig_getvar_ENCODING_ISO_8859_1(void);
+@@ -796,7 +799,8 @@
+ ONIG_EXTERN
+ int onig_getsize_OnigErrorInfo(void);
+ 
+-
++ONIG_EXTERN
++void onig_set_history_callback(int(*history_callback)(int));
+ 
+ #ifdef __cplusplus
+ }
+Only in Onigmocopy1: oniguruma.pc
+diff -u Onigmo/regcomp.c Onigmocopy1/regcomp.c
+--- Onigmo/regcomp.c	2016-09-24 18:22:02.383172932 +0200
++++ Onigmocopy1/regcomp.c	2016-09-27 17:25:31.733525621 +0200
+@@ -5774,6 +5774,10 @@
+ #endif
+ 
+   reg->capture_history  = scan_env.capture_history;
++  
++  if (onig_is_history_wanted_callback)
++  BIT_STATUS_ON_ALL(reg->capture_history); 
++  
+   reg->bt_mem_start     = scan_env.bt_mem_start;
+   reg->bt_mem_start    |= reg->capture_history;
+   if (IS_FIND_CONDITION(reg->options))
+Only in Onigmocopy1: regcomp.lo
+Only in Onigmocopy1: regcomp.o
+Only in Onigmocopy1: regenc.lo
+Only in Onigmocopy1: regenc.o
+Only in Onigmocopy1: regerror.lo
+Only in Onigmocopy1: regerror.o
+diff -u Onigmo/regexec.c Onigmocopy1/regexec.c
+--- Onigmo/regexec.c	2016-09-24 13:41:59.336971136 +0200
++++ Onigmocopy1/regexec.c	2016-09-27 17:14:47.900217001 +0200
+@@ -31,6 +31,7 @@
+ #include "regint.h"
+ 
+ int onig_stepcount = 0;
++int(*onig_is_history_wanted_callback)(int) = NULL;
+ 
+ #define USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE
+ 
+@@ -1133,8 +1134,7 @@
+   while (k < stk_top) {
+     if (k->type == STK_MEM_START) {
+       n = k->u.mem.num;
+-      if (n <= ONIG_MAX_CAPTURE_HISTORY_GROUP &&
+-          BIT_STATUS_AT(reg->capture_history, n) != 0) {
++      if ((!onig_is_history_wanted_callback && n <= ONIG_MAX_CAPTURE_HISTORY_GROUP && BIT_STATUS_AT(reg->capture_history, n) != 0) || (onig_is_history_wanted_callback && onig_is_history_wanted_callback(n))) {
+         child = history_node_new();
+         CHECK_NULL_RETURN_MEMERR(child);
+         child->group = n;
+@@ -1493,7 +1493,7 @@
+ 	    }
+ 
+ #ifdef USE_CAPTURE_HISTORY
+-	    if (reg->capture_history != 0) {
++	    if (reg->capture_history != 0 || onig_is_history_wanted_callback) {
+               int r;
+               OnigCaptureTreeNode* node;
+ 
+@@ -4377,3 +4377,7 @@
+ extern void* onig_getvar_ENCODING_UTF16_LE(void){ return ONIG_ENCODING_UTF16_LE; };
+ extern void* onig_getvar_SYNTAX_DEFAULT(void){ return ONIG_SYNTAX_DEFAULT; };
+ extern int onig_getsize_OnigErrorInfo(void){ return sizeof(OnigErrorInfo); };
++extern void onig_set_history_callback(int(*history_callback)(int))
++{
++ onig_is_history_wanted_callback = history_callback;
++}
+diff -u Onigmo/regint.h Onigmocopy1/regint.h
+--- Onigmo/regint.h	2016-09-22 18:47:48.490154502 +0200
++++ Onigmocopy1/regint.h	2016-09-27 11:09:23.190327503 +0200
+@@ -101,7 +101,7 @@
+ #endif
+ 
+ #define USE_WORD_BEGIN_END          /* "\<": word-begin, "\>": word-end */
+-#undef USE_CAPTURE_HISTORY
++#define USE_CAPTURE_HISTORY
+ #define USE_VARIABLE_META_CHARS
+ #define USE_POSIX_API_REGION_OPTION     /* needed for POSIX API support */
+ #define USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE

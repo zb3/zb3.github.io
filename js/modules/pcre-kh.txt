@@ -1,0 +1,71 @@
+
+emconfigure ./configure CFLAGS='-O2' --enable-pcre16 --disable-pcre8 --disable-cpp --enable-utf --disable-shared --enable-unicode-properties
+emmake make
+emcc -O2 -fvisibility=hidden .libs/libpcre16.a -o libpcre16.js -s 'EXPORTED_FUNCTIONS=["_pcre16_exec","_pcre16_study","_pcre16_free_study","_pcre16_fullinfo","_pcre16_compile","_pcre16_get_stepcount","_malloc","_free","_pcre16_callout_addr"]' -s 'EXPORTED_RUNTIME_METHODS=["stringToUTF16", "UTF16ToString","Pointer_stringify","Runtime"]' -s 'EXPORT_NAME="libpcre16"' -s 'MODULARIZE=1' -s 'RESERVED_FUNCTION_POINTERS=6' --memory-init-file 0
+echo -e "\nlibpcre16 = libpcre16();" >> libpcre16.js
+
+
+--
+
+
+--- /tmp/pcre-8.39/pcre_exec.c	2015-06-09 18:43:06.000000000 +0200
++++ /home/zb3/pcre-8.39/pcre_exec.c	2016-09-20 11:32:43.590406708 +0200
+@@ -721,6 +721,7 @@ utf = FALSE;
+ /* First check that we haven't called match() too many times, or that we
+ haven't exceeded the recursive call limit. 
+ 
++pcre16_stepcount++; //for callouts
+ if (md->match_call_count++ >= md->match_limit) RRETURN(PCRE_ERROR_MATCHLIMIT);
+ if (rdepth >= md->match_limit_recursion) RRETURN(PCRE_ERROR_RECURSIONLIMIT);
+ 
+@@ -6733,6 +6734,7 @@ if ((re->flags & PCRE_REQCHSET) != 0)
+     }
+   }
+ 
++int stepcount = pcre16_stepcount = 0;
+ 
+ /* ==========================================================================
+ 
+@@ -6934,6 +6936,10 @@ for(;;)
+   md->end_offset_top = 0;
+   md->skip_arg_count = 0;
+   rc = match(start_match, md->start_code, start_match, 2, md, NULL, 0);
++  
++  stepcount += md->match_call_count;
++  pcre16_stepcount = stepcount;
++  
+   if (md->hitend && start_partial == NULL)
+     {
+     start_partial = md->start_used_ptr;
+
+
+--- /tmp/pcre-8.39/pcre_study.c	2016-02-28 14:59:46.000000000 +0100
++++ /home/zb3/pcre-8.39/pcre_study.c	2016-09-20 11:38:21.207064036 +0200
+@@ -1651,6 +1651,16 @@ if (bits_set || min > 0 || (options & (
+ return extra;
+ }
+ 
++PCRE_EXP_DEFN int pcre16_get_stepcount()
++{
++ return pcre16_stepcount;
++}
++
++PCRE_EXP_DEFN void* pcre16_callout_addr()
++{
++ return &pcre16_callout;
++}
++
+
+--- /tmp/pcre-8.39/pcre.h.in	2014-02-09 12:46:05.000000000 +0100
++++ /home/zb3/pcre-8.39/pcre.h.in	2016-09-20 11:38:54.997063100 +0200
+@@ -670,6 +670,10 @@ PCRE_EXP_DECL void pcre_jit_free_unused_
+ PCRE_EXP_DECL void pcre16_jit_free_unused_memory(void);
+ PCRE_EXP_DECL void pcre32_jit_free_unused_memory(void);
+ 
++PCRE_EXP_DECL int pcre16_stepcount;
++PCRE_EXP_DECL int pcre16_get_stepcount(void);
++PCRE_EXP_DECL void* pcre16_callout_addr(void);
++
+ #ifdef __cplusplus
+ }  /* extern "C"
+ #endif

@@ -1,0 +1,326 @@
+<style>
+body
+{
+ background-color: black; color: white;
+ font-family: Arial;
+}
+canvas
+{
+ border: 1px solid grey;
+ margin-bottom: 3px;
+}
+#sep
+{
+ border:0;margin:0;
+ border-spacing:0;
+}
+#sep td
+{
+ vertical-align: top;
+}
+#sep .s
+{
+ padding-left: 3px;
+ width: 265px;
+}
+</style>
+<b>Point load simulator:</b><br><br>This thing simulates the movement of point loads according to Coulomb's law. All loads have mass = 1, to make simulation easier to understand in context of charges.<br><br>Use mouse left button to add a load, right click on a load will delete it, you can also drag it, and while dragging you can also change its charge using mouse wheel.<br>Have fun!<br><br>
+<table id="sep"><tr><td><canvas id="exp" width="230" height="230" onmousedown="parseDown(event);" onmouseup="parseUp(event)" onmousemove="parseMove(event);" oncontextmenu="return false" onwheel="parseWheel(event);"></canvas><br><b>Appearance settings:</b><br>Color density: <input type="text" onchange="isf(this);updateDensity(parseFloat(this.value));" id="pl-vdensity" size="2" data-oval="59940" value="59940" data-slideby="2200" class="zc14"><br>Color function cut: <input type="text" onchange="isf(this, mzero);vcut=parseFloat(this.value);" id="pl-vcut" size="2" data-oval="800" value="800" data-slideby="50" class="zc14"><br>Display radius: <input type="text" onchange="isf(this, mzero);updateRadius(parseFloat(this.value));" id="pl-radius" size="2" data-oval="6" value="6" data-slideby="1" class="zc14"></td><td class="s"><button onclick="switchSim(this);">Stop</button> <button onclick="loads.length=nl=0;">Delete all</button><br><br><b>Simulation settings:</b><br>Time fragment(dt): <input type="text" onchange="isf(this, mxzero);dt=parseFloat(this.value);" id="pl-dt" size="2" data-oval="0.0001" value="0.0001" data-slideby="0.00005" class="zc14"><br>Calculations per frame: <input type="text" onchange="isn(this, mxzero);cpf=parseInt(this.value);" id="pl-cpf" size="2" data-oval="1000" value="1000" data-slideby="20" class="zc14"><br>Frame every: <input type="text" onchange="isn(this, mxzero);fps=parseInt(this.value);updateFPS();" id="pl-fps" size="2" data-oval="16" value="16" data-slideby="1" class="zc14"> ms<br>Collision epsilon: <input type="text" size="2" onchange="isf(this, mzero);epsilon=parseFloat(this.value);" value="0.00001" data-oval="0.00001" style="width: 60px;" id="pl-epsilon"><br><br><input type="checkbox" checked id="pl-recharge" onchange="recharge=this.checked;">Recompute charges after collision<br><input type="checkbox" checked id="pl-collision" onchange="collision=this.checked;">Recompute velocities after collision</td><td class="s"><b>Box settings:</b><br>Size: <input type="text" size="2" id="pl-x" onchange="isn(this, mxzero);resize(parseInt(this.value), cy);" data-oval="230" value="230">x<input type="text" size="2" id="pl-y" onchange="isn(this, mxzero);resize(cx, parseInt(this.value));" data-oval="230" value="230"><br>Scale <input type="text" onchange="isf(this);updateScale(parseFloat(this.value));" id="pl-scale" size="2" data-oval="20" value="20" data-slideby="5" class="zc14"><br>Wall restitution: 0 <input id="pl-restitution" onchange="updateRestitution(parseFloat(this.value));" type="range" size="2" min="0" max="1" step="0.001"> 1<br><br><b>Misc settings:</b><br>Mouse wheel load 1/delta: <input type="text" onchange="isf(this, mxzero);wht=parseFloat(this.value);" id="pl-wht" size="2" data-oval="330" value="330" data-slideby="10" class="zc14"><br>Add charges in range: <input type="text" size="2" id="pl-m1charge" data-oval="-2" value="-2" onchange="isf(this);m1charge=parseFloat(this.value);">-<input type="text" size="2" data-oval="2" value="2" onchange="isf(this);m2charge=parseFloat(this.value);"></td></tr></table>
+<script>
+//zc14
+//that code contains bug... coz why set oval if that might not be legal?
+
+//starthere: do inputs, data-oval, checks, slideby etc
+zc14 = {};
+zc14.zc14ize = function()
+{
+ var el = document.querySelectorAll('.zc14'), t, tt, tt2; var ll = el.length;
+ for(t=0;t<ll;t++)
+ {
+  tt = document.createElement('button'); tt.setAttribute('class', 'zc14-button');tt.innerHTML = '-'; tt.setAttribute('onclick', 'zc14.minus(\''+el[t].id.replace(/'/g, '\\\'')+'\');');//button for
+  tt2 = document.createElement('button');  tt2.setAttribute('class', 'zc14-button');tt2.innerHTML = '+'; tt2.setAttribute('onclick', 'zc14.plus(\''+el[t].id.replace(/'/g, '\\\'')+'\');');//button for
+  el[t].parentNode.insertBefore(tt, el[t]);
+  if (el[t].nextSibling)
+  el[t].parentNode.insertBefore(tt2, el[t].nextSibling);
+  else
+  el[t].parentNode.appendChild(tt2);
+ } 
+}
+zc14.niceFloat = function(f, n)
+{
+ f = f.toFixed(n?n:6);
+ f = f.replace(/(\.)?[0]*$/, '');
+ return f;
+}
+zc14.plus = function(id)
+{
+ //orly oval?
+ //onchange is supposed to set that.
+ document.getElementById(id).value = zc14.niceFloat(parseFloat(document.getElementById(id).value)+parseFloat(document.getElementById(id).dataset.slideby));
+ document.getElementById(id).onchange();
+}
+zc14.minus = function(id)
+{
+ document.getElementById(id).value = zc14.niceFloat(parseFloat(document.getElementById(id).value)-parseFloat(document.getElementById(id).dataset.slideby));
+ document.getElementById(id).onchange();
+}
+window.addEventListener('DOMContentLoaded', zc14.zc14ize, false);
+//zc14
+//misc for input
+function mzero(x){return x>=0;}
+function mxzero(x){return x>0;}
+function isn(el, fnc)
+{
+ var t = parseInt(el.value);
+ if (isNaN(t) || ((fnc!==undefined) && !fnc(t)))
+ el.value = el.dataset.oval;
+ else el.dataset.oval = el.value = t;
+}
+function isf(el, fnc)
+{
+ var t = parseFloat(el.value);
+ if (isNaN(t) || ((fnc!==undefined) && !fnc(t)))
+ el.value = el.dataset.oval;
+ else el.dataset.oval = el.value = t;
+}
+//
+//traditional canvas
+var cel = document.getElementById('exp'); var xt = cel.getContext('2d');
+var cx = 0, cx2 = 0, cy = 0, cy2 = 0, scale = 20, size = cx*cy, cox, coy; xt.translate(cx/2, cy/2);
+function setRect()
+{
+ var cr = cel.getBoundingClientRect();
+ cox = cr.left+window.pageXOffset; coy = cr.top+window.pageYOffset;
+}
+setRect(); window.addEventListener('load', setRect);
+var recharge = 1, collision = 1, epsilon = 0.00001, radius = 6, radiusc = radius/scale, radiusx2=radius/2, radius2 = 18, radius2c = radius2/(scale*scale), m1charge=-2, m2charge=2, restitution = 0.5, restitution1 = 1.5, wht=330;
+//visual settings
+var vdensity = 90*666, vcut = 800, dt = 0.0001, cpf = 1000, fps = 16, curr=-1;
+var loads= [], nl=0, mdx, mdy, mvx, mvy, wasdown=0, wasmoved=0;
+
+//also do func to resize
+var tdata2, tbuf, tdata, tdx;
+
+function resize(nx, ny) //don't duplicate code, tomorrow, do resize(cel.width, cel.height)
+{
+ nl=0; loads.length=0;
+ xt.translate(-cx2, -cy2);
+ cel.width=cx=nx; cel.height=cy=ny;
+ size = cx*cy; cx2 = cx/2; cy2 = cy/2;
+ xt.translate(cx2, cy2);
+ tdata2 = xt.getImageData(0, 0, cx, cy); tbuf = new ArrayBuffer(4*cx*cy); tdata=new Uint32Array(tbuf); tdx=new Uint8ClampedArray(tbuf);
+ xt.fillStyle = 'rgb(0,0,0)';
+ xt.fillRect(-cx2, -cy2, cx, cy);
+ xt.strokeStyle = 'rgb(255,255,255)';
+}
+resize(cel.width, cel.height);
+function updateScale(s) //remember = radius
+{
+ scale=s;
+ radiusc = radius/scale; radius2c = radius2/(scale*scale);
+}
+function updateRadius(r)
+{
+ radius=r; radiusx2=r/2; radiusc = r/scale; radius2 = r*r; radius2c = radius2/scale;
+}
+function updateDensity(v)
+{
+ vdensity = v;
+ for(var t=0;t<nl;t++) loads[t].vcharge = v*loads[t].charge;
+}
+function updateRestitution(r)
+{
+ restitution = r; restitution1 = r+1;
+}
+//other update functions or sth
+function repaint()
+{
+ var t, t2;
+ function fx(r)
+ {
+  r+=vcut;
+  return r;
+ }
+ for(t=0;t<size;t++)
+ {
+  tc = 0; ty = Math.floor(t/cx)-cy2; tx = t%cx-cx2;
+  for(t2=0;t2<nl;t2++) tc += loads[t2].vcharge/fx((loads[t2][0]*scale-tx)*(loads[t2][0]*scale-tx)+(-loads[t2][1]*scale-ty)*(-loads[t2][1]*scale-ty));
+  tc = tc>255?255:tc<-255?-255:tc; tdata[t] = (tc>0?tc:0) | (tc<0?-tc:0)<<8 | (tc<0?-tc:0)<<16 | 255<<24;
+ }
+ tdata2.data.set(tdx);
+ xt.putImageData(tdata2, 0, 0);
+ for(t=0;t<nl;t++)
+ {
+  xt.beginPath(); xt.arc(loads[t][0]*scale, -loads[t][1]*scale, radius, 0, 2 * Math.PI, false); xt.stroke();
+  if (loads[t].charge>0) xt.fillStyle = 'rgb(255,0,0)'; else xt.fillStyle = 'rgb(0,255,255)';
+  if (loads[t].charge!=0)
+  xt.fillRect(loads[t][0]*scale-radiusx2, -loads[t][1]*scale-1, radius, 2);
+  if (loads[t].charge>0)
+  xt.fillRect(loads[t][0]*scale-1, -loads[t][1]*scale-radiusx2, 2, radius);
+ }
+}
+function dist(a, b)
+{
+ var tx = a.length, tx2, t, ret = 0;
+ for(t=0;t<tx;t++) ret += (tx2=a[t]-b[t])*tx2;
+ return Math.sqrt(ret);
+}
+var ret = [], ret2=[], ret2t = [];
+function computeForceVector(tx)
+{
+ var t, tnl;
+ ret[0] = loads[tx].charge; ret2[0]=0;  ret[1] = loads[tx].charge; ret2[1]=0;
+ if (tx==curr) return ret2;
+ for(t=0;t<nl;t++)
+ {
+  if (t==tx) continue;
+  tnl = dist(loads[tx], loads[t]);
+  tnl = tnl*tnl*tnl;
+  if (tnl<epsilon && tx<t)
+  {
+   if (recharge)
+   {
+    tnl = (loads[tx].charge + loads[t].charge)/2;
+    loads[t].vcharge = loads[tx].vcharge = vdensity*(loads[tx].charge = loads[t].charge = tnl);
+   }
+   if (collision)
+   {
+    tnl = loads[tx].velocity[0]; loads[tx].velocity[0] = loads[t].velocity[0]; loads[t].velocity[0] = tnl;
+    tnl = loads[tx].velocity[1]; loads[tx].velocity[1] = loads[t].velocity[1]; loads[t].velocity[1] = tnl;
+    if (t==curr) loads[t].velocity[0] = loads[t].velocity[1] = 0;
+   }
+   tnl = 0;
+  }
+  else if (tnl<epsilon) tnl=0;
+  else
+  tnl = loads[t].charge/tnl;
+  ret2[0] += tnl*(loads[tx][0]-loads[t][0]); ret2[1] += tnl*(loads[tx][1]-loads[t][1]);
+ }
+ ret[0] *= ret2[0]; ret[1] *= ret2[1];
+ return ret;
+}
+
+
+var force;  
+function tick()
+{
+ var t, t2;
+ for(t=0;t<nl;t++)
+ {
+  force = computeForceVector(t);
+  loads[t].velocity[0] += force[0]*dt; loads[t].velocity[1] += force[1]*dt;
+ }
+ for(t=0;t<nl;t++)
+ {
+  loads[t][0] += loads[t].velocity[0]*dt; loads[t][1] += loads[t].velocity[1]*dt;
+  if ((loads[t][1]-radiusc)<-cy2/scale)
+  {
+   loads[t][1] += restitution1*(-cy2/scale-(loads[t][1]-radiusc));
+   loads[t].velocity[1] *= -restitution;
+  }
+  if ((loads[t][1]+radiusc)>cy2/scale)
+  {
+   loads[t][1] += restitution1*(cy2/scale-(loads[t][1]+radiusc));
+   loads[t].velocity[1] *= -restitution;
+  }
+  if ((loads[t][0]-radiusc)<-cx2/scale)
+  {
+   loads[t][0] += restitution1*(-cx2/scale-(loads[t][0]-radiusc));
+   loads[t].velocity[0] *= -restitution;
+  }
+  if ((loads[t][0]+radiusc)>cx2/scale)
+  {
+   loads[t][0] += restitution1*(cx2/scale-(loads[t][0]+radiusc));
+   loads[t].velocity[0] *= -restitution;
+  }
+ }
+}
+function tik()
+{
+ if (on)
+ for(var t=0;t<cpf;t++)
+ tick();
+ repaint();
+}
+var go = window.setInterval(tik, fps), on=1;
+function updateFPS()
+{
+ window.clearInterval(go);
+ go = window.setInterval(tik, fps);
+}
+function stopSim()
+{
+ on = 0;
+}
+function startSim()
+{
+ on=1;
+}
+function switchSim(el)
+{
+ if (!on) {startSim(); el.innerHTML = 'Stop';}
+ else {stopSim(); el.innerHTML = 'Start';}
+}
+
+function addMEH(e)
+{
+ loads.push([TX(e.pageX), TY(e.pageY)]);
+ loads[loads.length-1].charge = Math.abs(m1charge-m2charge)*Math.random()+m1charge;
+ loads[loads.length-1].vcharge = loads[loads.length-1].charge*vdensity;
+ loads[loads.length-1].velocity = [0, 0];
+ nl++;
+}
+
+//first we must solve canvas position on screen
+function TX(x){return (x-cox-cx2)/scale;}
+function TY(y){return -(y-coy-cy2)/scale;}
+function getAt(x, y)
+{
+ var t, tx, ll = -1, ll2 = Infinity;
+ for(t=0;t<nl;t++)
+ if (((tx=(loads[t][0]-x)*(loads[t][0]-x)+(loads[t][1]-y)*(loads[t][1]-y))<radius2c) && (tx<ll2))
+ {
+  ll=t; ll2 = tx;
+ }
+ return ll;
+}
+function parseDown(e)
+{
+ mdx = TX(e.pageX); mdy = TY(e.pageY);
+ wasdown=1; wasmoved=0; curr = getAt(mdx, mdy);
+ if (curr!=-1)
+ {
+  loads[curr].velocity[0] = loads[curr].velocity[1] = 0;
+  mvx = loads[curr][0]-mdx; mvy = loads[curr][1]-mdy;
+ }
+ e.preventDefault();
+}
+function parseMove(e)
+{
+ if (!wasdown || curr==-1) return;
+  wasmoved=1;
+ loads[curr][0] = TX(e.pageX)+mvx;
+ loads[curr][1] = TY(e.pageY)+mvy;
+ e.preventDefault();
+}
+function parseWheel(e)
+{
+ if (curr==-1) return;
+ loads[curr].vcharge = vdensity*(loads[curr].charge += e.deltaY/wht);
+}
+function parseUp(e)
+{
+ if (wasdown && !wasmoved)
+ {
+  if (!e.button)
+  addMEH(e);
+  else if (e.button==2 && curr!=-1)
+  {
+   loads.splice(curr, 1); nl--;
+  }
+ }
+ wasdown=0; wasmoved=0; curr=-1;
+ e.preventDefault();
+}
+addMEH({pageX: cox+cx2, pageY: coy+cy2});
+</script>

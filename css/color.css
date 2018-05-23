@@ -1,0 +1,44 @@
+.cconv-preview-table > tbody > tr > td
+{
+ padding: 5px;
+}
+.cconv-output > tbody > tr > td
+{
+ padding-right: 10px;
+}
+#cconv-outHex
+{
+ width: 110px;
+}
+#cconv-preview
+{
+ border: 1px solid grey;
+ height: 100%;
+ width: 100px;
+}
+.cconv-range {
+  -webkit-appearance: none;
+  height: 15px;
+ width: 400px
+}
+.cconv-range::-moz-range-track {
+    background-color: transparent;
+}
+.cconv-range::-webkit-slider-thumb {
+ -webkit-appearance: none;
+ height: 25px;
+ width: 15px;
+ border: 2px solid #eee;
+ border-radius: 0;
+}
+.cconv-range::-moz-range-thumb {
+ -webkit-appearance: none;
+ background: transparent;
+ height: 25px;
+ width: 15px;
+ border: 2px solid #eee;
+ border-radius: 0;
+}
+.cconv-range:focus {
+  outline: none;
+}

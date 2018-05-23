@@ -1,0 +1,269 @@
+<style>
+body {background-color: black; color: white; margin: 0; font-family: Arial;}
+#headnav {font-size: 36px;}
+#centromer {width: 800px; margin: auto; text-align: center}
+#tcontainer {margin-top: 10px; overflow: hidden;}
+</style>
+<div id="centromer">
+<div id="headnav">zb3's plane</div>
+<div id="txttt" style="width: 500px; margin: auto; text-align: left;"><br>Your goal is to... well, isn't it obvious?<br>
+
+Move the whole rows / columns using mouse. (like drag, but it starts after you drop ;)<br></div>
+<canvas id="tcontainer" width="500" height="500"></div>
+</div>
+
+<script>
+//shuffle it so it is solvable!
+function shuffle(o)
+{
+ for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+ return o;
+};
+
+var gc, gc2, gc3, gc4, gc5; //general counters
+var vl, vl2, vl3, vl4, vl5; //variable lengths
+var tmp, tmp2, tmp3, tmp4, tmp5; //temp variables
+
+var layout = new Array(), x = 5, y = 5, w = 500, h = 500, ob = 10; //ob = border
+var xp = Math.round(w / x), yp = Math.round(h / y), px = 13, py = 13, rp = 2; //rp = rect line
+var mdown, mpos;
+var container = e("tcontainer"), ctx;
+
+container.onmousedown = mdown;
+//container.onmouseup = mdown;
+
+ctx = container.getContext("2d");
+ctx.mozImageSmoothingEnabled = false;
+ctx.lineWidth = rp;
+ctx.strokeStyle = '#303030';
+ctx.fillStyle = '#fff';
+ctx.lineCap = 'butt';
+ctx.textBaseline = 'middle';
+ctx.textAlign = 'center';
+ctx.font = 'bold 26px arial';
+var dbg=0;
+Array.prototype.clone = function()
+{
+ var na = new Array(); 
+ for (var property in this)
+ {
+  na[property] = typeof (this[property]) == 'object' ? this[property].clone() : this[property];
+ }
+ return na;
+}
+
+function mdown(ev)
+{
+ mpos = ev;
+ document.onmouseup = mup;
+ ev.preventDefault();
+}
+function mup(ev)
+{
+ tmp = mpos.clientX-container.offsetLeft-ob+window.scrollX;
+ tmp2 = mpos.clientY-container.offsetTop-ob+window.scrollY;
+ tmp = Math.floor(tmp / xp); if (tmp<0) tmp = 0; if (tmp > (x-1)) tmp = x-1;
+ tmp2 = Math.floor(tmp2 / yp);  if (tmp<0) tmp = 0; if (tmp2 > (y-1)) tmp2 = y-1; 
+ tmp3 = ev.clientX-container.offsetLeft-ob+window.scrollX;
+ tmp4 = ev.clientY-container.offsetTop-ob+window.scrollY;
+ tmp3 = Math.floor(tmp3 / xp); if (tmp3<0) tmp3 = 0; if (tmp3 > (x-1)) tmp3 = x-1;
+ tmp4 = Math.floor(tmp4 / yp); if (tmp4<0) tmp4 = 0; if (tmp4 > (y-1)) tmp4 = y-1; 
+ document.onmouseup = null;
+ if ((tmp!=tmp3 || tmp2!=tmp4) && ((tmp==tmp3) || (tmp2==tmp4)))
+ {
+  addOp(tmp, tmp2, tmp3, tmp4, (tmp!=tmp3));
+ }
+}
+//counters
+var opH, opV, stopV=0, stopH=0;
+var ops = new Array(), oc;
+
+//global ticker
+
+//isopH, isopV, stopV, stopH ?
+function addOp(a, b, c, d, isH)
+{
+ oc = ops.length;
+ ops[oc] = new Object();
+ if (isH)
+ {
+  stopV=1; stopH=0;
+ }
+ else
+ {
+  stopH=1; stopV=0;
+ }
+ ops[oc].am = 0;
+ ops[oc].mv = (isH)?(Math.abs(a-c)*xp):(Math.abs(b-d)*yp);
+ ops[oc].ms = 11+(((isH)?(Math.abs(a-c)*xp):(Math.abs(b-d)*yp))/16);
+ ops[oc].mz = (((isH)?(c-a):(d-b))>0)?1:-1;
+ ops[oc].mmade = 0;
+ ops[oc].type = isH;
+ ops[oc].rect = isH?b:a;
+}
+
+function doMove(rect, type, v)
+{
+ tmp2 = layout.clone();
+ if (type)
+ {
+  for(gc2=0;gc2<x;gc2++)
+  {
+   layout[rect*x+gc2] = tmp2[rect*x+(x+((gc2+v)%x))%x];
+  }
+ }
+ else
+ {
+  for(gc2=0;gc2<y;gc2++)
+  {
+   layout[gc2*x+rect] = tmp2[((y+((gc2+v)%y))%y)*x+rect];
+  }
+ }
+}
+
+function tick()
+{
+ vl = ops.length;
+ if (stopH)
+ {
+  for(gc=0;gc<vl;gc++)
+  {
+   if (ops[gc].type==1)
+   {
+    paintRect(ops[gc].rect, 1, 0);
+    ops.splice(gc, 1); gc--; vl--;
+   }
+  }
+  stopH=0;
+ }
+ if (stopV)
+ {
+  for(gc=0;gc<vl;gc++)
+  {
+   if (ops[gc].type==0)
+   {
+    paintRect(ops[gc].rect, 0, 0);
+    ops.splice(gc, 1); gc--; vl--;
+   }
+  }
+  stopV=0;
+ }
+ for(gc=0;gc<vl;gc++)
+ {
+  //speed, move, test, update layout
+ // ops[gc].ms -= 0.30; //drag
+  if (ops[gc].ms<0) ops[gc].ms = 0;
+  if (Math.abs(ops[gc].mmade+ops[gc].ms)>=ops[gc].mv)
+  {
+   ops[gc].mmade = ops[gc].mv;
+  }
+  else
+  {
+   ops[gc].mmade += ops[gc].ms;
+  }
+  tmp = Math.abs(Math.round(ops[gc].mmade/((ops[gc].type)?(xp):(yp))))-ops[gc].am;
+  if (tmp>0)
+  {
+   doMove(ops[gc].rect, ops[gc].type, tmp*ops[gc].mz*-1);
+   ops[gc].am += tmp;
+  } 
+  if (Math.abs(ops[gc].mmade+ops[gc].ms)>=ops[gc].mv)
+  {
+   paintRect(ops[gc].rect, ops[gc].type, 0);
+   ops.splice(gc, 1); vl--; gc--;
+   if (solved())
+   {
+    alert("Well done :D");
+    resetMEH();
+    break;
+   }
+  }
+  else
+  {
+   paintRect(ops[gc].rect, ops[gc].type, ops[gc].mz*(ops[gc].mmade-(ops[gc].am*(((ops[gc].type)?(xp):(yp))))));
+  }
+ }
+ window.setTimeout("tick()", 10);
+}
+
+function solved()
+{
+ vl2 = layout.length;
+ for(gc2=0;gc2<vl2;gc2++)
+ {
+  if (layout[gc2]!=gc2)
+  return false;
+ }
+ return true;
+}
+
+function resetMEH()
+{
+ ctx.fillStyle = '#000';
+ ctx.fillRect(0, 0, w, h);
+ ctx.fillStyle = '#fff';
+ loadLayout();
+ paintElems();
+}
+
+function paintRect(rect, type, move)
+{
+ if (type)
+ {
+  if (move<0) move = move+w;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, rect*yp, w, yp);
+  ctx.fillStyle = '#fff';
+  for(gc2=0;gc2<x;gc2++)
+  {
+   ctx.strokeRect(gc2*xp + px-w+move, rect*yp + py, xp-2*px, yp-2*py);
+   ctx.fillText((layout[rect*x+gc2]+1)+"", Math.round(((gc2*xp + px)+(xp/2-px)))-w+move, Math.round(((rect*yp + py)+(yp/2-py))));
+   ctx.strokeRect(gc2*xp + px+move, rect*yp + py, xp-2*px, yp-2*py);
+   ctx.fillText((layout[rect*x+gc2]+1)+"", Math.round(((gc2*xp + px)+(xp/2-px)))+move, Math.round(((rect*yp + py)+(yp/2-py))));
+  }
+ }
+ else
+ {
+  if (move<0) move = move+h;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(rect*xp, 0, xp, h);
+  ctx.fillStyle = '#fff';
+  for(gc2=0;gc2<y;gc2++)
+  {
+   ctx.strokeRect(rect*xp + px, gc2*yp + py-h+move, xp-2*px, yp-2*py);
+   ctx.fillText((layout[gc2*x+rect]+1)+"", Math.round(((rect*xp + px)+(xp/2-px))), Math.round(((gc2*yp + py)+(yp/2-py)))-h+move);
+   ctx.strokeRect(rect*xp + px, gc2*yp + py+move, xp-2*px, yp-2*py);
+   ctx.fillText((layout[gc2*x+rect]+1)+"", Math.round(((rect*xp + px)+(xp/2-px))), Math.round(((gc2*yp + py)+(yp/2-py)))+move);
+  }
+ }
+}
+function e(el)
+{
+ return document.getElementById(el);
+}
+
+function loadLayout()
+{
+ vl = x*y;
+ for(gc=0;gc<vl;gc++)
+ {
+  layout[gc] = gc;
+ }
+ shuffle(layout);
+}
+
+function paintElems()
+{
+ for(gc=0;gc<x;gc++)
+ for(gc2=0;gc2<y;gc2++)
+ {
+  ctx.strokeRect(gc*xp + px, gc2*yp + py, xp-2*px, yp-2*py);
+  ctx.fillText((layout[gc2*x+gc]+1)+"", Math.round(((gc*xp + px)+(xp/2-px))), Math.round(((gc2*yp + py)+(yp/2-py))));
+ }
+}
+
+loadLayout();
+paintElems();
+
+window.setTimeout("tick()", 10);
+</script>

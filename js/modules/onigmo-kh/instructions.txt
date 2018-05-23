@@ -1,0 +1,54 @@
+using emscripten 1.36.9, make 4.2.1, automake 1.15, libtool 2.4.6, autoconf 2.69
+
+based on https://github.com/k-takata/Onigmo/commit/58fa099ed1a34367de67fb3d06dd48d076839692
+
+casefold.h can be regenerated from newer unicode, name2ctype may stay
+
+diff -ru -x '*m4' -x 'configure' -x '*in' -x '*sh' -x 'casefold.h' -x 'name2ctype.h' -x 'libonig.js' -x 'libtool' -x 'Makefile' -x 'ogtest.html' -x 'tmp' pr/Onigmo Onigmo
+
+is inside diff.txt
+
+what was done:
+->multithread stuff defines undefined, can't do this in emscripten
+->replaced casefold.h, name2ctype.h
+->removed encodings other than utf16_le.c unicode.c mktable.c iso8859_1.c ascii.c
+->removed form Makefile.am, ran aclocal -I config && libtoolize --automake && autoheader && automake --foreign --add-missing && autoconf
+->removed from oniguruma.h
+->removed from mktable.c
+->updated regext.c
+->removed reggnu.c, oniggnu.h, regposix, regposerr, onigposix
+->undef capture history
+->removed more, see Makefile.am, removed encode sample
+-shit, tests were euc_jp + utf16be :<
+->applied 2 patches
+https://github.com/ruby/ruby/commit/b3935f179b3a5668320eab59a07e4de7b747546d, regparse.c
+https://github.com/ruby/ruby/commit/8c2ddab57a74377c108c3a5a58d2580f063d114b
+-> added accessor functions for constants
+-> added a stepcount variable
+-> allowed [^] (mainly for unprettify...)
+-> $ in singleline means the real end of the string
+-> presence of named group doesn't mean we can't use numbers
+-> undefined USE_POSIX_API_REGION_OPTION
+-> removed other syntaxes
+-> varargs weren't supported, so replaced the definition of code to str
+-> fixed fetching name - raise error if code set
+-> fixed printing error
+
+
+---convenience scripts
+
+gen.sh:
+aclocal -I config && libtoolize --automake && autoheader && automake --foreign --add-missing && autoconf
+
+build.sh:
+emconfigure ./configure CFLAGS='-O2'
+emmake make clean
+./rebuild.sh
+
+rebuild.sh:
+emmake make
+emcc -O2 -fvisibility=hidden .libs/libonig.a -o libonig.js -s 'EXPORTED_FUNCTIONS=["_onig_error_code_to_str","_onig_new","_onig_free","_onig_search","_onig_match","_onig_region_new","_onig_region_free",
+"_onig_foreach_name","_onig_number_of_names","_onig_number_of_captures","_onig_name_to_backref_number","_malloc","_free","_onig_get_stepcount",
+"_onig_getvar_ENCODING_ISO_8859_1","_onig_getvar_SYNTAX_DEFAULT","_onig_getvar_ENCODING_UTF16_LE",
+"_onig_getsize_OnigErrorInfo","_onig_set_warn_func","_onig_set_verb_warn_func"]' -s 'EXPORTED_RUNTIME_METHODS=["stringToUTF16", "UTF16ToString","Pointer_stringify","Runtime","writeAsciiToMemory"]' -s 'EXPORT_NAME="libonig"' -s 'MODULARIZE=1' -s 'RESERVED_FUNCTION_POINTERS=6' --memory-init-file 0
+echo -e "\nlibonig = libonig();" >> libonig.js

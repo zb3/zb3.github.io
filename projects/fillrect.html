@@ -1,0 +1,749 @@
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: arial;
+}
+#bdisplay, #bgcanvas
+{
+ border: 1px solid #777777;
+}
+#dsp td
+{
+ vertical-align: top;
+}
+#dsp .ctable
+{
+ margin: 4px 0 4px 0;
+ padding: 0;
+ border: none;
+ border-collapse: collapse;
+}
+#dsp .ctable td
+{
+ vertical-align: middle;
+}
+#dsp .ctable td
+{
+ padding-left:3px;
+}
+#dsp .ctable td:first-child
+{
+ padding-left:0;
+}
+#scoredisp
+{
+ border-collapse: collapse;
+ margin-left: 20px;
+}
+#scoredisp td
+{
+ border: 1px solid #777777;
+ text-align: center;
+ background-color: #111111;
+}
+#scoretable
+{
+ font-family: Arial;
+ font-size: 30px;
+ padding: 0 10px 0 10px;
+}
+.rel
+{
+ position: relative;
+}
+.a0
+{
+ position: absolute;
+ left: 0px;
+ top: 0px;
+ z-index: 0;
+}
+.a1
+{
+ position: absolute;
+ left: 0px;
+ top: 0px;
+ z-index: 1;
+}
+input.size1
+{
+ width: 40px;
+}
+.valign
+{
+ display: table-cell;
+ vertical-align: middle;
+ height:300px;
+}
+input[type=color]
+{
+ padding: 0px;
+ width: 30px;
+}
+input[type=color]::-moz-focus-inner
+{
+ padding: 0px;
+}
+#intro
+{
+ width: 550px;
+ margin: auto;
+}
+</style>
+<div id="intro"><center><h1>Brick Fill-Rect Game</h1></center><br>
+This is a html5 "remake" of a brick-based "fill the rectangle" game. This is a rare game and I did not have this on my console, therefore I've implemented this basing on an YT gameplay video, so there may be some misinterpretations here.<br><br>Maybe it's not "the best brick game", but it was worth implementing because it's so rare I'm sure it wouldn't be implemented in any other brick game emulator.<br>As always, you can configure it.
+<br><br>Use AD/arrows to control the gun horizontally and any other key to shoot (except P which pauses the gamne).
+<br><br>Click on the canvas to start.
+<br><br><br>
+<table id="dsp">
+<tr>
+<td>
+<div class="rel" id="relholder">
+<div class="a0">
+<canvas tabindex="1" id="bgcanvas">
+</div>
+<div class="a1">
+<canvas tabindex="1" id="bdisplay">
+</div>
+</div>
+<td><table id="scoredisp"><tr><td><span id="scoretable">000</span><tr><td><canvas id="bchances"></canvas></table><br><b>Game options:</b><br>Viewport dimensions: <input type="number" min="2" max="100" value="10" data-oval="10" step="1" class="size1" onchange="updateH(this.value)" autocomplete="off">x<input type="number" min="4" max="100" value="20" data-oval="20" step="1" class="size1" onchange="updateV(this.value)" autocomplete="off"><br>Rectangle size: <input type="number" min="2" max="100" value="4" data-oval="4" step="1" class="size1" onchange="updateX()" autocomplete="off" id="aq-rect-xa">-<input type="number" min="2" max="100" value="5" data-oval="5" step="1" class="size1" onchange="updateX()" autocomplete="off" id="aq-rect-xb">x<input type="number" min="2" max="100" value="2" data-oval="2" step="1" class="size1" onchange="updateY()" autocomplete="off" id="aq-rect-ya">-<input type="number" min="2" max="100" value="4" data-oval="4" step="1" class="size1" onchange="updateY()" autocomplete="off" id="aq-rect-yb"><br><label><input type="checkbox" onchange="canFlash=this.checked;" checked>Flash the rectangle after completion</label><br>Clock tick every [ms]: <input type="number" min="4" max="50" value="4" data-oval="4" step="1" class="size1" onchange="updateClock(this.value)" autocomplete="off"><br><table class="ctable"><tr><td>Speed: <td><input type="range" min="-500" max="-46" value="-214" step="1" onchange="speed=-parseInt(this.value);" autocomplete="off"></table><br><br><b>Display options:</b><br>
+<table class="ctable" id="bgctable"><tr><td>Background colors:<td><input type="color" value="#000000" onchange="updateBgColor()" autocomplete="off"><td><input type="color" value="#202020" onchange="updateBgColor()" autocomplete="off"></table>
+<table class="ctable" id="bgctable"><tr><td>Box color:<td><input type="color" value="#8c8c8c" onchange="updateBgColor()" autocomplete="off"></table>
+Box dimensions: <input type="number" min="5" value="15" data-oval="15" step="1" id="block-x" onchange="updateBlock();" class="size1" autocomplete="off">x<input type="number" min="5" value="18" data-oval="18" step="1" class="size1" id="block-y" onchange="updateBlock();" autocomplete="off"><br>
+Border dimensions: <input type="number" min="1" value="1" data-oval="1" step="1" class="size1" id="block-bx" onchange="updateBlock();" autocomplete="off">x<input type="number" min="1" value="2" data-oval="2" step="1" class="size1" id="block-by" onchange="updateBlock();" autocomplete="off"></table>
+</div>
+<script>
+var validator = {};
+validator.install = function()
+{
+ var el = document.querySelectorAll('input[type=number]'), ell = el.length, t;
+ for(t=0;t<ell;t++)
+ {
+  if (el[t].getAttribute('onchange'))
+  el[t].setAttribute('onchange', 'validator.validate(event);'+el[t].getAttribute('onchange'));
+  else //this doesn't work, because DOM3 events suck, text attributes are better coz you can list them and control the order.
+  {
+   el[t].addEventListener('change', validator.validate, false);
+  }
+ }
+}
+validator.validate = function(event)
+{
+ if (!event.target.validity.valid)
+ event.target.value = event.target.dataset.oval;
+ else
+ event.target.dataset.oval = event.target.value;
+}
+document.addEventListener('DOMContentLoaded', validator.install, false);
+</script>
+<script src="adisplay.js"></script>
+<script>
+
+var offseta = 0, offsetb = 7, bordera = 2, borderb = 3, heighta = 2, heightb = 4, widtha = 4, widthb = 5;
+var trow = 0, scroll = heightb, canFlash = 1, speed = 214, oct = 0;
+
+b.bsizex = 15; b.bsizey = 18;
+b.borderx = 1; b.bordery = 2;
+
+var dimx = 10, dimy = 23, dimy2 = 20, buffer = 3;
+b.dimx = dimx; b.dimy = dimy2;
+
+var bulletx = -1, bullety = -1, bsched = [];
+var rects = [], board = [], pos, chance_no = 4, chances = chance_no, score = 0;
+var tclock = 4, tnv, pause=1, kstate=0;
+b.chance_no = chance_no;
+
+b.initDisplay();
+
+var explosion = [[[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,1,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0]],
+[[0,0,0,0,0],
+[0,1,1,1,0],
+[0,1,0,1,0],
+[0,1,1,1,0],
+[0,0,0,0,0]],
+[[1,0,1,0,1],
+[0,0,0,0,0],
+[1,0,0,0,1],
+[0,0,0,0,0],
+[1,0,1,0,1]],
+[[0,1,0,1,0],
+[1,0,0,0,1],
+[0,0,0,0,0],
+[1,0,0,0,1],
+[0,1,0,1,0]],
+[[1,0,1,0,1],
+[0,0,0,0,0],
+[1,0,0,0,1],
+[0,0,0,0,0],
+[1,0,1,0,1]],
+[[0,0,0,0,0],
+[0,1,1,1,0],
+[0,1,0,1,0],
+[0,1,1,1,0],
+[0,0,0,0,0]],
+[[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0],
+[0,0,0,0,0]]];
+
+
+function genBoard()
+{
+ var t, t2;
+ for(t=0;t<dimy;t++)
+ {
+  board[t] = [];
+  for(t2=0;t2<dimx;t2++)
+  board[t][t2] = 0;
+ }
+}
+genBoard();
+function updateH(v)
+{
+ v = parseInt(v);
+ dimx = v; b.dimx = v;
+ offsetb = dimx-3; //coz min length is 2
+ genBoard();
+ b.initDisplay();
+ newGame();
+}
+//also add a checkbox to disable flashrect
+function updateV(v)
+{
+ v = parseInt(v);
+ dimy = v+buffer; dimy2 = v; b.dimy = dimy2;
+ genBoard();
+ b.initDisplay();
+ newGame();
+}
+function updateX()
+{
+ var nxa = parseInt(document.getElementById('aq-rect-xa').value), nxb = parseInt(document.getElementById('aq-rect-xb').value);
+ if (nxa>nxb)
+ {
+  nxa ^= nxb;
+  nxb ^= nxa;
+  nxa ^= nxb;
+  document.getElementById('aq-rect-xa').value = document.getElementById('aq-rect-xa').dataset.oval = nxa;
+  document.getElementById('aq-rect-xb').value = document.getElementById('aq-rect-xb').dataset.oval = nxb;
+ }
+ widtha = nxa; widthb = nxb;
+}
+function updateY()
+{
+ var nya = parseInt(document.getElementById('aq-rect-ya').value), nyb = parseInt(document.getElementById('aq-rect-yb').value);
+ if (nya>nyb)
+ {
+  nya ^= nyb;
+  nyb ^= nya;
+  nya ^= nyb;
+  document.getElementById('aq-rect-ya').value = document.getElementById('aq-rect-ya').dataset.oval = nya;
+  document.getElementById('aq-rect-yb').value = document.getElementById('aq-rect-yb').dataset.oval = nyb;
+ }
+ heighta = nya; heightb = nyb;
+ buffer = heightb-1;
+ updateV(dimy2);
+}
+function updateScore()
+{
+ document.getElementById('scoretable').innerHTML = score+'00';
+}
+function updateChances()
+{
+ b.sc(chances);
+}
+function updateClock(v)
+{
+ tclock = parseInt(v);
+ clearInterval(tnv);
+ tnv = window.setInterval(tick, tclock);
+}
+function updateBgColor()
+{
+ var cl = document.getElementById('bgctable').querySelectorAll('input[type=color]'), t;
+ b.g1 = [parseInt(cl[0].value.substr(1, 2),16), parseInt(cl[0].value.substr(3, 2),16), parseInt(cl[0].value.substr(5, 2),16)];
+ b.g2 = [parseInt(cl[1].value.substr(1, 2),16), parseInt(cl[1].value.substr(3, 2),16), parseInt(cl[1].value.substr(5, 2),16)];
+ b.initDisplay();
+}
+function updateColor()
+{
+ var cl = cs.element.querySelectorAll('input[type=color]'), t;
+ b.rg1 = [];
+ for(t=0;cl[t];t++)
+ {
+  b.rg1.push([parseInt(cl[t].value.substr(1, 2),16), parseInt(cl[t].value.substr(3, 2),16), parseInt(cl[t].value.substr(5, 2),16)]);
+ }
+ b.initDisplay();
+}
+function updateBlock()
+{
+ b.bsizex = parseInt(document.getElementById('block-x').value);
+ b.bsizey = parseInt(document.getElementById('block-y').value);
+
+ b.borderx = parseInt(document.getElementById('block-bx').value);
+ b.bordery = parseInt(document.getElementById('block-by').value);
+ 
+ b.initDisplay()
+}
+function put(x, y, what, mult)
+{
+ if (!mult) mult = 1;
+ var t, t2;
+ for(t=0;t<what.length;t++)
+ for(t2=0;t2<what[0].length;t2++)
+ board[t+y][t2+x] = (what[t][t2]?mult:0);
+}
+function putCar(x)
+{
+ var t, t2;
+ for(t=dimy-2;t<dimy;t++)
+ for(t2=0;t2<dimx;t2++)
+ board[t][t2] = t2==x?1:((t2==x-1 || t2==x+1) && t==dimy-1)?1:0;
+ pos = x;
+}
+function syncFrame()
+{
+ window.requestAnimationFrame(syncFrame);
+ var t, t2;
+ b.bg();
+ for(t=buffer;t<dimy;t++)
+ for(t2=0;t2<dimx;t2++)
+ if (board[t][t2])
+ b.bk(t2, t-buffer, board[t][t2]-1);
+}
+window.requestAnimationFrame(syncFrame);
+
+function fireBullet(x)
+{
+ if (x===undefined) x = pos;
+ if (!board[dimy-3][x] && controller==snow)
+ {
+  if (bulletx==-1)
+  {
+   bulletx = x; bullety = dimy-3;
+   board[bullety][bulletx] = 1;
+   if (board[bullety-1][bulletx])
+   {
+    var tx = bulletx, ty = bullety;
+    bullety = bulletx = -1;
+    acceptBullet(tx, ty)
+   }
+  }
+  else bsched.push(x);
+ }
+}
+function processBullet() //single bullet only
+{
+ if (bulletx==-1) return;
+ board[bullety][bulletx] = 0;
+ if (bullety==buffer)
+ {
+  bullety = bulletx = -1;
+  if (bsched.length)
+  {
+   var newb = bsched.pop();
+   fireBullet(newb);
+  }
+ }
+ else
+ {
+  bullety--;
+  board[bullety][bulletx] = 1;
+  if (board[bullety-1][bulletx])
+  {
+   var tx = bulletx, ty = bullety;
+   bullety = bulletx = -1;
+   acceptBullet(tx, ty)
+  }
+ }
+}
+function acceptBullet(x, y)
+{
+ var t, t2, trect;
+ //find the rect
+ for(t=0;t<rects.length;t++)
+ if (rects[t].x<=x && x<rects[t].x+rects[t].w)
+ {
+  trect = rects[t];
+  break;
+ }
+ trect.hon[x-trect.x]--;
+ trect.ch = trect.h-Math.min.apply(this, trect.hon);
+
+ for(t=1;t<trect.w;t++)
+ if (trect.hon[0]!=trect.hon[t])
+ break;
+
+ //now we have to decide if we want the next bullet or not
+ if (bsched.length)
+ {
+  var newb = bsched.pop();
+  if (t!=trect.w || newb<trect.x || newb.x>=trect.x+trect.w)
+  fireBullet(newb);
+ }
+
+ if (t==trect.w)
+ solveRect(trect);
+}
+
+function tick()
+{
+ if (pause) return;
+ processBullet()
+ controller()
+}
+function setController(func, oct)
+{
+ ct = oct?oct:0; controller = func;
+}
+function destroyRect()
+{
+/* well, but it destroys it a bit too fast, maybe set this as a controller, and after some ticks, fire ?*/
+ ct++;
+ if (ct==24)
+ {
+  var t, t2;
+  for(t=flashRect.rect.y;t<flashRect.rect.y+flashRect.rect.h-flashRect.rect.hon[0];t++)
+  for(t2=flashRect.rect.x;t2<flashRect.rect.x+flashRect.rect.w;t2++)
+  board[t][t2] = 0;
+  rects.splice(rects.indexOf(flashRect.rect), 1);
+  setController(snow, oct);
+ }
+}
+function flashRect()
+{
+ var t, t2, tm = flashRect.time;
+ for(t=flashRect.rect.y;t<flashRect.rect.y+flashRect.rect.h-flashRect.rect.hon[0];t++)
+ for(t2=flashRect.rect.x;t2<flashRect.rect.x+flashRect.rect.w;t2++)
+ board[t][t2] = (ct%(2*tm)>tm)?0:1;
+
+ ct++;
+ if (ct==8*tm)
+ {
+  rects.splice(rects.indexOf(flashRect.rect), 1);
+  setController(snow);
+ }
+}
+flashRect.time = 25;
+function solveRect(rect)
+{
+ score += rect.w*(rect.h-rect.hon[0]);
+ updateScore();
+ flashRect.rect = rect;
+ oct = ct;
+ setController(canFlash?flashRect:destroyRect);
+}
+function startExplosion()
+{
+ if (pos==0)
+ doExplosion.x = 0;
+ else if (pos+4>=dimx)
+ doExplosion.x = dimx-5;
+ else
+ doExplosion.x = pos-1;
+ doExplosion.tick = 0;
+ setController(doExplosion);
+}
+function doExplosion()
+{
+ if ((ct++)%(12)) return;
+ put(doExplosion.x, dimy-6, explosion[doExplosion.tick%7])
+ doExplosion.tick++;
+ if (doExplosion.tick==28)
+ {
+console.log('entering curtain');
+  curtain.mode = 1;
+  curtain.tick = 0;
+  setController(curtain);
+ }
+}
+function curtain()
+{
+ if ((ct++)%(chances?4:24)) return;
+ /*
+ now that depends on tick
+ fill board[dimy-1-tick] with .mode
+ */
+
+ for(curtain.t=0;curtain.t<dimx;curtain.t++)
+ board[dimy-1-curtain.tick][curtain.t] = curtain.mode;
+
+ curtain.tick += -1 + 2*curtain.mode;
+ if (curtain.tick==dimy-buffer)
+ {
+  curtain.tick = dimy-buffer-1;
+  curtain.mode = 0;
+  
+  var t, t2;
+  for(t=0;t<buffer;t++)
+  for(t2=0;t2<dimx;t2++)
+  board[t][t2] = 0;
+ }
+ else if (curtain.tick==-1)
+ {
+  chances--;
+  if (chances==-1)
+  newGame();
+  else
+  resetGame(); //this must call updateChances
+ }
+}
+function resetGame()
+{
+ console.log(bsched.length);
+ bsched.length=0;
+ updateChances();
+ putCar(Math.floor(dimx/2));
+ rects.length=0; 
+ scroll = heightb;
+ setController(snow);
+}
+function newGame()
+{
+ score=0; chances=chance_no;
+ updateScore(); updateChances();
+ resetGame();
+}
+/*
+
+ok, so I've made alot of stuff
+now you need to:
+1. install(fork cdisplay)
+2. define empty functions updatescore/chances
+3. tick per interval
+4. write sync frame
+5. left/right - change pos to pos-1 pos+1 when possible
+6. up - fire bullet
+
+and test & fix. probably nothing works
+
+#starthere
+well, now test
+and fix obvious fail timing
+fail with snow again...
+ah because with line, we should clear all the screen not just
+the visible part
+
+FAIL:
+-no win (can't repro) (rects?)
+I repro'd, no error messages
+could this be caused by the fact that we forward the bullet into an improper rect?
+could this be caused by bullet-snow miscooperation?
+g
+g
+g
+
+b
+
+and then when bullet moves, it sees that there's g above..
+picture:
+g
+g
+g
+b
+
+
+but look, if snow does it first, WE LOOSE RECT:
+g
+g
+g
+b
+
+then bullet moves:
+g
+g
+b
+
+and then calls for accept bullet.
+that's why sometimes rect was disappearing and that one row left
+(I think so but no guarantee)
+
+so that appeared and Ive seen bullet-for-free bug
+havent seen no win yet
+
+YEAH, reproduced the no win bug :D
+}
+
+well now settings. we should obviously let the user change
+viewport height
+
+width? well, this depends on how the rects are being made...
+
+this is of course complicated, current parameters:
+-start range
+-border range
+-width range
+
+Offset: []-[]
+Border: []-[]
+Width: []-[]
+
+this could be Square dimensions: [a]-[b]x[c]-[d]
+
+ehh but fail here with the buffer...
+we've hardcoded that 3, 4 everywhere
+
+and height range, box-per
+but box-per = max_height + 1
+
+
+UPDATE:
+offset can be 0 - width-2
+
+*/
+function snow()
+{
+ //we have to take care of ct!
+ if ((ct++)%(speed)) return;
+ scroll++;
+ 
+
+ var t, t2;
+ for(t=dimy-1;t>0;t--)
+ {
+  for(t2=0;t2<dimx;t2++)
+  {
+   if (t>dimy-3 && (t2==pos-1 || t2==pos || t2==pos+1) || t2==bulletx && (t==bullety || t==bullety+1)) continue; 
+   board[t][t2] = board[t-1][t2];
+  } 
+ }
+ for(t=0;t<dimx;t++)
+ board[0][t] = 0;
+
+ var t, rl = rects.length;
+
+ if (scroll==heightb+1)
+ {
+  scroll = 0;
+  makeRects(dimx);
+ }
+
+
+ for(t=0;t<rl;t++)
+ {
+  rects[t].y++; 
+  if (rects[t].y+rects[t].ch>dimy-2)
+  {
+   startExplosion();
+   return;
+  }
+ }
+ 
+ if (bullety!=-1 && board[bullety-1][bulletx])
+ {
+  var tx = bulletx, ty = bullety;
+  bullety = bulletx = -1;
+  acceptBullet(tx, ty)
+ }
+}
+
+function ri(min, max)
+{
+ return Math.floor(Math.random()*(max-min+1))+min;
+}
+function makeRects()
+{
+ var nstart = 0, nones = 0, nb, bh = 0, t, t2;
+ while(nstart<dimx)
+ {
+  border = nstart?ri(bordera, borderb):ri(offseta, offsetb);
+  nstart += border; 
+  if (nstart>=dimx-1) break;
+  
+  nb = {x: nstart, y: 0, h: ri(heighta,heightb)};
+  nb.ch = nb.h;
+
+  blen = ri(widtha, widthb)
+  nstart += blen;
+  nstart = Math.min(nstart, dimx)
+  nb.w = nstart-nb.x;
+  
+  rects.push(nb);
+  nones++;
+
+  var hon = [], hnr = 0, whichrow; while(hon.length<nb.w) hon.push(0);
+  var tholes;
+  if (Math.min(nb.w, nb.h)<=2)
+  tholes = Math.floor(nb.w*nb.h/2)-1
+  else if (Math.min(nb.w, nb.h)<=3)
+  tholes = ri(Math.floor(nb.w*nb.h/2)-1, Math.floor(nb.w*nb.h/2));
+  else
+  tholes = ri(Math.floor(nb.w*nb.h/2)-1, Math.floor(nb.w*nb.h/2)+1);
+
+  for(t=0;t<tholes;t++)
+  {
+   whichrow = ri(0, nb.w-1);
+   if (!hon[whichrow] && (hnr<nb.w-1))//there was no hole here before
+   {
+    hnr++;
+    hon[whichrow]++; //+1 means "dig there"
+   }
+   else if (hon[whichrow] && hon[whichrow]<nb.h-1)//hon must be less than height-1
+   {
+    hon[whichrow]++;
+   }
+   else
+   {
+    //we can't so continue, but minus the counter first
+    t--;
+    continue;
+   }
+  }
+  //now we need to put this hollow rect on board...
+  for(t=0;t<nb.w;t++)
+  {
+   for(t2=0;t2<nb.h-hon[t];t2++)
+   board[t2][nb.x+t] = 1;
+  }
+  nb.hon = hon; //useful for bullets
+ }
+}
+
+b.element.onkeydown = function(e)
+{
+ e.preventDefault();
+ if (controller!=snow) return;
+ if (e.keyCode==80)
+ pause = 1-pause;
+ if (pause) return;
+ if ((e.keyCode==37 || e.keyCode==65) && pos)
+ putCar(pos-1);
+ else if ((e.keyCode==39 || e.keyCode==68) && pos<(dimx-1))
+ putCar(pos+1)
+ else if (!(e.keyCode==37 || e.keyCode==65) && !(e.keyCode==39 || e.keyCode==68) && e.keyCode!=80)
+ {
+  if (!kstate)
+  fireBullet();
+  kstate=e.keyCode;
+ }
+}
+b.element.onkeyup = function(e)
+{
+ if (e.keyCode==kstate)
+ kstate=0;
+ e.preventDefault();
+}
+b.element.onblur = function(e)
+{
+ fast=0; pause = 1;
+ e.preventDefault();
+}
+b.element.onfocus = function(e)
+{
+ pause=0;
+ e.preventDefault();
+}
+
+ntv = window.setInterval(tick, tclock);
+newGame()
+
+
+</script>
+<br><br>

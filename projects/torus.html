@@ -1,0 +1,543 @@
+<title>zb3 torus generator</title>
+<style>
+body
+{
+ background-color: black;
+ color: white;
+ font-family: arial;
+ font-size: 10pt;
+ margin:0;
+}
+textarea, input[type="text"]
+{
+ background-color: #001313;
+ color: cyan;
+ border-style: inset;
+ border-color:white;
+ border-width:2px;
+}
+input[type="text"], button
+{
+ margin-left: 2px;
+ margin-right: 2px;
+ margin-top: -1px;
+ margin-bottom: 5px;
+}
+button
+{
+ text-align: center;
+}
+</style>
+<div id="options" style="position: absolute; right: 0px; top: 0x; background-color: black; color: white; border: 1px solid grey; z-index:9;">
+<button style="width: 100%; margin: 0px;" onclick="hideshow(this, 'optdiv');">Hide settings</button><div id="optdiv" style="border-top: 1px solid grey;"><b>Torus settings:</b><br>
+Segments: <input type="text" size="2" data-oval="207" value="207" onchange="isn(this);" id="opt-seg"><br>
+Radius segments: <input type="text" size="2" data-oval="22" value="22" onchange="isn(this);" id="opt-q"><br>
+Segment length: <input type="text" size="2" data-oval="72" value="72" onchange="isn(this);" id="opt-len"><br><br>
+<b>Torus generation settings:</b> <span style="font-size: 11px; color: grey;">(angles are interpolated)</span><br> 
+Minimum segment length: <input type="text" size="2" data-oval="10" value="10" onchange="isf(this);" id="opt-mclen"><br>
+Maximum segment length: <input type="text" size="2" data-oval="14" value="14" onchange="isf(this);" id="opt-mxlen"><br>
+Angle delta: <input type="text" size="5" data-oval="1.125" value="1.125" onchange="isf(this);" id="opt-angled"><br>
+Minimum segment angle: <input type="text" size="5" data-oval="1" value="1" onchange="isf(this);" id="opt-anglem"><br><br>
+<button onclick="opt.sync();changeTorusSettings();">Change torus settings</button><br><br>
+<b>Race speed:</b><br>
+Speed: <input type="text" size="5" data-oval="31" value="31" onchange="isf(this);" id="opt-speed"><br>
+<button onclick="opt.sync();changeTorusSpeed();">Change speed</button><br><br>
+<b>Rendering settings:</b><br>
+Z-far: <input type="text" size="5" data-oval="0" value="0" onchange="isf(this);" id="opt-zfar"><br>
+Scale factor: <input type="text" size="5" data-oval="261" value="261" onchange="isf(this);" id="opt-scale"><br> 
+Fog: <input type="text" size="5" data-oval="0.03" value="0.03" onchange="isf(this);" id="opt-fog"><br>
+<button onclick="opt.sync();changeRenderSettings();">Change rendering settings</button><br><br>
+</div></div>
+<canvas id="thecanvas" width="600" height="600" style="position: absolute; left: 0px; top: 0px;z-index:8;"></canvas>
+<script>
+//stack?
+//like when its -, needs to be +
+
+var tools = //do normalize
+{
+ t0: 0, t1: 0, ts: 0, tc: 0,
+ normalize: function(vec)
+ {
+  ts = Math.sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
+  vec[0] /= ts; vec[1] /= ts; vec[2] /= ts;
+ },
+ distance: function(ar, i1)
+ {
+  return Math.sqrt((ar[i1][0])*(ar[i1][0])+(ar[i1][1])*(ar[i1][1])+(ar[i1][2])*(ar[i1][2]));
+ }
+}
+var Matrix4 = function()
+{
+ this.el = []; this.t = [0, 0, 0, 0, 0, 0]; this.tv = [0, 0, 0, 0, 0, 0];
+ this.el2 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+ this.el3 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+ this.x = [0, 0, 0]; this.y = [0, 0, 0];
+ this.reset();
+}
+Matrix4.prototype.reset = function()
+{
+ this.el = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+Matrix4.prototype.setFrom = function(mat)
+{
+ this.el = [mat.el[0], mat.el[1], mat.el[2], mat.el[3], mat.el[4], mat.el[5], mat.el[6], mat.el[7], mat.el[8], mat.el[9], mat.el[10], mat.el[11], mat.el[12], mat.el[13], mat.el[14], mat.el[15]];
+}
+//new way: rotate vector by a2, new end, then multiply a2 by looking at new end from old end (this thing)
+Matrix4.prototype.lookAt = function(vec, up)
+{
+ this.tv[0] = vec[0]; this.tv[1] = vec[1]; this.tv[2] = vec[2];
+ tools.normalize(vec);
+ if (!vec[0] && !vec[1] && !vec[2]) vec[2] = 1;
+
+ this.x = [up[1]*vec[2] - up[2]*vec[1], up[2]*vec[0]-up[0]*vec[2], up[0]*vec[1]-up[1]*vec[0]];
+ tools.normalize(this.x);
+// test if zero
+ 
+ this.y = [vec[1]*this.x[2]-vec[2]*this.x[1], vec[2]*this.x[0]-this.x[2]*vec[0], vec[0]*this.x[1]-vec[1]*this.x[0]];
+ this.el[0] = this.x[0]; this.el[4] = this.y[0]; this.el[8] = vec[0];
+ this.el[1] = this.x[1]; this.el[5] = this.y[1]; this.el[9] = vec[1];
+ this.el[2] = this.x[2]; this.el[6] = this.y[2]; this.el[10] = vec[2];
+ vec[0] = this.tv[0]; vec[1] = this.tv[1]; vec[2] = this.tv[2];
+}
+//WATCH OUT!
+//this assumes this is 3x3 matrix. you MUST make sure multiplication doesnt affect rows that arent here
+//otherwise rewrite this to provide full multiplication
+Matrix4.prototype.multiplyVector = function(vec)
+{
+ this.t[0] = vec[0]; this.t[1] = vec[1]; this.t[2] = vec[2];
+ vec[0] = this.el[0]*this.t[0] + this.el[4]*this.t[1] + this.el[8]*this.t[2];
+ vec[1] = this.el[1]*this.t[0] + this.el[5]*this.t[1] + this.el[9]*this.t[2];
+ vec[2] = this.el[2]*this.t[0] + this.el[6]*this.t[1] + this.el[10]*this.t[2];
+}
+Matrix4.prototype.determinant = function()
+{
+ return (this.el[12] * this.el[9] * this.el[6] * this.el[3]-this.el[8] * this.el[13] * this.el[6] * this.el[3]-this.el[12] * this.el[5] * this.el[10] * this.el[3]+this.el[4] * this.el[13] * this.el[10] * this.el[3]+this.el[8] * this.el[5] * this.el[14] * this.el[3]-this.el[4] * this.el[9] * this.el[14] * this.el[3]-this.el[12] * this.el[9] * this.el[2] * this.el[7]+this.el[8] * this.el[13] * this.el[2] * this.el[7]+this.el[12] * this.el[1] * this.el[10] * this.el[7]-this.el[0] * this.el[13] * this.el[10] * this.el[7]-this.el[8] * this.el[1] * this.el[14] * this.el[7]+this.el[0] * this.el[9] * this.el[14] * this.el[7]+this.el[12] * this.el[5] * this.el[2] * this.el[11]-this.el[4] * this.el[13] * this.el[2] * this.el[11]-this.el[12] * this.el[1] * this.el[6] * this.el[11]+this.el[0] * this.el[13] * this.el[6] * this.el[11]+this.el[4] * this.el[1] * this.el[14] * this.el[11]-this.el[0] * this.el[5] * this.el[14] * this.el[11]-this.el[8] * this.el[5] * this.el[2] * this.el[15]+this.el[4] * this.el[9] * this.el[2] * this.el[15]+this.el[8] * this.el[1] * this.el[6] * this.el[15]-this.el[0] * this.el[9] * this.el[6] * this.el[15]-this.el[4] * this.el[1] * this.el[10] * this.el[15]+this.el[0] * this.el[5] * this.el[10] * this.el[15]);
+}
+//do inverse and check if the rotation is still
+Matrix4.prototype.invert = function()
+{
+ for(this.t[0]=0;this.t[0]<16;this.t[0]++)
+ this.el2[this.t[0]] = this.el[this.t[0]];
+
+ this.t[0] = this.determinant();
+ this.el[0] = (this.el2[9]*this.el2[14]*this.el2[7] - this.el2[13]*this.el2[10]*this.el2[7] + this.el2[13]*this.el2[6]*this.el2[11] - this.el2[5]*this.el2[14]*this.el2[11] - this.el2[9]*this.el2[6]*this.el2[15] + this.el2[5]*this.el2[10]*this.el2[15])*this.t[0];
+ this.el[4] = (this.el2[12]*this.el2[10]*this.el2[7] - this.el2[8]*this.el2[14]*this.el2[7] - this.el2[12]*this.el2[6]*this.el2[11] + this.el2[4]*this.el2[14]*this.el2[11] + this.el2[8]*this.el2[6]*this.el2[15] - this.el2[4]*this.el2[10]*this.el2[15])*this.t[0];
+ this.el[8] = (this.el2[8]*this.el2[13]*this.el2[7] - this.el2[12]*this.el2[9]*this.el2[7] + this.el2[12]*this.el2[5]*this.el2[11] - this.el2[4]*this.el2[13]*this.el2[11] - this.el2[8]*this.el2[5]*this.el2[15] + this.el2[4]*this.el2[9]*this.el2[15])*this.t[0];
+ this.el[12] = (this.el2[12]*this.el2[9]*this.el2[6] - this.el2[8]*this.el2[13]*this.el2[6] - this.el2[12]*this.el2[5]*this.el2[10] + this.el2[4]*this.el2[13]*this.el2[10] + this.el2[8]*this.el2[5]*this.el2[14] - this.el2[4]*this.el2[9]*this.el2[14])*this.t[0];
+ this.el[1] = (this.el2[13]*this.el2[10]*this.el2[3] - this.el2[9]*this.el2[14]*this.el2[3] - this.el2[13]*this.el2[2]*this.el2[11] + this.el2[1]*this.el2[14]*this.el2[11] + this.el2[9]*this.el2[2]*this.el2[15] - this.el2[1]*this.el2[10]*this.el2[15])*this.t[0];
+ this.el[5] = (this.el2[8]*this.el2[14]*this.el2[3] - this.el2[12]*this.el2[10]*this.el2[3] + this.el2[12]*this.el2[2]*this.el2[11] - this.el2[0]*this.el2[14]*this.el2[11] - this.el2[8]*this.el2[2]*this.el2[15] + this.el2[0]*this.el2[10]*this.el2[15])*this.t[0];
+ this.el[9] = (this.el2[12]*this.el2[9]*this.el2[3] - this.el2[8]*this.el2[13]*this.el2[3] - this.el2[12]*this.el2[1]*this.el2[11] + this.el2[0]*this.el2[13]*this.el2[11] + this.el2[8]*this.el2[1]*this.el2[15] - this.el2[0]*this.el2[9]*this.el2[15])*this.t[0];
+ this.el[13] = (this.el2[8]*this.el2[13]*this.el2[2] - this.el2[12]*this.el2[9]*this.el2[2] + this.el2[12]*this.el2[1]*this.el2[10] - this.el2[0]*this.el2[13]*this.el2[10] - this.el2[8]*this.el2[1]*this.el2[14] + this.el2[0]*this.el2[9]*this.el2[14])*this.t[0];
+ this.el[2] = (this.el2[5]*this.el2[14]*this.el2[3] - this.el2[13]*this.el2[6]*this.el2[3] + this.el2[13]*this.el2[2]*this.el2[7] - this.el2[1]*this.el2[14]*this.el2[7] - this.el2[5]*this.el2[2]*this.el2[15] + this.el2[1]*this.el2[6]*this.el2[15])*this.t[0];
+ this.el[6] = (this.el2[12]*this.el2[6]*this.el2[3] - this.el2[4]*this.el2[14]*this.el2[3] - this.el2[12]*this.el2[2]*this.el2[7] + this.el2[0]*this.el2[14]*this.el2[7] + this.el2[4]*this.el2[2]*this.el2[15] - this.el2[0]*this.el2[6]*this.el2[15])*this.t[0];
+ this.el[10] = (this.el2[4]*this.el2[13]*this.el2[3] - this.el2[12]*this.el2[5]*this.el2[3] + this.el2[12]*this.el2[1]*this.el2[7] - this.el2[0]*this.el2[13]*this.el2[7] - this.el2[4]*this.el2[1]*this.el2[15] + this.el2[0]*this.el2[5]*this.el2[15])*this.t[0];
+ this.el[14] = (this.el2[12]*this.el2[5]*this.el2[2] - this.el2[4]*this.el2[13]*this.el2[2] - this.el2[12]*this.el2[1]*this.el2[6] + this.el2[0]*this.el2[13]*this.el2[6] + this.el2[4]*this.el2[1]*this.el2[14] - this.el2[0]*this.el2[5]*this.el2[14])*this.t[0];
+ this.el[3] = (this.el2[9]*this.el2[6]*this.el2[3] - this.el2[5]*this.el2[10]*this.el2[3] - this.el2[9]*this.el2[2]*this.el2[7] + this.el2[1]*this.el2[10]*this.el2[7] + this.el2[5]*this.el2[2]*this.el2[11] - this.el2[1]*this.el2[6]*this.el2[11])*this.t[0];
+ this.el[7] = (this.el2[4]*this.el2[10]*this.el2[3] - this.el2[8]*this.el2[6]*this.el2[3] + this.el2[8]*this.el2[2]*this.el2[7] - this.el2[0]*this.el2[10]*this.el2[7] - this.el2[4]*this.el2[2]*this.el2[11] + this.el2[0]*this.el2[6]*this.el2[11])*this.t[0];
+ this.el[11] = (this.el2[8]*this.el2[5]*this.el2[3] - this.el2[4]*this.el2[9]*this.el2[3] - this.el2[8]*this.el2[1]*this.el2[7] + this.el2[0]*this.el2[9]*this.el2[7] + this.el2[4]*this.el2[1]*this.el2[11] - this.el2[0]*this.el2[5]*this.el2[11])*this.t[0];
+ this.el[15] = (this.el2[4]*this.el2[9]*this.el2[2] - this.el2[8]*this.el2[5]*this.el2[2] + this.el2[8]*this.el2[1]*this.el2[6] - this.el2[0]*this.el2[9]*this.el2[6] - this.el2[4]*this.el2[1]*this.el2[10] + this.el2[0]*this.el2[5]*this.el2[10])*this.t[0];
+}
+Matrix4.prototype.multiplyBy = function(mat)
+{
+ for(this.t[0]=0;this.t[0]<16;this.t[0]++)
+ this.el2[this.t[0]] = this.el[this.t[0]];
+ for(this.t[0]=0;this.t[0]<16;this.t[0]++)
+ this.el3[this.t[0]] = mat.el[this.t[0]];
+
+ this.el[0] = this.el2[0]*this.el3[0] + this.el2[1]*this.el3[4] + this.el2[2]*this.el3[8] + this.el2[3]*this.el3[12];
+ this.el[1] = this.el2[0]*this.el3[1] + this.el2[1]*this.el3[5] + this.el2[2]*this.el3[9] + this.el2[3]*this.el3[13];
+ this.el[2] = this.el2[0]*this.el3[2] + this.el2[1]*this.el3[6] + this.el2[2]*this.el3[10] + this.el2[3]*this.el3[14];
+ this.el[3] = this.el2[0]*this.el3[3] + this.el2[1]*this.el3[7] + this.el2[2]*this.el3[11] + this.el2[3]*this.el3[15];
+ this.el[4] = this.el2[4]*this.el3[0] + this.el2[5]*this.el3[4] + this.el2[6]*this.el3[8] + this.el2[7]*this.el3[12];
+ this.el[5] = this.el2[4]*this.el3[1] + this.el2[5]*this.el3[5] + this.el2[6]*this.el3[9] + this.el2[7]*this.el3[13];
+ this.el[6] = this.el2[4]*this.el3[2] + this.el2[5]*this.el3[6] + this.el2[6]*this.el3[10] + this.el2[7]*this.el3[14];
+ this.el[7] = this.el2[4]*this.el3[3] + this.el2[5]*this.el3[7] + this.el2[6]*this.el3[11] + this.el2[7]*this.el3[15];
+ this.el[8] = this.el2[8]*this.el3[0] + this.el2[9]*this.el3[4] + this.el2[10]*this.el3[8] + this.el2[11]*this.el3[12];
+ this.el[9] = this.el2[8]*this.el3[1] + this.el2[9]*this.el3[5] + this.el2[10]*this.el3[9] + this.el2[11]*this.el3[13];
+ this.el[10] = this.el2[8]*this.el3[2] + this.el2[9]*this.el3[6] + this.el2[10]*this.el3[10] + this.el2[11]*this.el3[14];
+ this.el[11] = this.el2[8]*this.el3[3] + this.el2[9]*this.el3[7] + this.el2[10]*this.el3[11] + this.el2[11]*this.el3[15];
+ this.el[12] = this.el2[12]*this.el3[0] + this.el2[13]*this.el3[4] + this.el2[14]*this.el3[8] + this.el2[15]*this.el3[12];
+ this.el[13] = this.el2[12]*this.el3[1] + this.el2[13]*this.el3[5] + this.el2[14]*this.el3[9] + this.el2[15]*this.el3[13];
+ this.el[14] = this.el2[12]*this.el3[2] + this.el2[13]*this.el3[6] + this.el2[14]*this.el3[10] + this.el2[15]*this.el3[14];
+ this.el[15] = this.el2[12]*this.el3[3] + this.el2[13]*this.el3[7] + this.el2[14]*this.el3[11] + this.el2[15]*this.el3[15];
+}
+Matrix4.prototype.rotateX = function(angle)
+{
+ for(this.t[0]=0;this.t[0]<16;this.t[0]++)
+ this.el2[this.t[0]] = this.el[this.t[0]];
+ this.t[0] = Math.cos(angle); this.t[1] = Math.sin(angle);
+
+ this.el[4] = this.t[0] * this.el2[4] + this.t[1] * this.el2[8];
+ this.el[5] = this.t[0] * this.el2[5] + this.t[1] * this.el2[9];
+ this.el[6] = this.t[0] * this.el2[6] + this.t[1] * this.el2[10];
+ this.el[7] = this.t[0] * this.el2[7] + this.t[1] * this.el2[11];
+
+ this.el[8] = this.t[0] * this.el2[8] - this.t[1] * this.el2[4];
+ this.el[9] = this.t[0] * this.el2[9] - this.t[1] * this.el2[5];
+ this.el[10] = this.t[0] * this.el2[10] - this.t[1] * this.el2[6];
+ this.el[11] = this.t[0] * this.el2[11] - this.t[1] * this.el2[7];
+}
+Matrix4.prototype.rotateY = function(angle) //wrong?
+{
+ for(this.t[0]=0;this.t[0]<16;this.t[0]++)
+ this.el2[this.t[0]] = this.el[this.t[0]];
+ this.t[0] = Math.cos(angle); this.t[1] = Math.sin(angle);
+
+ this.el[0] = this.t[0] * this.el2[0] - this.t[1] * this.el2[8];
+ this.el[1] = this.t[0] * this.el2[1] - this.t[1] * this.el2[9];
+ this.el[2] = this.t[0] * this.el2[2] - this.t[1] * this.el2[10];
+ this.el[3] = this.t[0] * this.el2[3] - this.t[1] * this.el2[11];
+
+ this.el[8] = this.t[0] * this.el2[8] + this.t[1] * this.el2[0];
+ this.el[9] = this.t[0] * this.el2[9] + this.t[1] * this.el2[1];
+ this.el[10] = this.t[0] * this.el2[10] + this.t[1] * this.el2[2];
+ this.el[11] = this.t[0] * this.el2[11] + this.t[1] * this.el2[3];
+
+}
+//delay for pts removal?
+var vectorStack = function(buffSize, len, pminlen, pmaxlen, anglem, angled)
+{
+ this.buffSize = buffSize; this.l = len;
+ this.stack = []; this.sign = [0, 0]; this.op = 0;
+ this.pminlen = pminlen; this.pmaxlen = pmaxlen;
+ this.anglem = anglem; this.angled = angled;
+ this.t = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; //some temp variables
+ this.as = [0, 0]; this.as2 = [0, 0];
+ this.load();
+}
+vectorStack.prototype.pushVec = function()
+{
+ if (this.stack.length==this.buffSize)
+ this.stack.splice(0, 1);
+ if (!this.op)
+ {
+  if (!this.stack.length)
+  {
+   this.as[0] = (Math.round(Math.random())-0.5)*2;
+   this.as[0] *= Math.floor(Math.random()*(this.angled-this.anglem+1))+this.anglem; this.as[1] = (Math.round(Math.random())-0.5)*2;
+   this.as[1] *= Math.floor(Math.random()*(this.angled-this.anglem+1))+this.anglem;
+   this.as2[0] = (Math.round(Math.random())-0.5)*2;
+   this.as2[0] *= Math.floor(Math.random()*(this.angled-this.anglem+1))+this.anglem; this.as2[1] = (Math.round(Math.random())-0.5)*2;
+   this.as2[1] *= Math.floor(Math.random()*(this.angled-this.anglem+1))+this.anglem;
+  }
+  else
+  {
+   this.as[0] = this.as2[0]; this.as[1] = this.as2[1];
+   this.as2[0] = (Math.round(Math.random())-0.5)*2;
+   this.as2[0] *= Math.floor(Math.random()*(this.angled-this.anglem+1))+this.anglem; this.as2[1] = (Math.round(Math.random())-0.5)*2;
+   this.as2[1] *= Math.floor(Math.random()*(this.angled-this.anglem+1))+this.anglem;
+  }
+  this.t[2] = this.as[0]; this.t[3] = this.as[1];
+  this.opl = Math.floor(Math.random()*(this.pmaxlen-this.pminlen+1))+this.pminlen; this.op = this.opl;
+ }
+ else
+ {
+  this.t[2] = ((this.op-1)/this.opl)*this.as[0] + ((this.opl+1-this.op)/this.opl)*this.as2[0];   this.t[3] = ((this.op-1)/this.opl)*this.as[1] + ((this.opl+1-this.op)/this.opl)*this.as2[1];
+  this.op--;
+ }
+ this.t[1] = this.l;
+ this.stack.push([-this.t[1]*Math.sin(this.t[2]), -this.t[1]*Math.cos(this.t[2])*Math.sin(this.t[3]), this.t[1]*Math.cos(this.t[2])*Math.cos(this.t[3]), this.t[1], this.t[2], this.t[3]]);
+ this.sign[0] = this.t[2]>0;  this.sign[3] = this.t[3]>0;
+}
+vectorStack.prototype.load = function()
+{
+ this.stack.push([0, 0, this.l, this.l, 0, 0, 0]);
+ while(this.stack.length<this.buffSize)
+ this.pushVec();
+}
+var torusPoints = function(canvas, r, q, speed, len, mclen, mxlen, minangle, maxangle)
+{
+ //implement LOD (level of details)
+ this.len = len; this.r = r; this.q = q; this.l = [0, 0, 0];
+ this.stack = new vectorStack(this.r, this.len, mclen, mxlen, minangle*Math.PI/180, maxangle*Math.PI/180);
+ this.canvas = canvas;
+ this.canvas.setParameters(this.r, this.q);
+ this.points = []; this.t = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+ this.tv = [0, 0, 0];
+ this.template = []; this.loadTemplate();
+ this.a2 = new Matrix4();
+ this.a3 = new Matrix4();
+ this.mt = new Matrix4(); this.mt2 = new Matrix4();
+ this.a2up = [0, 1, 0];
+ this.speed = speed;
+ this.currentl = 0;
+ this.centroids = [];
+ //keep track of the angles. remember to "cleanup" sometimes (- occurences of 2Pi)
+ for(this.t[6]=0;this.stack.buffSize-this.t[6];this.t[6]++)
+ this.genFromVector(this.stack.stack[this.t[6]]);
+ this.points.splice(0, this.q);
+ this.tpl -= this.q;
+ this.gc1 = this.centroids[1][0]-this.centroids[0][0]; this.gc2 = this.centroids[1][1]-this.centroids[0][1]; this.gc3 = this.centroids[1][2]-this.centroids[0][2];
+}
+torusPoints.prototype.setSpeed = function(val)
+{
+ this.speed = val;
+}
+//then you just need to draw lines between point->[point+1, point-1, point+q, point-q] (or 4 quads but remember not to double them [future])
+torusPoints.prototype.loadTemplate = function()
+{
+ for(this.t[0]=0;this.q-this.t[0];this.t[0]++)
+ {
+  this.t[1] = Math.sin((this.t[0]/(this.q))*2*Math.PI); this.t[2] = Math.cos((this.t[0]/(this.q))*2*Math.PI);
+  this.template.push([-this.r*this.t[1], this.r*this.t[2]]); 
+ }
+}
+torusPoints.prototype.applyTemplate = function() //must not use t[0]-t[2]
+{
+ for(this.t[3]=0;this.q-this.t[3];this.t[3]++)
+ {
+  this.tv[0] = this.template[this.t[3]][0]; this.tv[1] = this.template[this.t[3]][1]; this.tv[2] = 0;
+  this.a2.multiplyVector(this.tv);
+  this.points.push([this.tv[0]+this.l[0], this.tv[1]+this.l[1], this.tv[2]+this.l[2]]);
+ }
+ this.tpl = this.points.length;
+}
+torusPoints.prototype.applyRotation = function()
+{
+ this.mt.reset();
+ this.mt.lookAt(this.t, this.a2up);
+ this.mt.invert();
+ this.a2.multiplyBy(this.mt);
+ this.mt.multiplyVector(this.l);
+
+ for(this.t[0]=0;this.centroids.length-this.t[0];this.t[0]++)
+ {
+  this.mt.multiplyVector(this.centroids[this.t[0]]);
+ }
+ for(this.t[0]=0;this.tpl-this.t[0];this.t[0]++)
+ {
+  this.mt.multiplyVector(this.points[this.t[0]]);
+ }
+}
+torusPoints.prototype.moveByVector = function(l)
+{
+ this.mt.reset();
+ this.mt.lookAt(this.centroids[0], this.a2up);
+ this.t[0] = 0; this.t[1] = 0; this.t[2] = l;
+ this.mt.multiplyVector(this.t);
+
+ for(this.t[3]=0;this.centroids.length-this.t[3];this.t[3]++)
+ {
+  this.centroids[this.t[3]][0] -= this.t[0]; this.centroids[this.t[3]][1] -= this.t[1]; this.centroids[this.t[3]][2] -= this.t[2];
+ }
+ for(this.t[3]=0;this.tpl-this.t[3];this.t[3]++)
+ {
+  this.points[this.t[3]][0] -= this.t[0]; this.points[this.t[3]][1] -= this.t[1]; this.points[this.t[3]][2] -= this.t[2];
+ }
+ this.l[0] -= this.t[0]; this.l[1] -= this.t[1]; this.l[2] -= this.t[2];
+}
+torusPoints.prototype.tickFrame = function(speed)
+{
+ if (((this.currentl+speed)>(this.stack.stack[0][3])))
+ this.t[5] = 1; else this.t[5] = 0;
+ this.t[4] = (!this.t[5])?(speed):((this.stack.stack[0][3])-this.currentl);
+ this.currentl += this.t[4];
+ if (this.t[4])
+ this.moveByVector(this.t[4]);
+ this.t[0] = (this.t[4]/this.stack.stack[0][3])*(this.gc1); this.t[1] = (this.t[4]/this.stack.stack[0][3])*(this.gc2);
+ this.t[2] = (this.t[4]/this.stack.stack[0][3])*(this.gc3) + ((this.stack.stack[0][3]-this.t[4]))*1;
+ this.applyRotation();
+ if (this.t[5])
+ {
+  this.a3.reset();
+  this.stack.pushVec(); this.currentl = 0;
+  this.points.splice(0, this.q);
+  this.tpl -= this.q;
+  this.genFromVector(this.stack.stack[this.stack.stack.length-1]);
+  this.gc1 = this.centroids[1][0]-this.centroids[0][0]; this.gc2 = this.centroids[1][1]-this.centroids[0][1]; this.gc3 = this.centroids[1][2]-this.centroids[0][2];
+  this.tickFrame(speed-this.t[4]) ;return;
+ }
+ this.canvas.drawPoints(this.points);
+}
+torusPoints.prototype.genFromVector = function(vec)
+{
+ this.t[0] = vec[0]; this.t[1] = vec[1]; this.t[2] = vec[2];
+ this.mt.lookAt(this.t, this.a2up);
+ this.a2.multiplyVector(this.t);
+ this.mt.multiplyBy(this.a2);
+ this.a2.setFrom(this.mt);
+ this.applyTemplate();
+ this.l[0] += this.t[0]; this.l[1] += this.t[1]; this.l[2] += this.t[2]; 
+ if (this.centroids.length<this.stack.buffSize)
+ {this.centroids.push([this.l[0], this.l[1], this.l[2]]);}
+ else
+ { 
+  for(this.t[0]=0;this.t[0]<(this.stack.buffSize-1);this.t[0]++)
+  {
+   this.centroids[this.t[0]][0] = this.centroids[this.t[0]+1][0]; this.centroids[this.t[0]][1] = this.centroids[this.t[0]+1][1]; this.centroids[this.t[0]][2] = this.centroids[this.t[0]+1][2];
+  }
+  this.centroids[this.stack.buffSize-1][0] = this.l[0]; this.centroids[this.stack.buffSize-1][1] = this.l[1]; this.centroids[this.stack.buffSize-1][2] = this.l[2];
+ }//splice 0,1; centroid[last] =this
+}
+var canvasSync = function(el, zfar, scale, fog)
+{
+ this.elem = document.getElementById(el); this.ctx = this.elem.getContext("2d");
+ this.x = this.y = 0;
+ this.resize();
+ this.x = this.elem.width; this.y = this.elem.height;
+ this.scale = scale; this.fog = fog;
+ this.clear();this.data = this.ctx.getImageData(0, 0, this.x, this.y);
+ this.zfar = zfar; this.t = [0, 0, 0, 0, 0, 0, 0];
+ this.lt = [0, 0, 0, 0, 0, 0, 0];
+}
+canvasSync.prototype.setParameters = function(r, q)
+{
+ this.r = r-1;
+ this.q = q;
+}
+canvasSync.prototype.resize = function()
+{
+ this.ctx.translate(-this.x/2, -this.y/2);
+ this.elem.width = document.body.clientWidth; this.elem.height = document.body.clientHeight;
+ this.x = this.elem.width; this.y = this.elem.height;
+ this.ctx.translate(this.x/2, this.y/2);
+}
+canvasSync.prototype.setOpt = function(zfar, scale, fog)
+{
+ this.scale = scale; this.zfar = zfar; this.fog = fog;
+}
+canvasSync.prototype.clear = function()
+{
+ this.ctx.fillStyle = "rgb(0, 0, 0)"; 
+ this.ctx.fillRect(-this.x/2, -this.y/2, this.x, this.y);
+}
+canvasSync.prototype.pixelLine = function(x0, y0, x1, y1, val)
+{
+ if (((x0<0 || x0>this.x) || (y0<0 || y0>this.y)) && ((x1<0 || x1>this.x) || (y1<0 || y1>this.y)))
+ return;
+ if (((x0<0 || x0>this.x) || (y0<0 || y0>this.y)))
+ {
+  x0 ^= x1; x1 ^= x0; x0 ^= x1;
+  y0 ^= y1; y1 ^= y0; y0 ^= y1;
+ }
+ this.lt[0] = Math.abs(x1-x0);
+ this.lt[1] = Math.abs(y1-y0);
+ if (x0 < x1) this.lt[2] = 1; else this.lt[2] = -1;
+ if (y0 < y1) this.lt[3] = 1; else this.lt[3] = -1;
+
+ this.lt[4] = this.lt[0]-this.lt[1];
+ while (1)
+ {
+  if (x0>0 && x0<this.x && y0>0 && y0<this.y)
+  {this.data.data[(y0*this.x+x0)*4] = val; this.data.data[(y0*this.x+x0)*4+1] = val; this.data.data[(y0*this.x+x0)*4+2] = val; this.data.data[(y0*this.x+x0)*4+3] = 255;}
+  else break;
+ 
+  if (x0==x1 && y0==y1) break;
+  this.lt[5] = 2*this.lt[4];
+  if (this.lt[5]>-this.lt[1])
+  {
+   this.lt[4] -= this.lt[1];
+   x0 += this.lt[2];
+  }
+  if (this.lt[5]<this.lt[0])
+  {
+   this.lt[4] += this.lt[0];
+   y0 += this.lt[3];
+  }
+ }
+}
+canvasSync.prototype.line = function(x1, y1, x2, y2, depth)
+{
+ this.pixelLine(Math.floor(x1+this.x/2), Math.floor(-y1+this.y/2), Math.floor(x2+this.x/2), Math.floor(-y2+this.y/2), parseInt(255-depth*this.fog));
+}
+canvasSync.prototype.lnpts = function(pts, a1, a2)
+{
+ if ((pts[a1][2]+this.zfar)>0 && (pts[a2][2]+this.zfar)>0)
+ this.line((pts[a1][0]/(pts[a1][2]+this.zfar))*this.scale, (pts[a1][1]/(pts[a1][2]+this.zfar))*this.scale, (pts[a2][0]/(pts[a2][2]+this.zfar))*this.scale, (pts[a2][1]/(pts[a2][2]+this.zfar))*this.scale, tools.distance(pts, a2));
+}
+canvasSync.prototype.drawPoints = function(pts) //change that hardcoded stuff like 1111, 20 etc
+{
+ this.clear(); this.data = this.ctx.getImageData(0, 0, this.x, this.y);
+ this.t[1] = this.q; this.ctx.fillStyle = "rgb(255, 255, 255)";
+ this.ctx.fillStyle = 'rgb(255, 255, 255)';
+ for(this.t[4]=this.r-1;this.t[4]>0;this.t[4]--)
+ {
+  for(this.t[0]=0;this.t[0]<this.q-1;this.t[0]++)
+  {
+   this.lnpts(pts, this.q*this.t[4]+this.t[0], this.q*this.t[4]+this.t[0]+1);
+   this.lnpts(pts, this.q*this.t[4]+this.t[0], this.q*(this.t[4]-1)+this.t[0]);
+  }
+  this.lnpts(pts, this.q*this.t[4]+this.q-1, this.q*this.t[4]);
+  this.lnpts(pts, this.q*this.t[4]+this.t[0], this.q*(this.t[4]-1)+this.t[0]);
+ }
+ this.lnpts(pts, this.q-1, 0);
+ for(this.t[0]=0;this.t[0]<this.q-1;this.t[0]++)
+ {
+  this.lnpts(pts, this.t[0], this.t[0]+1);
+ }
+ this.ctx.putImageData(this.data, 0, 0);
+}
+
+var Opt = function(val, prefix)
+{
+ this.opts = val; this.prefix = prefix;
+ this.temp = this.el = this.tmp2 = null;
+}
+Opt.prototype.sync = function()
+{
+ for(this.temp in this.opts)
+ if (this.opts.hasOwnProperty(this.temp) && (this.el=document.getElementById("opt-"+this.temp)))
+ this.opts[this.temp] = parseFloat(this.el.value);
+}
+
+//misc global
+var t = new Array();
+function isn(el)
+{
+ t[0] = parseInt(el.value);
+ if (!isNaN(t[0]))
+ {
+  if (t[0]<0) t[0] *= -1;
+  el.value = t[0]; el.setAttribute("data-oval", t[0]);
+ }
+ else el.value = el.getAttribute("data-oval");
+}
+function isf(el)
+{
+ t[0] = parseFloat(el.value);
+ if (!isNaN(t[0]))
+ {
+  if (t[0]<0) t[0] *= -1;
+  el.value = t[0]; el.setAttribute("data-oval", t[0]);
+ }
+ else el.value = el.getAttribute("data-oval");
+}
+function changeTorusSettings()
+{
+ torus = new torusPoints(crenderer, opt.opts["seg"], opt.opts["q"], opt.opts["speed"], opt.opts["len"], opt.opts["mclen"], opt.opts["mxlen"], opt.opts["angled"], opt.opts["anglem"]);
+}
+function changeTorusSpeed()
+{
+ torus.setSpeed(opt.opts["speed"]);
+}
+function changeRenderSettings()
+{
+ crenderer.setOpt(opt.opts["zfar"], opt.opts["scale"], opt.opts["fog"]);
+}
+function hideshow(el, el2)
+{
+ if (document.getElementById(el2).style.display!='none')
+ {
+  document.getElementById(el2).style.display='none';
+  el.innerHTML = el.innerHTML.replace("Hide", "Show");
+ }
+ else 
+ {
+  document.getElementById(el2).style.display='';
+  el.innerHTML = el.innerHTML.replace("Show", "Hide");
+ }
+}
+//misc global
+var opt = new Opt({seg: 207, q: 22, len: 72, mclen: 10, mxlen: 14, angled: 1.125, anglem: 1, speed: 31, zfar: 0, scale: 261, fog: 0.03}, "opt-");
+var crenderer = new canvasSync("thecanvas", opt.opts["zfar"], opt.opts["scale"], opt.opts["fog"]);
+var torus = new torusPoints(crenderer, opt.opts["seg"], opt.opts["q"], opt.opts["speed"], opt.opts["len"], opt.opts["mclen"], opt.opts["mxlen"], opt.opts["angled"], opt.opts["anglem"]);
+
+function tickClock()
+{
+ torus.tickFrame(torus.speed);
+ window.requestAnimationFrame(tickClock);
+}
+
+window.setInterval("torus.tickFrame(torus.speed);", 20);
+window.onresize = function(){crenderer.resize()};
+</script>
