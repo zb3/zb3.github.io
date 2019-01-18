@@ -54,12 +54,12 @@ var TLC = function(element, options)
  this.shadow.style.height = '200px';
  this.scrollbarWidth = cw-this.shadow.clientWidth;
  this.shadow.style.overflowY = 'hidden';
- 
+
  this.shadow.style.height = '1px';
 
  this.paddingTop = parseInt(cs.paddingTop);
  this.paddingBottom = parseInt(cs.paddingBottom);
- 
+
  this.shadow.value = '.';
  this.heightBase = this.shadow.scrollHeight;
 
@@ -162,7 +162,7 @@ TLC.prototype.updateScrollbar = function()
 TLC.prototype.generateMap = function(from, to)
 {
  var lines, baseHeight = 0;
- 
+
  if (from === -1) from = 0;
 
  if (from)
@@ -296,7 +296,7 @@ TLC.prototype.onSelectionChanged = function()
 TLC.prototype.updateSelection = function() //after updateUI
 {
  if (this.currentFirstLine+this.currentSelIdx === this.currentSelectedLine) return;
- 
+
  if (this.currentSelIdx > -1 && this.currentSelIdx < this.sayer.children.length)
  this.sayer.children[this.currentSelIdx].classList.remove('current');
 
@@ -328,8 +328,8 @@ TLC.prototype.textModified = function()
  this.updateScrollbar();
 
  var nv = this.original.value;
- 
- if (oldScrollOn === this.scrollOn) 
+
+ if (oldScrollOn === this.scrollOn)
  {
   var cp = commonPrefix(this.lastValue, nv), cs = commonSuffix(this.lastValue, nv, cp);
 
@@ -477,7 +477,7 @@ function updCursor()
 function updLen(after)
 {
  var val = getValue(), vl = val.length;
- 
+
  document.getElementById('text-binary-mode').className = isBinary?'binary':'';
  document.getElementById('lenSayer1').innerHTML=vl;
  updCursor();
@@ -513,7 +513,7 @@ function updLen(after)
 function getAdditionalVal()
 {
  var asText = document.getElementById('adt-mode-text').checked, asHex = document.getElementById('adt-mode-hex').checked, asHexified = document.getElementById('adt-mode-hexified').checked;
- 
+
  var v = getAdditionalValue();
 
  try
@@ -565,14 +565,14 @@ function sliceOp(remove, str)
  {
   if (unicode)
   return unicodeSubstring(str, 0, start)+unicodeSubstring(str, stop);
-  else 
+  else
   return str.slice(0, start)+str.slice(stop);
  }
  else
  {
   if (unicode)
   return unicodeSubstring(str, start, stop);
-  else 
+  else
   return str.slice(start, stop);
  }
 }
@@ -594,7 +594,7 @@ enc1 = chr1 >> 2;
 enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
 enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
 enc4 = chr3 & 63;
- 
+
 if (isNaN(chr2)) {
 enc3 = enc4 = 64;
 } else if (isNaN(chr3))
@@ -714,7 +714,7 @@ function decodeoct(oct)
   if (oct[i] === '\\' && (tmatch = oct.substr(i+1, 3).match(/^[0-7]{1,3}/)))
   {
    ccode = parseInt(tmatch[0], 8);
-   if (ccode>255) 
+   if (ccode>255)
    {
     tmatch[0] = tmatch[0].slice(0, -1);
     ccode = parseInt(tmatch[0], 8);
@@ -827,10 +827,10 @@ function cunescapeCB(wide, str, char, oct, hex, unicode16, unicode32, invalid)
  else if (oct)
  return String.fromCharCode(parseInt(oct, 8));
  else if (hex)
- {  
+ {
   if (hex.length > 2+(wide?2:0))
   hex = hex.slice(-2-(wide?2:0));
-  
+
   return String.fromCharCode(parseInt(hex, 16));
  }
  else if (unicode16)
@@ -858,7 +858,7 @@ function cunescape(str)
 
  var ret = '', m, wide = false;
  var parts = [];
- 
+
  while(m = literalRegex.exec(str))
  {
   if (m[2])
@@ -888,20 +888,20 @@ function cescape(str, singleChar, asChars)
  */
  if (str.length>1)
  singleChar = false;
- 
+
  if (singleChar)
  asChars = false;
- 
+
  var escTable = {'\x07': 'a', '\x08': 'b', '\x0c': 'f', '\x0a': 'n', '\x0d': 'r', '\x09': 't', '\x0b': 'v', '\\': '\\'};
  var ret = '', escChar = singleChar ? "'" : '"', lastEscape = false, isWide = false;
- 
+
  ret += escChar;
- 
+
  for(var t=0, c;t<str.length;t++)
  {
   if (transformTextByFunction.cursor === t)
   transformTextByFunction.outcursor = ret.length;
-  
+
   if (str[t] in escTable)
   ret += '\\'+escTable[str[t]];
   else if (str[t] === escChar)
@@ -909,7 +909,7 @@ function cescape(str, singleChar, asChars)
   else
   {
    c = str.charCodeAt(t);
-   
+
    if (c < 0x20 || c === 0x7f)
    {
     ret += '\\x'+('0'+c.toString(16)).slice(-2);
@@ -922,7 +922,7 @@ function cescape(str, singleChar, asChars)
      ret += '""';
      lastEscape = false;
     }
-    
+
     ret += str[t];
    }
    else
@@ -933,7 +933,7 @@ function cescape(str, singleChar, asChars)
     {
      ret += '\\x'+c.toString(16);
      lastEscape = true;
-     
+
      if (c > 0xff && !isWide)
      {
       ret = 'L'+ret;
@@ -943,10 +943,10 @@ function cescape(str, singleChar, asChars)
    }
   }
  }
- 
+
  ret += escChar;
  ret = ret.replace(/\?\?([=/'()!<>-])/g, '?\\x3f$1');
- 
+
  return ret;
 }
 
@@ -969,13 +969,13 @@ function downloadTextarea(link, waitTime)
 {
  var v = getValue();
  var a = new Uint8Array(v.length);
- 
+
  for(var t=0,c;t<v.length;t++)
  {
   c = v.charCodeAt(t);
   if (c > 255)
   {
-   alert(bytesNeeded); 
+   alert(bytesNeeded);
    return;
   }
   a[t] = c;
@@ -991,7 +991,7 @@ function downloadTextarea(link, waitTime)
 function loadFromFile()
 {
  var input = document.getElementById('tools-load-from-file');
- input.click();  
+ input.click();
 }
 document.getElementById('tools-load-from-file').onchange=function()
 {
@@ -1027,7 +1027,7 @@ function hexify(str, tab, unicode, utf16)
 
   //crazy case...
   if (cursor === o+1 && m.length===2)
-  cd++; 
+  cd++;
 
   if (cursor > o)
   cd += 2+c.length-m.length;
@@ -1244,7 +1244,7 @@ if (document.getElementById('nbase').value=="IP")
 {
  var nexp = document.getElementById('nmbr').value.split(".");
  if (nexp.length == 4)
- { 
+ {
   var i, out=0;
   for(i=0;i<4;i++)
   {
@@ -1256,7 +1256,7 @@ if (document.getElementById('nbase').value=="IP")
    else
    {
     alert('Error!');
-   } 
+   }
   }
   document.getElementById('nmbr').value=out;
  }
@@ -1347,7 +1347,7 @@ function fixedCharCodeAt (str, idx)
  idx = idx || 0;
  var code = str.charCodeAt(idx);
  var hi, low;
-    
+
  if (0xD800 <= code && code <= 0xDBFF)
  {
   hi = code;
@@ -1567,7 +1567,7 @@ function amplifyIndent(mode, str) {
 
   for(var t=1;t<tlines.length;t++) {
     if (!tlines[t]) continue; //empty
-    
+
     if (!blank.test(tlines[t])) {
       thisLine = tlines[t].match(indent)[0].length;
 
@@ -1577,7 +1577,7 @@ function amplifyIndent(mode, str) {
       }
       else if (thisLine < lastLine) {
         delta = lastLine-thisLine;
-     
+
         while(true) {
           addSpaces -= spaces;
           delta -= indentStack.pop();
@@ -1603,7 +1603,7 @@ function amplifyIndent(mode, str) {
 function splitCSV(str, sep, tsep, preserveQuotes)
 {
  if (!sep.length) return str.split('');
- 
+
  var t, escaped = false, ret = [], current = '', l = str.length, sl = sep.length, tsl = tsep && tsep.length;
  for(t=0;t<l;t++)
  {
@@ -1725,8 +1725,8 @@ function arrayToCSV(two, str)
 
  if (arr===null || !Array.isArray(arr))
  throw e || 'Error while parsing JSON';
- 
- return joinCSV(arr, getInputString('element-separator'), two?getInputString('row-separator'):null, getInputString('csv-quote'), document.getElementById('csv-quote-always').checked) 
+
+ return joinCSV(arr, getInputString('element-separator'), two?getInputString('row-separator'):null, getInputString('csv-quote'), document.getElementById('csv-quote-always').checked)
 }
 
 
@@ -1994,7 +1994,7 @@ function elAdmin(type, str)
    if (maxbad) result = 'None';
    else result = maxval;
   }
-  
+
   document.getElementById('eladmin-calc-result-td').style.visibility = 'visible';
   document.getElementById('eladmin-calc-result').textContent = result;
   return;
@@ -2041,7 +2041,7 @@ function applyPerItem(type, str)
    elements[t] = splitCSV(elements[t], sep, tsep);
   }
  }
- 
+
  return joinCSV(elements, sep, type?rsep:null, tsep, document.getElementById('csv-quote-always').checked);
 }
 
@@ -2068,9 +2068,9 @@ function escapeHTML(str) {
 
 function escapeUnicodeHTML(str) {
  str = escapeHTML(str);
- 
+
  var ret = '';
- 
+
  for(var t=0,c;t<str.length;t++)
  {
   c = str.codePointAt(t);
@@ -2078,11 +2078,11 @@ function escapeUnicodeHTML(str) {
   ret += '&#'+c+';';
   else
   ret += str[t];
-  
+
   if (c > 65535)
   t++;
  }
- 
+
  return ret;
 }
 
@@ -2107,7 +2107,7 @@ var currentRegexBackend = 1;
 document.addEventListener('DOMContentLoaded', function()
 {
  var backendSelect =  document.getElementById('regex-search-backend');
- 
+
  //bind to onBackendChange, and execute it
  (backendSelect.onchange = function()
  {
@@ -2119,24 +2119,24 @@ function regexBackendChange(backend, callback)
 {
  var select = document.getElementById('regex-search-backend');
  select.selectedIndex = backend;
- 
+
  var option = select.children[backend];
  var callme = function()
  {
   currentRegexBackend = backend;
-  
+
   document.getElementById('regextractor-button').style.display = backend === 3 ? '' : 'none';
-    
+
   if (callback) callback();
  };
- 
+
  if (option.dataset.ensureloadedonselect)
  {
   var toLoad = option.dataset.ensureloadedonselect.split(',');
   tcEnsureLoaded(toLoad, callme);
  }
  else callme();
-} 
+}
 
 function advanceStringIndex(str, idx, unicode)
 {
@@ -2154,19 +2154,19 @@ function getFindRegex(nonThrowingExec)
  //or maybe bcoz I don't like try/catch? dunno
 
  //stuff returned by this function must not be stored, and its only valid until
- //we're called again... coz for some backends (ported from C), 
+ //we're called again... coz for some backends (ported from C),
  //we must deallocate memory manually
- 
+
  //so now try to free the last one if we have one that wants it
  if (getFindRegex.lastRegex && getFindRegex.lastRegex.destroy)
  {
   getFindRegex.lastRegex.destroy();
   getFindRegex.lastRegex = null;
  }
- 
+
  var rtext = document.getElementById('regex-search-rtext').value, mcase = document.getElementById('regex-search-mcase').checked, municode = document.getElementById('regex-search-municode').checked, multiline = document.getElementById('regex-search-multiline').checked, extended = document.getElementById('regex-search-mextended').checked;
  var regex;
- 
+
  try
  {
   if (currentRegexBackend === 2)
@@ -2179,11 +2179,11 @@ function getFindRegex(nonThrowingExec)
    rtext = escapeRegExp(rtext);
    else if (extended)
    rtext = minifyRegex(rtext);
-   
+
    regex = new RegExp(rtext, 'g'+(mcase?'':'i')+(multiline?'m':'')+(municode?'u':''));
   }
 
-  
+
   getFindRegex.lastRegex = regex;
 
   if (nonThrowingExec) //for throwing backends, obviously
@@ -2191,9 +2191,9 @@ function getFindRegex(nonThrowingExec)
    regex.realExec = regex.exec;
    regex.exec = function()
    {
-    try { return regex.realExec.apply(regex, arguments); } 
+    try { return regex.realExec.apply(regex, arguments); }
     catch(e)
-    { 
+    {
      regex.error = e;
      return 'error';
     }
@@ -2212,7 +2212,7 @@ function findNextRegex(silent)
 {
  var regex = getFindRegex(true);
  var match, t, v = getValue(), matchSteps = null;
- 
+
  if (regex === null)
  return false;
 
@@ -2220,10 +2220,10 @@ function findNextRegex(silent)
  for(t=0;t<2;t++)
  {
   match=regex.exec(v);
-  
+
   if (regex.matchSteps !== undefined)
   matchSteps = (matchSteps||0)+regex.matchSteps;
-  
+
   //check if match is an error
   if (match === 'error')
   {
@@ -2234,7 +2234,7 @@ function findNextRegex(silent)
   {
    if (regex.matchSteps !== undefined)
    matchSteps = (matchSteps||0)+regex.matchSteps;
-   
+
    setSelection(0, regex.lastIndex-match[0].length);
    setSelection(1, regex.lastIndex);
    ensureSelectionVisible();
@@ -2243,11 +2243,11 @@ function findNextRegex(silent)
   }
   else
   regex.lastIndex = 0;
-  
+
   if (t)
   {
    matchSteps = (matchSteps !== null) ? ' (steps: <span class="result">'+matchSteps+'</span>)' : '';
-   
+
    regexStatusMsg('No match found.'+matchSteps);
    return false;
   }
@@ -2282,22 +2282,22 @@ function _emulateReplaceStr(result, str, args)
    {
     t++;
     var patStart = t, pattern;
-    
+
     //get pattern name
     while(t<str.length && str[t]!=='?' && str[t]!=='!' && str[t]!=='}' && str[t]!=='|')
     t++;
-    
+
     if (t === str.length) break;
-    
+
     pattern = str.substring(patStart, t);
     pattern = args[!isNaN(tmp=parseInt(pattern)) && tmp<args.length-2 ? tmp : result.namedPatterns ? result.namedPatterns[pattern] : ''];
-    
+
     if (str[t] === '|') //treat empty as false
     {
      pattern = pattern === '' ? undefined : pattern;
      t++;
     }
-    
+
     if (str[t] === '}') //echo the pattern
     {
      ret += pattern || '';
@@ -2319,13 +2319,13 @@ function _emulateReplaceStr(result, str, args)
 
       if (subOpenBraces < 0)
       break;
-      
+
       t++;
      }
-     
+
      if (t === str.length) break;
      //t is now the addr of brace end
-     
+
      if ((str[copy] === '?' && pattern === undefined) || (str[copy] === '!' && pattern !== undefined))
      {
       //skip
@@ -2349,7 +2349,7 @@ function _emulateReplaceStr(result, str, args)
    {
     ret += args[tmp] || '';
    }
-   else 
+   else
    ret += '$'+str[t];
 
    state = false;
@@ -2380,11 +2380,11 @@ function replaceRegex()
  var match, t;
 
  var ss=getSelectionStart(), se = getSelectionEnd(), osel = se-ss;
- 
+
  if (!osel)
  {
   if (!findNextRegex()) return;
-  
+
   if (ss !== getSelectionStart() || se !== getSelectionEnd())
   return;
  }
@@ -2405,10 +2405,10 @@ function replaceRegex()
 
  var regex = getFindRegex();
  var replacementFunc = getReplacementFunc();
- 
+
  if (regex === null) //"shouldn't happen" (TM)
  return;
- 
+
  regex.lastIndex = ss;
  var v = getValue();
  var match = regex.exec(v);
@@ -2419,10 +2419,10 @@ function replaceRegex()
  var tval = v.slice(0, mstart)+replacementFunc.apply(match, match);
  se = tval.length;
  setValue(tval+v.slice(regex.lastIndex));
- 
+
  if (empty) //for empty matches
  se = advanceStringIndex(getValue(), se, regex.unicode);
- 
+
  setSelection(0, ss);
  setSelection(1, se);
 
@@ -2434,9 +2434,9 @@ function replaceRegex()
 function execWholeRegex(regex, str, startFrom)
 {
  var results = [], result, done = false;
- 
+
  regex.lastIndex = startFrom || 0;
- 
+
  while(!done)
  {
   result = regex.roots ? regex.execRooted(str) : regex.exec(str);
@@ -2449,9 +2449,9 @@ function execWholeRegex(regex, str, startFrom)
     {
      results.push(result.rootedResults[t]);
     }
-   } 
+   }
    else results.push(result);
- 
+
    if (!regex.global) done = true;
    else
    {
@@ -2460,7 +2460,7 @@ function execWholeRegex(regex, str, startFrom)
    }
   }
  }
- 
+
  return results;
 }
 
@@ -2469,21 +2469,21 @@ function replaceAllRegex(str)
  //this is no longer stand-alone, this is serviced via transformtext
  var regex = getFindRegex();
  var replacementFunc = getReplacementFunc();
- 
+
  if (regex === null)
  return;
 
  var results = execWholeRegex(regex, str);
- 
+
  var ret = '', pos = 0, tmp;
  for(var t=0;t<results.length;t++)
  {
   results[t].push(results[t].index, str);
-  
+
   ret += str.substring(pos, results[t].index)+replacementFunc.apply(results[t], results[t]);
   pos = results[t].index+results[t][0].length;
  }
- 
+
  return ret+str.substr(pos);
 }
 
@@ -2494,13 +2494,13 @@ function extractAllRegex(str)
 
  var results = execWholeRegex(regex, str);
  var ret = '', tmp;
- 
+
  for(var t=0;t<results.length;t++)
  {
   results[t].push(results[t].index, str);
   ret += replacementFunc.apply(results[t], results[t]);
  }
-  
+
  return ret;
 }
 /*
@@ -2517,30 +2517,30 @@ regex.
 function exportAllRegexAsJSONTree(str)
 {
  var regex = getFindRegex();
- 
+
  if (!regex.specialGroups.length)
  throw 'No groups to export!\nMark capturing groups you want in the export with a + sign, for example:\n(+<[^>]*>)';
 
  var ret = [], result, done = false;
- 
+
  regex.lastIndex = 0;
- 
+
  while((result=regex.execTree(str)) !== null)
  {
   if (!result.base[0])
   regex.lastIndex = advanceStringIndex(str, regex.lastIndex, regex.unicode);
-  
+
   result = result.tree;
-  
+
   ret.push(result);
  }
 
  //allow keys on root, but it doesn't merge results
  ret = regex._processTreeKeys(ret);
- 
+
  if (Array.isArray(ret) && ret.length === 1)
  ret = ret[0];
- 
+
  return JSON.stringify(ret);
 }
 
@@ -2565,7 +2565,7 @@ function occurencesOfRegex()
   if (!no)
   regex.lastIndex = regex.lastIndex-match[0].length+1;
  }
- 
+
  return ret;
 }
 function removeDuplicates(str) //this may be stupid, but one day (more precisely - today, 17 march 2015) I needed it
@@ -2590,7 +2590,7 @@ function removeDuplicates(str) //this may be stupid, but one day (more precisely
  }
  return result_str;
 }
-function removeDuplicateLines(str) 
+function removeDuplicateLines(str)
 {
  return u(str.split('\n')).join('\n');
 }
@@ -2604,7 +2604,7 @@ function hex2uint8(str)
  {
   code = parseInt(str.substr(t, 2), 16);
   if (isNaN(code)) throw 'Not a hex string.';
-  
+
   ret[t/2] = code;
  }
  return ret;
@@ -2710,29 +2710,29 @@ function entropy(str) //doesn't support surrogates, but that'd be an overkill
 {
  var countMap = [], c;
  var ret = 0;
- 
+
  for(var t=0;t<str.length;t++)
  {
-  c = str.charCodeAt(t);  
+  c = str.charCodeAt(t);
   countMap[c] = (countMap[c] || 0) + 1;
  }
- 
+
  var ckeys = Object.keys(countMap), p;
  for(var t=0;t<ckeys.length;t++)
  {
   p = countMap[ckeys[t]]/str.length;
   ret += p*Math.log(p);
  }
- 
+
  ret /= Math.log(2);
- 
+
  return -ret;
 }
 
 function chunksEntropy(str, chunkSize)
 {
  var ret = [], entropySum = 0, numEntropies = 0;
- 
+
  for(var t=0;t<str.length;t+=chunkSize)
  {
   curr = entropy(str.slice(t, t+chunkSize));
@@ -2740,14 +2740,14 @@ function chunksEntropy(str, chunkSize)
   ret.push('Chunk ['+t+'-'+Math.min(t+chunkSize, str.length)+']: '+curr);
  }
  ret.push('Avg: '+(entropySum/numEntropies));
- 
+
  return ret.join('\n');
 }
 
 function calcEntropy(str)
 {
  var chunk = document.getElementById('entropy-chunked').checked, chunkSize = parseInt(getInputString('entropy-chunk-size')) || 1000;
- 
+
  if (chunk)
  return chunksEntropy(str, chunkSize);
  else
@@ -2808,7 +2808,7 @@ function permutationToCycles(perm)
   for(p=0;p<perm.length;p++)
   if (!used[p]) break;
  }
- 
+
  return ret;
 }
 function cyclesToPermutation(cycles)
@@ -2832,7 +2832,7 @@ function permutationOrder(cycles)
  var t, ret = cycles[0].length;
  for(t=1;t<cycles.length;t++)
  ret = lcm(ret, cycles[t].length);
- 
+
  return ret;
 }
 function permutationInvert(cycles)
@@ -2897,7 +2897,7 @@ function permutationToString(perm)
   ret += '('+permutationToString(perm[t])+')';
  }
  else
- { 
+ {
   for(var t=0, ret=[];t<perm.length;t++)
   ret.push(perm[t]+1);
   ret = ret.join(',');
@@ -2950,7 +2950,7 @@ function __swapArgsAB(func)
  return function(a, b){return func(b, a);}
 }
 
-var regexExamples = 
+var regexExamples =
 [
  {name: "Match lines containing ABC", regex: '^(.*?)ABC(.*)$', replacement: '$&\n', multiline: true, matchBased: true},
  {name: "Match all hexified chars", regex: '\\[([0-9A-F]{2,5})]', replacement: '$&', matchBased: true},
@@ -2988,12 +2988,12 @@ var regexInteractiveExamplesParameters = {
   railFence: {parameters: ['height', 'mode', 'forElements'], height: {display: 'Fence height', type: 'number', value: 2, min: 2}, mode: {display: 'Fence type', type: 'radio', value: 0, options: ['\\\\\\', '\\/\\', '/\\/', '///']}, forElements: {type: 'bool', display: 'Work on elements instead of characters', value: false}},
   railFenceArgs: {}, //shared args, otherwise each tool gets it's own copy
 };
-var regexInteractiveExamples = 
+var regexInteractiveExamples =
 [
  {name: "Leave characters in range", regex: '[^\\u<Start>-\\u<End>]', replacement: '', unicode: false, matchcase: true, parameters: ['Start', 'End'], Start: {type: 'hexnumber', minchars: 4, min: 0, max: 65535, value: '20'}, End: {type: 'hexnumber', minchars: 4, min: 0, max: 65535, value: '7f'}},
 
  {name: "Remove characters in range", regex: '[\\u<Start>-\\u<End>]', replacement: '', unicode: false, matchcase: true, parameters: ['Start', 'End'], Start: {type: 'hexnumber', minchars: 4, min: 0, max: 65535, value: '20'}, End: {type: 'hexnumber', minchars: 4, min: 0, max: 65535, value: '7f'}},
- 
+
  {name: "Leave unicode characters in range", regex: '[^\\u{<Start>}-\\u{<End>}]', replacement: '', unicode: false, matchcase: true, parameters: ['Start', 'End'], Start: {type: 'hexnumber', minchars: 4, min: 0, value: '20'}, End: {type: 'hexnumber', minchars: 4, min: 0, value: '1A000'}},
 
  {name: "Remove unicode characters in range", regex: '[\\u{<Start>}-\\u{<End>}]', replacement: '', unicode: false, matchcase: true, parameters: ['Start', 'End'], Start: {type: 'hexnumber', minchars: 4, min: 0, value: '20'}, End: {type: 'hexnumber', minchars: 4, min: 0, value: '1A000'}},
@@ -3001,15 +3001,15 @@ var regexInteractiveExamples =
  {name: "Add slashes: X -> \\X, \\ -> \\\\", regex: '\\\\|(<X>)', replacement: '\\$&', parameters: ['X'], X: {type: 'string', value: '"'}},
 
  {name: "Strip slashes: \\X -> X, \\\\ -> \\", regex: '\\\\(\\\\|<X>)', replacement: '$1', parameters: ['X'], X: {type: 'string', value: '"'}},
- 
+
  {name: "Remove leading X", regex: '^(<X>)*', replacement: '', multiline: true, multilineParameter: 'work per line', parameters: ['X', 'multiline'], X: {type: 'string', value: ' '}},
 
- {name: "Remove trailing X", regex: '(<X>)*$', replacement: '', multiline: true, multilineParameter: 'work per line', parameters: ['X', 'multiline'], X: {type: 'string', value: ' '}}, 
- 
+ {name: "Remove trailing X", regex: '(<X>)*$', replacement: '', multiline: true, multilineParameter: 'work per line', parameters: ['X', 'multiline'], X: {type: 'string', value: ' '}},
+
  {name: "Convert C arrays to string literals", regex: false, func: 'CUtils._replaceCArrays', ensureLoaded: ['cutils.js'], parameters: []},
- 
+
  {name: "Convert string / C literals to C array(s)", regex: false, func: 'CUtils.doConvertToCArray', ensureLoaded: ['cutils.js'], parameters: ['mode', 'utf8'], mode: {type: 'radio', display: 'Input mode', value: 1, options: ['Whole string', 'C source with literals']}, utf8: {type: 'bool', display: 'Convert input to UTF8 first', value: false}},
- 
+
  {name: "Separate ASCII text blocks from binary in C string literals", regex: false, func: 'CUtils.doSeparateCLiterals', ensureLoaded: ['cutils.js'], parameters: ['minTextLength', 'allowTab', 'allowNL'], minTextLength: {display: 'Min lengh of a text block (not \\x escaped)', type: 'number', value: 1, min: 1}, allowTab: {type: 'bool', display: 'Don\'t escape tabs', value: false}, allowNL: {type: 'bool', display: 'Don\'t escape newlines (not C compatible)', value: false}},
 
  {name: "element -> XelementY", regex: '(^|<elsep>)([^<elsep>]*)', replacement: '$1<X>$2<Y>', parameters: ['X', 'Y'], X: {type: 'string', value: '"'}, Y: {type: 'string', value: '"'}},
@@ -3185,51 +3185,51 @@ function compileExample(obj, elsep)
 function regexStatusMatch(match, offset, steps)
 {
  document.getElementById('regex-status-message').classList.remove('initial');
- 
+
  document.getElementById('regex-status-matchinfo-position').textContent = offset;
  document.getElementById('regex-status-matchinfo-length').textContent = match[0].length;
- 
+
  document.getElementById('regex-status-matchsteps-span').style.display = steps !== null ? '' : 'none';
  document.getElementById('regex-status-matchsteps').textContent = steps;
- 
+
  //document.getElementById('regex-status-show-groups').style.display = match.length>1?'inline':'none';
  var groupsContainer = document.getElementById('regex-status-matched-groups-tbody');
 
  while(groupsContainer.firstChild)
  groupsContainer.removeChild(groupsContainer.firstChild);
- 
+
  var nameHash = {}, tmp;
  if (match.namedPatterns)
  {
   tmp = Object.keys(match.namedPatterns);
-  
+
   for(var t=0;t<tmp.length;t++)
   nameHash[match.namedPatterns[tmp[t]]] = tmp[t];
  }
- 
+
  //match.matchOffsets = [1, 2, 4, 5, -1, -1];
  //nameHash = {1: 'hloh'};
-  
+
  for(var t=0;t<match.length;t++)
  {
   var nrow = document.createElement('tr');
   var ncell = document.createElement('td');
   var html = '$'+(t?t:'&amp;');
-  
+
   if (t && nameHash[t])
   html = '${'+nameHash[t]+'}<br>('+html+')';
-  
+
   ncell.innerHTML = html+((t && (match[t] !== undefined))?'<br><br>':'');
   nrow.appendChild(ncell);
   ncell = document.createElement('td');
-  
+
   if (match[t] !== undefined)
   {
    var ntextarea = document.createElement('textarea');
    ntextarea.readOnly = true;
    ntextarea.value = match[t];
    ncell.appendChild(ntextarea);
-   
+
    if (t)
    {
     var minfo = document.createElement('div');
@@ -3253,7 +3253,7 @@ function regexStatusMatch(match, offset, steps)
  }
 
  document.getElementById('regex-status-message').style.display = 'none';
- document.getElementById('regex-status-matchinfo').style.display = 'block';  
+ document.getElementById('regex-status-matchinfo').style.display = 'block';
 }
 function regexStatusMsg(msg)
 {
@@ -3305,7 +3305,7 @@ function _loadRegexExample(example, cb)
  document.getElementById('regex-search-municode').checked = example.unicode;
  if (example.matchcase !== undefined)
  document.getElementById('regex-search-mcase').checked = example.matchcase;
- 
+
  //explictly set, because it's not compatible
  document.getElementById('regex-search-mextended').checked = !!example.extended;
 
@@ -3315,7 +3315,7 @@ function _loadRegexExample(example, cb)
 function maybeLoadRegexExampleUI()
 {
  var which = document.getElementById('regex-interactive-example-list').selectedIndex;
- 
+
  if (which && regexInteractiveExamples[which-1].ensureLoaded && regexInteractiveExamples[which-1].ensureLoaded.length)
  tcEnsureLoaded(regexInteractiveExamples[which-1].ensureLoaded, loadRegexExampleUI);
  else
@@ -3338,7 +3338,7 @@ function loadRegexExampleUI()
 
  var example = regexInteractiveExamples[which-1], param;
  var t, csep = getInputString('element-separator'), regexUnicode = document.getElementById('regex-search-municode').checked;
- 
+
  if (example.regex && ((!regexUnicode && csep.length>1 || regexUnicode && unicodeLength(csep)>1) || document.getElementById('csv-quote').value) && (/(^|[^<])<elsep>($|[^>])/.test(example.regex) || /(^|[^<])<elsep>($|[^>])/.test(example.replacement)))
  {
   cont.innerHTML = 'Element separators longer than 1 char, CSV quotes are not supported in these regex examples. Convert them first and then <button onclick="loadRegexExampleUI();">Retry</button>';
@@ -3346,7 +3346,7 @@ function loadRegexExampleUI()
   buttons.style.display = 'none';
   return false;
  }
- 
+
  if (typeof example.func === 'string')
  example.func = tcResolve(example.func);
 
@@ -3356,9 +3356,9 @@ function loadRegexExampleUI()
  miscTransform.entry = example;
 
  document.getElementById('regex-interactive-title').textContent = example.name;
- 
+
  var lastDisplayData = null;
- 
+
  for(t=0;example.parameters && t<example.parameters.length;t++)
  {
   if (example.parametersDisplayData[t] && lastDisplayData !== example.parametersDisplayData[t])
@@ -3368,9 +3368,9 @@ function loadRegexExampleUI()
    nb.textContent = example.parametersDisplayData[t]+':';
    cont.appendChild(nb);
   }
-  
+
   lastDisplayData = example.parametersDisplayData[t];
-  
+
   param = example.parameters[t];
   if (example[param].visibility) //definitely just a PoC, you can use evalhscriptexpression
   {
@@ -3380,7 +3380,7 @@ function loadRegexExampleUI()
     vval = false;
     vparam = vparam.slice(1);
    }
-   
+
    if (example.args[vparam]!==vval)
    continue;
   }
@@ -3412,14 +3412,14 @@ function createDetailsSummary(summaryText, open)
 {
  var details = document.createElement('details');
  details.open = !!open;
- 
+
  if (summaryText)
  {
   var summary = document.createElement('summary');
   summary.textContent = summaryText;
   details.appendChild(summary);
  }
- 
+
  return details;
 }
 
@@ -3438,7 +3438,7 @@ function createIRegexUIComponent(cont, example, param)
    //we reload because visibility of some other param may depend on us...
    loadRegexExampleUI(); //hey, I hope this doesn't leak :O
   };
-  
+
   cont.appendChild(checkbox.parentNode);
  }
  else if (example[param].type==='string')
@@ -3467,7 +3467,7 @@ function createIRegexUIComponent(cont, example, param)
 
   if (example[param].min !== undefined) input.min = example[param].min;
   if (example[param].max !== undefined) input.max = example[param].max;
-  
+
   var updateInput = function()
   {
    input.value = example.args[param];
@@ -3541,20 +3541,20 @@ function initRegexExamples()
 {
  var sel = document.getElementById('regex-example-list');
  sel.remove(0);
- 
+
  var matchGroup = document.createElement('optgroup');
  var replaceGroup = document.createElement('optgroup');
- 
+
  matchGroup.label = 'Match/extract based';
  replaceGroup.label = 'Replace based';
- 
+
  for(var t=0;t<regexExamples.length;t++)
  {
   var option = document.createElement('option');
   option.textContent = regexExamples[t].name;
   (regexExamples[t].matchBased ? matchGroup : replaceGroup).appendChild(option);
  }
- 
+
  sel.appendChild(matchGroup);
  sel.appendChild(replaceGroup);
 }
@@ -3565,15 +3565,15 @@ function initIRegexExamples()
  for(var t=0;t<regexInteractiveExamples.length;t++)
  {
   var example = regexInteractiveExamples[t];
-  
+
   var option = document.createElement('option');
   option.textContent = (example.regex?'[regex]':'[native]')+' '+example.name;
   sel.add(option);
-  
+
   var params = example.parameters;
   example.args = example.args || {};
   example.parametersDisplayData = [];
-  
+
   for(var p=0;params && p<params.length;p++)
   {
    if (typeof params[p] === 'object') //ability to reuse parameters
@@ -3584,28 +3584,28 @@ function initIRegexExamples()
     for(var xp=0;xp<xpl;xp++)
     {
      example.parametersDisplayData[p] = xparams.display;
-     
+
      params.splice(p++, 0, xparams.parameters[xp]);
      example[xparams.parameters[xp]] = xparams[xparams.parameters[xp]];
     }
-    
+
     p -= xpl;
    }
-   
+
    if (typeof example[params[p]] !== 'object')
    example[params[p]] = {display: example[params[p]+'Parameter'], type: 'bool', value: example[params[p]]};
-   
+
    //while parameter objects are shared, .args is not unless manually assigned
    example.args[params[p]] = example[params[p]].value;
   }
  }
  sel.addEventListener('change', maybeLoadRegexExampleUI);
- 
+
  do
  {
   sel.selectedIndex = Math.random()*sel.length|0;
  } while(regexInteractiveExamples[sel.selectedIndex].ensureLoaded);
- 
+
  loadRegexExampleUI();
 }
 
@@ -3644,7 +3644,7 @@ function _takeXYZ(args, str)
 function takeElXYZ(str, x, y, z, del, repl)
 {
  //x>=0 y>=0 z>=x+y
- 
+
  z = z-x-y;
  if (z<0)
  throw 'Z must be >= X+Y!';
@@ -3653,7 +3653,7 @@ function takeElXYZ(str, x, y, z, del, repl)
  while(c<el.length)
  {
   for(t=0;t<x && c<el.length;c++,t++)
-  if (del) ret.push(el[c]); 
+  if (del) ret.push(el[c]);
 
   if (Array.isArray(repl))
   ret.push(repl.shift() || '');
@@ -3661,10 +3661,10 @@ function takeElXYZ(str, x, y, z, del, repl)
   ret.push(repl);
 
   for(t=0;t<y && c<el.length;c++,t++)
-  if (!del) ret.push(el[c]); 
+  if (!del) ret.push(el[c]);
 
   for(t=0;t<z && c<el.length;c++,t++)
-  if (del) ret.push(el[c]); 
+  if (del) ret.push(el[c]);
  }
  return makeElements(ret);
 }
@@ -3679,7 +3679,7 @@ function leavedeleteXYZ(del, str)
  var x = parseInt(document.getElementById('take-xyz-x').value) || 0;
  var z = Math.max(parseInt(document.getElementById('take-xyz-z').value), 2) || 2;
  x %= z;
- 
+
  return takeXYZ(str, x, 1, z, del);
 }
 
@@ -3815,7 +3815,7 @@ function transpose2D(arr, strict)
   curr=[];
   for(tt=0;tt<arr.length;tt++)
   {
-   if (arr[tt][t]===undefined && strict) 
+   if (arr[tt][t]===undefined && strict)
    {
     break;
    }
@@ -3840,28 +3840,28 @@ function readHexDumpAddr(line)
 
  if (!m || !m[1])
  return null;
- 
+
  if (m[1].match(/^[0-9a-fA-F]{0,3}$/)) //pure hex without special chars less than 4 chars
  return null;
- 
+
  m = m[1].replace(/[^a-fA-F0-9]/g, '');
  if (!m)
  return null;
- 
+
  return parseInt(m, 16);
 }
 function hexDumpLinePrefixLength(str, addr)
 {
  if (addr === undefined)
  addr = readHexDumpAddr(str);
- 
+
  var ret;
- 
+
  if (addr !== null)
  ret = str.match(/^\s*([^\s]+)[^a-fA-F0-9]*/)[0].length
  else
  ret = str.match(/^\s*/)[0].length; //we catch spaces to avoid detecting 4 consecutive spaces later
- 
+
  return ret;
 }
 
@@ -3869,7 +3869,7 @@ function extractHex(str)
 {
  var lines = str.split('\n');
  //skip nonhex in first part like :,
- 
+
  var ret = '';
  /*
  These are the rules:
@@ -3893,18 +3893,18 @@ function extractHex(str)
    if (thisLen > longestLine && thisLen*3 + 6 < lines[t].length) //is it "realistic"?
    longestLine = thisLen;
   }
-  
+
   lastAddr = thisAddr;
  }
 
  longestLine = longestLine || Infinity;
- 
+
  var mregex = /((?:[0-9A-Fa-f][0-9A-Fa-f]))|(\s{4})|(\s+)|./y;
 
  var nextAddr = readHexDumpAddr(lines[0])
  var tmp, remaining, prefixLength;
  var lastSpace;
- 
+
  for(var t=0;t<lines.length;t++)
  {
   tmp = t == lines.length-1 ? null : readHexDumpAddr(lines[t+1]);
@@ -3913,10 +3913,10 @@ function extractHex(str)
    remaining = Math.min(tmp - nextAddr, longestLine);
   }
   else remaining = Infinity;
-  
+
   prefixLength = hexDumpLinePrefixLength(lines[t], nextAddr);
 
- 
+
   nextAddr = tmp;
   mregex.lastIndex = prefixLength;
   lastSpace = 0;
@@ -3926,7 +3926,7 @@ function extractHex(str)
    if (m[1])
    {
     remaining--;
-   } 
+   }
    else if (m[2]) break;
    else if (m[3])
    lastSpace = mregex.lastIndex; //end of space
@@ -3940,7 +3940,7 @@ function extractHex(str)
    if (!remaining)
    break;
   }
-  
+
   mregex.lastIndex = mregex.lastIndex || lines[t].length; //bcoz it may be undefined @ the end
   tmp = lines[t].slice(prefixLength, mregex.lastIndex).replace(/[^a-fA-F0-9]/g, '');
   ret += tmp;
@@ -3950,19 +3950,19 @@ function extractHex(str)
 }
 
 
- 
+
 
 function extractText(str)
 {
  var lines = str.split('\n');
  if (lines.length < 2)
  return str;
-   
+
  var asciiIndex = 0;
-   
+
  var firstLine = lines[0].length >= lines[1].length ? 0 : 1;
-   
-   
+
+
  if (!asciiIndex && lines.length-firstLine > 1)
  {
   //scan first full line until len(rest of line) == charsRead, this assumes no padding and no separator
@@ -3986,11 +3986,11 @@ function extractText(str)
    else break;
   }
  }
-   
+
  var ret = firstLine ? lines[0] : '', m;
  var mregex = /((?:[0-9A-Fa-f][0-9A-Fa-f]))|(\s{4})|(\s)|./y;
  var readChars, lastGood;
-   
+
  for(var t=firstLine;t<lines.length;t++)
  {
   if (asciiIndex)
@@ -3998,9 +3998,9 @@ function extractText(str)
   else
   {
    mregex.lastIndex = hexDumpLinePrefixLength(lines[t]);
-     
+
    readChars = lastGood = '';
-   
+
    //first condition checks whether if we advance by 2, we have at least 1 character left
    while(lines[t].length-mregex.lastIndex >= readChars.length+3 && (m = mregex.exec(lines[t])))
    {
@@ -4011,20 +4011,20 @@ function extractText(str)
      readChars += String.fromCharCode(c);
      else
      readChars += '.';
-       
+
      if (lines[t].slice(-readChars.length) === readChars)
      lastGood = readChars;
     }
     else if (m[2] || !m[3])
     {
      break;
-    }      
+    }
    }
-   
+
    ret += lastGood;
   }
  }
-   
+
  return ret;
 }
 
@@ -4051,7 +4051,7 @@ function railFence(sth, mod, straight, bottomUp, returnSeparated)
 
   if (!straight && (!cursor || cursor === mod-1))
   cursorDirection *= -1;
-  
+
   if (straight && cursor === (bottomUp ? -1 : mod))
   cursor = bottomUp ? mod-1 : 0;
  }
@@ -4121,7 +4121,7 @@ function __flatten(a,b) {return a.concat(b);}
 function flattenRecursive(arr)
 {
  if (!Array.isArray(arr)) return arr;
-  
+
  var tmp, t, tt, ret = [];
  for(t=0;t<arr.length;t++)
  {
@@ -4148,7 +4148,7 @@ function braceStart(str, start)
  var t, tmp, braces = [];
  for(t=0;t<braceStr.length/2;t++)
  braces[t] = 0;
- 
+
  for(t=start-1;t>=0;t--)
  {
   if ((tmp = braceStr.indexOf(str[t])) > -1)
@@ -4159,7 +4159,7 @@ function braceStart(str, start)
    return t+1;
   }
  }
- 
+
  return 0;
 }
 function braceEnd(str, start)
@@ -4168,7 +4168,7 @@ function braceEnd(str, start)
  var t, tmp, braces = [];
  for(t=0;t<braceStr.length/2;t++)
  braces[t] = 0;
- 
+
  for(t=start;t<str.length;t++)
  {
   if ((tmp = braceStr.indexOf(str[t])) > -1)
@@ -4179,7 +4179,7 @@ function braceEnd(str, start)
    return t;
   }
  }
- 
+
  return t;
 }
 
@@ -4205,10 +4205,10 @@ function extendRegex(str)
  var currentIndent = '';
  var lvl = '   ', lvl2 = '  ', t = 0, ret = '', groupNo = 1, tmp, str2;
  var lastBreak = false, topStack, matched, wantQuantifiers, capturingGroup;
- 
+
  var wholePatterns = [/^P=\w*(\)|$)/, /^#(\\[^]|[^)])*(\)|$)/, /^((&\w*)|-?\d*)(\)|$)/, /^(R|C\d+)(\)|$)/, /^[a-z-]*(\)|$)/];
  var prefixPatterns = [/^\((R?-?\d+|'\w+'|<\w+>)(\)|$)/, /^(\<=|<!|:|>|=|!|@)/, /^(P)?('\w+'|<[\w-]+>)/, /^[a-z-]*:/];
- 
+
  var branchResetStack = [];
 
  function readPostfix() //like ++{}
@@ -4217,7 +4217,7 @@ function extendRegex(str)
   while(t<len)
   {
    str2 = str.substr(t);
-   
+
    if (tmp = str2.match(/^(\*|\?|\+)+/))
    ret += tmp[0], t += tmp[0].length;
    else if (tmp = str2.match(/^\{\d+,?(\d+)?(}|$)/))
@@ -4226,7 +4226,7 @@ function extendRegex(str)
    ret += tmp[0], t += tmp[0].length;
    else break;
   }
-  
+
   lastBreak = true;
  }
 
@@ -4236,25 +4236,25 @@ function extendRegex(str)
   {
    if (ret.length)
    ret += '\n'+currentIndent;
-   
+
    ret += '(';
 
    wantQuantifiers = capturingGroup = true;
    t++;
-   
+
    if (str[t] === '+') ret += str[t++];
-   
+
    if (tmp = str.substr(t).match(/^\*[a-z]*:/))
    {
     ret += tmp[0]; t += tmp[0].length;
    }
-   
+
    if (str[t] === '*') //(*VERB)
    {
     tmp = str.substr(t).match(/^\*[^)]*(\)|$)/);
     ret += tmp[0];
     t += tmp[0].length;
-    
+
     wantQuantifiers = true;
     capturingGroup = false;
    }
@@ -4262,10 +4262,10 @@ function extendRegex(str)
    {
     ret += '?'; t++;
     str2 = str.substr(t);
-    
+
     capturingGroup = false;
     matched = false;
-        
+
     for(var x=0;x<wholePatterns.length;x++)
     {
      if (tmp = str2.match(wholePatterns[x]))
@@ -4275,12 +4275,12 @@ function extendRegex(str)
       break;
      }
     }
-    
+
     if (!matched)
     {
      if (/^['<@]/.test(str2) && !/^<[!=]/.test(str2)) //they are capturing groups
      capturingGroup = true;
-    
+
      currentIndent += lvl;
      for(var x=0;x<prefixPatterns.length;x++)
      {
@@ -4291,7 +4291,7 @@ function extendRegex(str)
        break;
       }
      }
-     
+
      if (!matched && str[t] === '|') //branch reset
      {
       ret += '|'; t++;
@@ -4309,12 +4309,12 @@ function extendRegex(str)
     currentIndent += lvl;
     branchResetStack.push(null);
    }
-   
+
    if (capturingGroup)
    {
     ret += ' # group '+(groupNo++);
    }
-   
+
    if (wantQuantifiers)
    readPostfix();
 
@@ -4326,9 +4326,9 @@ function extendRegex(str)
    ret += '\n'+currentIndent;
    ret += ')';
    t++;
-  
+
    readPostfix();
-   
+
    topStack = branchResetStack.pop();
    if (topStack)
    groupNo = topStack[1];
@@ -4340,32 +4340,32 @@ function extendRegex(str)
     var lines = ret.split('\n');
     for(var x=0;x<lines.length;x++)
     lines[x] = lvl2+lines[x];
-    
+
     ret = lines.join('\n');
-    
+
     currentIndent += lvl2;
-   } 
+   }
    ret += '\n'+currentIndent.slice(0, -lvl2.length)+'|';
    lastBreak = true;
    t++;
-   
+
    if (branchResetStack.length && (topStack = branchResetStack[branchResetStack.length-1]))
    {
     topStack[1] = Math.max(topStack[1], groupNo);
     groupNo = topStack[0]; //the actual reset
    }
   }
-  else 
+  else
   {
    matched = false;
-   
+
    if (str[t] === '\\')
    {
     str2 = str.substr(t);
     if ((tmp = str2.match(/^\\g('[\d\w+-]+'|<[\d\w+-]+>)/)) || (tmp = str2.match(/^\\K/)))
     {
      matched = true;
-     
+
      if (ret.length)
      ret += '\n'+currentIndent;
 
@@ -4373,15 +4373,15 @@ function extendRegex(str)
      readPostfix();
     }
    }
-   
+
    if (!matched)
    {
     if (lastBreak)
     {
-     lastBreak = false; 
+     lastBreak = false;
      ret += '\n'+currentIndent;
     }
-   
+
     if (/^\s|#$/.test(str[t])) //escape spaces and #
     ret += '['+str[t]+']', t++;
     else if (str[t] === '\\')
@@ -4405,7 +4405,7 @@ function extendRegex(str)
     {
      ret += '[';
      t++;
-  
+
      if (str[t] === ']')
      ret += str[t++];
 
@@ -4422,7 +4422,7 @@ function extendRegex(str)
   }
  }
 
- return ret; 
+ return ret;
 }
 
 function minifyRegex(str)
@@ -4451,7 +4451,7 @@ function minifyRegex(str)
   else
   {
    ret += str[t]; t++;
-  } 
+  }
  }
  return ret;
 }
@@ -4466,38 +4466,38 @@ function execXPath(str)
  var type = document.getElementById('xpath-xml').checked ? 'xml' : 'html';
  var expr = getInputString('xpath-path');
  var doc = new DOMParser().parseFromString(str, 'text/'+type);
- 
+
  var nsResolver = doc.createNSResolver(doc.ownerDocument == null ? doc.documentElement : doc.ownerDocument.documentElement);
  var xpathResult;
  var done = false;
  var ret = '';
- 
+
  try
  {
   xpathResult = doc.evaluate(expr, doc, nsResolver, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-  
+
   done = true;
-  
+
   var thisNode = xpathResult.iterateNext();
-  
+
   while (thisNode)
   {
    ret += thisNode.outerHTML+'\n';
    thisNode = xpathResult.iterateNext();
-  }	
+  }
  } catch(e) {}
- 
+
  if (!done)
  {
   xpathResult = doc.evaluate(expr, doc, nsResolver, XPathResult.ANY_TYPE, null);
-  
+
   if (xpathResult.resultType === XPathResult.NUMBER_TYPE)
   ret = xpathResult.numberValue+'';
   else if (xpathResult.resultType === XPathResult.STRING_TYPE)
   ret = xpathResult.stringValue;
   else if (xpathResult.resultType === XPathResult.BOOLEAN_TYPE)
   ret = xpathResult.booleanValue+'';
- } 
+ }
 
  return ret;
 }
@@ -4507,12 +4507,12 @@ function execCSS(str)
  var doc = new DOMParser().parseFromString(str, 'text/html');
  var nodes = doc.querySelectorAll(getInputString('css-path'));
  var ret = '';
- 
+
  for(var t=0;t<nodes.length;t++)
  {
   ret += nodes[t].outerHTML;
  }
- 
+
  return ret;
 }
 
@@ -4520,6 +4520,101 @@ function beautifyJSON(str)
 {
  var indent = getInputString('beautify-indent');
  return JSON.stringify(JSON.parse(str), null, indent);
+}
+
+
+function decodeUtf8Lax(str, toArray) {
+  var val, char, remaining = 0;
+  var chars = [], result = '';
+
+  for(var t=0; t <= str.length; t++) {
+    val = str.charCodeAt(t);
+
+    if (t && (!remaining || t === str.length || (val & 0xc0) != 0x80)) {
+      if (toArray) chars.push(char)
+      else result += String.fromCodePoint(char);
+
+      remaining = 0;
+    }
+
+    if (t === str.length)
+    break;
+
+    if (!remaining) {
+      if (val < 0xc0) { char = val & 0x7f; remaining = 0; }
+      else if (val < 0xe0) { char = val & 0x1f; remaining = 1; }
+      else if (val < 0xf0) { char = val & 0x0f; remaining = 2; }
+      else if (val < 0xf8) { char = val & 0x07; remaining = 3; }
+      else if (val < 0xfc) { char = val & 0x03; remaining = 4; }
+      else if (val < 0xfe) { char = val & 0x01; remaining = 5; }
+      else { remaining = val == 0xff ? 7 : 6; char = 0; }
+    } else {
+      char <<= 6;
+      char |= val & 0x3f;
+      remaining--;
+    }
+  }
+
+  return toArray ? chars : result;
+}
+
+function encodeUtf8Lax(str, recognizeSurrogates, extraBytes) {
+  var result = '', code, len;
+  var fromArray = str.length && typeof str[0] === 'number';
+
+  for (var t=0; t<str.length; t++) {
+    code = fromArray ? str[t] : str[recognizeSurrogates ? 'codePointAt' : 'charCodeAt'](t);
+
+    if (code > 0xffff)
+    t++;
+
+    if (code < 0x80) n = 1;
+    else if (code < 0x800) n = 2;
+    else if (code < 0x10000) n = 3;
+    else if (code < 0x200000) n = 4;
+    else if (code < 0x4000000) n = 5;
+    else if (code < 0x80000000) n = 6;
+    else if (code < 0x1000000000) n = 7;
+    else n = 8;
+
+    if (extraBytes) {
+      n = Math.min(n + extraBytes, 8);
+    }
+
+    if (n === 1) {
+      result += String.fromCharCode(code);
+      continue;
+    }
+
+    result += String.fromCharCode((0x100 - (0x100 >> n)) | (code >> (6 * (n-1))));
+
+    while (--n > 0)
+    result += String.fromCharCode(0x80 | ((code >> (6 * (n-1))) & 0x3f));
+  }
+
+  return result;
+}
+
+function laxUtf8Encode(str) {
+  var mode = document.getElementById('laxutf8-mode').selectedIndex;
+
+  if (mode === 2) {
+    if (str[0] !== '[') str = '['+str;
+    if (str[str.length-1] !== ']') str += ']';
+
+    try {
+      str = JSON.parse(str);
+    } catch(e) {
+      throw 'Invalid input, expected comma separated decimal numbers.';
+    }
+  }
+
+  return encodeUtf8Lax(str, mode === 1, parseInt(document.getElementById('laxutf8-extrabytes').value) || 0);
+}
+
+function laxUtf8Decode(str) {
+  var mode = document.getElementById('laxutf8-mode').selectedIndex;
+  return decodeUtf8Lax(str, mode === 2)+'';
 }
 
 //for future reference: init code
