@@ -608,6 +608,7 @@ function initCore()
  document.addEventListener('mousemove', catchselMove); document.addEventListener('touchmove', catchselMove);
  document.addEventListener('mouseup', catchselEnd); document.addEventListener('touchend', catchselEnd);
  document.addEventListener('touchcancel', catchselEnd);
+ document.addEventListener('selectionchange', userCursorChange);
  
  textarea.addEventListener('copy', handleCopy);
  textarea.addEventListener('beforeinput', handleBeforeInput);
