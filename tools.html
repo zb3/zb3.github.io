@@ -122,6 +122,16 @@ Lax UTF8 <button data-transform="laxUtf8Encode">Encode</button><button data-tran
 <br>
 <button data-transform="extendRegex">Extend</button><button data-transform="reformatRegex">Reformat</button><button data-transform="minifyRegex">Minify</button> regex (read info!)<br><br>
 
+<details>
+<summary><button data-transform="deformatGenericAction">De</button><button data-transform="formatGenericAction">Format</button> generic nested struct
+</summary>
+formed by <input type="text" id="format-generic-tokens" value="<>()[]{}" size=5>, separated by <input type="text" id="format-generic-separators" value="," size=3>
+<br>
+with strings <input type="text" id="format-generic-strings" value="&quot;&#39;" size=3> </label> <label><input type="checkbox" id="format-generic-strings-escape" checked> with escapes</label><br>
+indented with <input type="text" id="format-generic-indent" value="  " size=4>, not breaking items not longer than <input type="number" id="format-generic-maxlen" value=130> and with max nesting level <input type="number" id="format-generic-maxnestlevel" value=0>
+</details>
+<br>
+
 <button data-transform="sliceOp" data-args="false">Leave</button><button data-transform="sliceOp" data-args="true">Remove</button> slice (<input type="number" id="slice-start" value=0>, <input type="number" id="slice-end" value=0 >) <label><input type="checkbox" id="slice-support-utf16">recognize surrogates</label><br>
 
 <button data-transform="leavedeleteXYZ" data-args="false">Leave</button><button data-transform="leavedeleteXYZ" data-args="true">Delete</button> characters whose position mod <input type="number" min="2" value="4" id="take-xyz-z"> is <input type="number" min="0" value="0" id="take-xyz-x"><br>

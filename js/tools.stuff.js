@@ -4461,6 +4461,149 @@ function reformatRegex(str)
  return extendRegex(minifyRegex(str));
 }
 
+// generic nested struct - 2022 here!
+// to Format<Stuff, Like<This,When<That,Gets>,More,Nested>>>
+
+function _readGenericNestedUI() {
+  const prefix = 'format-generic-';
+  return {
+    tokens: document.getElementById(prefix+'tokens').value,
+    separators: document.getElementById(prefix+'separators').value,
+    strings: document.getElementById(prefix+'strings').value,
+    escapes: document.getElementById(prefix+'strings-escape').checked,
+    indent: document.getElementById(prefix+'indent').value,
+    maxLen: document.getElementById(prefix+'maxlen').value,
+    maxNestLevel: document.getElementById(prefix+'maxnestlevel').value,
+  };
+}
+
+function formatGenericAction(src) {
+  const cfg = _readGenericNestedUI();
+  return formatGenericNested(src, cfg.tokens, cfg.separators, cfg.indent, cfg.strings, cfg.escapes, cfg.maxLen, cfg.maxNestLevel);
+}
+
+function deformatGenericAction(src) {
+  const {strings, escapes} = _readGenericNestedUI();
+  return deformatGenericNested(src, strings, escapes);
+}
+
+
+function deformatGenericNested(src, supportedStrings, stringEscapes) {
+  var defSrc = '';
+  if (supportedStrings) {
+    let stringTokensRegex = '';
+    for (const sch of supportedStrings) {
+      const ech = escapeRegExp(sch);
+      stringTokensRegex += ech + (stringEscapes ? '(\\\\[^]|[^'+ech+'])+' : '[^'+ech+']') + ech +'|';
+    }
+
+    const tokens = new RegExp('\\s+|('+stringTokensRegex+'.)', 'g');
+    let m;
+    while(m = tokens.exec(src)) {
+      if (m[1]) defSrc += m[1];
+    }
+  } else defSrc = src.replace(/\s+/g, '');
+
+  return defSrc;
+}
+
+function formatGenericNested(src, tokenPairs, separators=',', indent='  ', supportedStrings, stringEscapes, maxCompactLen=60, maxCompactNesting=1) {
+  // "deformat" (tm) first, with string support if requested
+  src = deformatGenericNested(src, supportedStrings, stringEscapes);
+
+  var endFor = {};
+
+  for (var t=0; t<tokenPairs.length; t+=2) {
+    endFor[tokenPairs[t]] = tokenPairs[t+1];
+  }
+
+  // 2 layers - a container which is a list of item
+  // and an item which is a list of... containers
+  // astStack is a stack of containers
+  
+  var ast = {token: null, start: 0, items: [
+    {start: 0, containers: [], end: src.length, nestLevel: 0}
+  ], end: src.length, nestLevel: 0};
+
+  var pos, ch, astStack = [ast], container = ast, lastItem = ast.items[0];
+  for (pos = 0; pos < src.length; pos++) {
+    ch = src[pos];
+
+    if (endFor.hasOwnProperty(ch)) {
+      // 2 elems, the inner
+      const item = {start: pos+1, containers: [], end: src.length, nestLevel: 0};
+      const newContainer = {token: ch, start: pos+1, items: [item], end: src.length, nestLevel: 0};
+      lastItem.containers.push(newContainer);
+      astStack.push(newContainer);
+      container = newContainer;
+      lastItem = item;
+    } else if (astStack.length > 1 && ch === endFor[astStack[astStack.length-1].token]) {
+      const popLevel = Math.max(container.nestLevel, lastItem.nestLevel);
+      lastItem.end = pos;
+      container.end = pos;
+      container.nestLevel = popLevel;
+      astStack.pop();
+      container = astStack[astStack.length - 1];
+      lastItem = container.items[container.items.length - 1];
+      lastItem.nestLevel = Math.max(lastItem.nestLevel, popLevel+1);
+    } else if (separators.indexOf(ch) !== -1) {
+      lastItem.end = pos+1;
+      container.nestLevel = Math.max(container.nestLevel, lastItem.nestLevel);
+      lastItem = {start: pos+1, containers: [], end: src.length, nestLevel: 0};
+      container.items.push(lastItem);
+    } else if (supportedStrings.indexOf(ch) !== -1) {
+      const regex = new RegExp(stringEscapes ? '(\\\\[^]|[^'+escapeRegExp(ch)+'])*' : '[^'+escapeRegExp(ch)+']*', 'g');
+      regex.lastIndex = pos + 1;
+      const m = regex.exec(src);
+      if (m) pos += m[0].length + 1;
+    }
+  }
+
+  container.nestLevel = Math.max(container.nestLevel, lastItem.nestLevel);
+
+  // break logic is complicated, maybe it could be optimized
+  // we need to break both too-long containers and too-long items
+  // but if we've already broken one container in the item, we might not need to break another
+
+  function printContainer(cont, curIndent, mustBreak=false) {
+    var curStart, startIndent = curIndent;
+    var ret = '';
+
+    var shouldBreak = mustBreak || (cont.token && ((cont.end - cont.start) > maxCompactLen || cont.nestLevel > maxCompactNesting));
+    if (shouldBreak) {
+      ret += '\n';
+      curIndent += indent;
+    }
+
+    for (var i=0; i<cont.items.length; i++) {
+      const item = cont.items[i];
+
+      ret += (curIndent != startIndent) ? curIndent : '';
+      curStart = item.start;
+
+      for (const ncont of item.containers) {
+        const shouldBreakContainer = (item.end - curStart) > maxCompactLen;
+        ret += src.substring(curStart, ncont.start);
+        ret += printContainer(ncont, curIndent, shouldBreakContainer);
+        curStart = ncont.end;
+      }
+
+      ret += src.substring(curStart, item.end) + (shouldBreak ? '\n' : (i<cont.items.length-1 ? ' ' : ''));
+    }
+
+    if (shouldBreak) {
+      ret += startIndent;
+    }
+
+    return ret;
+  }
+
+  return printContainer(ast, ''); 
+}
+
+// end generic nested struct. end comments are cool too
+
+
 function execXPath(str)
 {
  var type = document.getElementById('xpath-xml').checked ? 'xml' : 'html';
