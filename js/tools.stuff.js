@@ -2958,6 +2958,7 @@ var regexExamples =
  {name: "Strip whitespace", regex: '\\s', replacement: ''},
  {name: "Strip trailing whitespace", regex: '[ \\t]+$', multiline: true, replacement: ''},
  {name: "Strip newline", regex: '\\n', replacement: ''},
+ {name: "Remove empty lines", regex: '^\\s*\\r?\\n', multiline: true, replacement: ''},
  {name: "Remove lines containing ABC", regex: '^(.*?)ABC(.*)(\n|$)', replacement: '', multiline: true},
  {name: "Remove text after # in each line", regex: '^(.*?)#.*$', replacement: '$1', multiline: true},
  {name: "deadbabe -> de ad ba be", regex: '([^]{2})(?!$)', replacement: '$1 ', multiline: false},
