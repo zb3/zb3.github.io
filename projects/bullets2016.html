@@ -42,9 +42,10 @@ a
  position: absolute;
 }
 </style>
-<h1>Bullets 2016</h1>
-<p>What's this? I don't really know, this is a remake of <a href="http://js1k.com/2014-dragons/demo/1777">this js1k</a>, except it's not a game this time - you can't loose and you can cheat, but this was made to experiment with, and by default, blocks are not destroyed, but are moved instead. I just wanted to see how it would look like with this modification, but since the original is more interesting, you can toggle the original behavior with a fancy input of type "checkbox"!</p>
+<h1>Bullets <span style="text-decoration: line-through; color: #aaa;">2016</span> 2024</h1>
+<p>What's this? I don't really know, this is a remake of <a href="http://js1k.com/2014-dragons/demo/1777">this js1k</a>, except it's not a game this time - you can't loose and you can cheat, but this was made to experiment with, and by default, blocks are not destroyed, but are moved instead. I just wanted to see how it would look like with this modification, but since the original is more interesting, you can toggle the original behavior with a fancy input of type "radio"!</p>
 <p>Maybe the whole thing isn't interesting anymore, but hey - at least you can find it out for yourself with help of this "tool"...<br>And of course, you can laugh at the source code which is terrible (as always), because I had no time, but also because this was meant to be an "old school" zb3 project, and one of the most important part of that kind of project is that the source code is horrible.</p>
+<p><b>2024 update:</b> it appears that it gets even more interesting when the blocks aren't always moved forward, but are randomly moved forward or backward. So there's a new mode - enjoy :)
 <p><b>Left click</b> to shoot, <b>Right click</b> to paint blocks</p>
 <table id="t16-layout">
 <tr>
@@ -60,12 +61,16 @@ Board dimensions: <input type=number min=5 id="t16-x" value=50 onchange="readSet
  <input type=number min=5 id="t16-y" value=50 onchange="readSettings()"><br>
 Number of blocks: <input type=number id="t16-initblocks" min=0 value=44 onchange="readSettings()"><br>
 Step time: <input type=number id="t16-steptime" min=4 value=25 onchange="readSettings()"><br>
-<label><input type=checkbox id="t16-destroy" onchange="readSettings()">destroy block on hit</label><br>
+<br>
+<label><input type=radio name="t16-mode" onchange="readSettings()">js1k mode - destroy block on hit</label><br>
+<label><input type=radio name="t16-mode" onchange="readSettings()">2016 mode - push block forward</label><br>
+<label><input type=radio name="t16-mode" onchange="readSettings()" checked>2024 mode - randomly push block forward/backward</label><br>
+
 <br><br>
 <b>Style settings:</b><br>
 Cell size: <input type=number min=1 id="t16-blocksize" value=10 onchange="updateBaseStyle()">px <br>
 Board colors: <input type=color id="t16-bgcolor" value="#000000" onchange="updateBaseStyle()"> <input type=color id="t16-bordercolor" value="#333333" onchange="updateBaseStyle()"><br>
-Block colors: <input type=color id="t16-blockcolor" value="#00dddd" onchange="updateStyle()"> <input type=color id="t16-bulletcolor" value="#dddddd" onchange="updateStyle()"><br>
+Block colors: <input type=color id="t16-blockcolor" value="#00dddd" onchange="updateStyle()"> <input type=color id="t16-bulletcolor" value="#ffffff" onchange="updateStyle()"> (<input type=number min=1 max=255 step=1 id="t16-bulletalpha" value="220" onchange="updateStyle()"> alpha)<br>
 <br><br>
 <button onclick="newGame();">New board</button> <button onclick="newGame(false);">New empty board</button><br>
 <button onclick="undoShot();">Undo last shot</button> <button id="t16-suspend" onclick="suspendGame();">Suspend engine</button>
@@ -73,7 +78,8 @@ Block colors: <input type=color id="t16-blockcolor" value="#00dddd" onchange="up
 <br><br><br>
 Shots fired: <b id="t16-shotsfired">0</b><br>
 Blocks on board: <b id="t16-blocksonboard">0</b><br>
-Bullets on board: <b id="t16-bulletsonboard">0</b>
+Bullets on board: <b id="t16-bulletsonboard">0</b><br>
+Steps: <b id="t16-steps">0</b>
 
 </table>
 
@@ -108,6 +114,12 @@ function aarr(n, d, od, s, os)
 {
  for(var t=0;t<n;t++)
  d[od+t] += s[os+t];
+}
+
+function saarr(n, d, od, s, os)
+{
+ for(var t=0;t<n;t++)
+ d[od+t] -= s[os+t];
 }
 
 function carr(g, coord)
@@ -180,12 +192,12 @@ function fillBoard(g, items)
  }
 }
 
-function fireBullet(g, carr, destroy)
+function fireBullet(g, carr, mode)
 {
  if (!legalPosition(g, carr)) return false;
  
  var c = coord(g, carr);
- if (!destroy && g.board[c]) return false;
+ if (mode>0 && g.board[c]) return false;
  
  for(var t=0,tmp;t<directions.length;t++)
  {
@@ -213,7 +225,7 @@ function putBlock(g, coord, clear)
  }
 }
 
-function stepBullets(g)
+function stepBullets(g, mode)
 {
  for(var t=0;t<g.bullets.length;t++)
  {
@@ -230,7 +242,13 @@ function stepBullets(g)
   {
    //add bullet velocity to block velocity
    g.board[c][0] = 1;
-   aarr(g.n, g.board[c], 1, g.bullets[t], g.n);
+   
+   if (mode !== 2 || Math.random()<0.5) {
+     aarr(g.n, g.board[c], 1, g.bullets[t], g.n);
+   } else {
+     saarr(g.n, g.board[c], 1, g.bullets[t], g.n);
+   }
+   
 
    g.bullets.splice(t--, 1);
    continue;
@@ -238,7 +256,7 @@ function stepBullets(g)
  }
 }
 
-function stepBoard(g, destroy)
+function stepBoard(g, mode)
 {
  for(var c=0;c<g.totalsize;c++)
  {
@@ -248,7 +266,7 @@ function stepBoard(g, destroy)
  
    var pos = carr(g, c);
   
-   if (destroy)
+   if (mode == 0)
    {
     putBlock(g, c, true);
     fireBullet(g, pos, true);
@@ -313,14 +331,15 @@ document.body.appendChild(t16Style);
 
 var inProgress = false, suspended = false, stepTimeout;
 var shotsFired = 0;
+var totalSteps = 0;
 var gameStack = [];
 
-var destroy = false;
+var mode = 2;
 var initBlocks = 44;
 var x, y; x=y=50;
 var stepTime = 25;
 var size = 10, borderSize = 1;
-var bgcolor, bordercolor, blockcolor, bulletcolor;
+var bgcolor, bordercolor, blockcolor, bulletcolor, bulletalpha;
 
 function initTable(x, y)
 {
@@ -363,7 +382,7 @@ function paintCanvas(g)
    fillCanvasRect(ctx, x, y);
   }
  }
- ctx.fillStyle=bulletcolor;
+ ctx.fillStyle=bulletcolor+bulletalpha;
  for(var t=0;t<g.bullets.length;t++)
  {
   fillCanvasRect(ctx, g.bullets[t][0], g.bullets[t][1]);
@@ -375,6 +394,7 @@ function printStats()
  document.getElementById('t16-shotsfired').textContent = shotsFired;
  document.getElementById('t16-blocksonboard').textContent = game.blocks;
  document.getElementById('t16-bulletsonboard').textContent = game.bullets.length;
+ document.getElementById('t16-steps').textContent = totalSteps;
 }
 
 function paint()
@@ -389,7 +409,7 @@ function shoot(e)
  var x = cell.cellIndex, y = cell.parentNode.rowIndex;
 
  var gameClone = JSON.parse(JSON.stringify(game));
- if (fireBullet(game, [x, y], destroy))
+ if (fireBullet(game, [x, y], mode))
  {
   gameStack.push(gameClone);
   shotsFired++;
@@ -445,8 +465,10 @@ function gameStep()
  inProgress = true;
  if (!suspended)
  {
-  stepBullets(game);
-  stepBoard(game, destroy);
+  if (game.bullets.length)
+  totalSteps += 1;
+  stepBullets(game, mode);
+  stepBoard(game, mode);
  }
  paint();
 
@@ -506,13 +528,21 @@ function readSettings()
  y = parseInt(document.getElementById('t16-y').value);
  initBlocks = parseInt(document.getElementById('t16-initblocks').value);
  stepTime = parseInt(document.getElementById('t16-steptime').value);
- destroy = document.getElementById('t16-destroy').checked;
+ 
+ var modeInputs = document.getElementsByName('t16-mode');
+ for (var t=0; t<3; t++) {
+   if (modeInputs[t].checked) {
+      mode = t;
+      break;
+   }
+ }
 }
 
 function updateStyle()
 {
  blockcolor = document.getElementById('t16-blockcolor').value;
  bulletcolor = document.getElementById('t16-bulletcolor').value;
+ bulletalpha = (256 + (document.getElementById('t16-bulletalpha').value|0)).toString(16).substring(1, 3);
 }
 
 function readBaseStyle()
@@ -540,6 +570,7 @@ function newGame(fill)
  fill = true;
  
  shotsFired = 0;
+ totalSteps = 0;
  initGame(game, [x, y]);
  initRenderer();
  initTable(x, y);
